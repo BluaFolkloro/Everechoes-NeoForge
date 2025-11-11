@@ -1,4 +1,4 @@
-package net.overdeterminism.everechoes;
+package net.bluafolkloro.overdeterminism.everechoes;
 
 import java.util.List;
 
