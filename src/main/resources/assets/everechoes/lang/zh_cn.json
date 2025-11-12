@@ -1,3 +1,5 @@
 {
-  "item.everechoes.sealed_letter": "封蜡信件"
+  "item.everechoes.sealed_letter": "封蜡信件",
+  "item.everechoes.letter": "信件",
+  "item.everechoes.opened_letter": "拆封的信件"
 }

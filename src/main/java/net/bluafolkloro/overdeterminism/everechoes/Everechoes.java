@@ -1,6 +1,8 @@
 package net.bluafolkloro.overdeterminism.everechoes;
 
-import net.bluafolkloro.overdeterminism.everechoes.item.ModItems;
+import net.bluafolkloro.overdeterminism.everechoes.block.ContainerBlocks;
+import net.bluafolkloro.overdeterminism.everechoes.item.ContainerBlockItems;
+import net.bluafolkloro.overdeterminism.everechoes.item.LetterItems;
 import net.minecraft.world.item.CreativeModeTabs;
 import org.slf4j.Logger;
 
@@ -66,7 +68,9 @@ public class Everechoes {
         // Do not add this line if there are no @SubscribeEvent-annotated functions in this class, like onServerStarting() below.
         NeoForge.EVENT_BUS.register(this);
 
-        ModItems.register(modEventBus);
+        LetterItems.register(modEventBus);
+        ContainerBlocks.register(modEventBus);
+        ContainerBlockItems.register(modEventBus);
 
         // Register the item to a creative tab
         modEventBus.addListener(this::addCreative);
@@ -93,7 +97,13 @@ public class Everechoes {
     // Add the example block item to the building blocks tab
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
-            event.accept(ModItems.SEALED_LETTER);
+            event.accept(LetterItems.SEALED_LETTER);
+            event.accept(LetterItems.LETTER);
+            event.accept(LetterItems.OPENED_LETTER);
+        }
+
+        if(event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
+            event.accept(ContainerBlocks.MAIL_BOX);
         }
     }
 
