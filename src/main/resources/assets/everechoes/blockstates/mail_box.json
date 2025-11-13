@@ -1,7 +1,10 @@
 {
   "variants": {
-    "": {
+    "half=lower": {
       "model": "everechoes:block/mail_box"
+    },
+    "half=upper": {
+      "model": "minecraft:block/air"
     }
   }
 }

@@ -17,11 +17,12 @@ public class ContainerBlocks {
     public static final DeferredRegister.Blocks BLOCKS =
             DeferredRegister.createBlocks(Everechoes.MODID);
 
-    public static final DeferredBlock<Block> MAIL_BOX =
-            registerBlock("mail_box", () -> new Block(BlockBehaviour.Properties.of()
+    public static final DeferredBlock<MailBoxBlock> MAIL_BOX =
+            registerBlock("mail_box", () -> new MailBoxBlock(BlockBehaviour.Properties.of()
                     .strength(2.0f)
                     .sound(SoundType.METAL)
-                    .noOcclusion()));
+                    .noOcclusion()
+            ));
 
     private static <T extends Block> DeferredBlock<T> registerBlock(String name, Supplier<T> block) {
         DeferredBlock<T> toReturn = BLOCKS.register(name, block);
