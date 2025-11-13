@@ -12,8 +12,6 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.DoorBlock;
-import net.minecraft.world.level.block.DoublePlantBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -53,7 +51,7 @@ public class MailBoxBlock extends Block {
         Level level = context.getLevel();
         if (blockpos.getY() < level.getMaxBuildHeight() - 1 && level.getBlockState(blockpos.above()).canBeReplaced(context)) {
             return this.defaultBlockState()
-                    .setValue(FACING, context.getHorizontalDirection())
+                    .setValue(FACING, context.getHorizontalDirection().getOpposite())
                     .setValue(HALF, DoubleBlockHalf.LOWER);
         } else {
             return null;
@@ -99,7 +97,7 @@ public class MailBoxBlock extends Block {
     @Override
     public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         DoubleBlockHalf half = state.getValue(HALF);
-        BlockPos otherPos = (half == DoubleBlockHalf.LOWER) ? pos.above() : pos.below();
+        BlockPos otherPos = (half == DoubleBlockHalf.UPPER) ? pos.below() : pos.above();
         BlockState otherState = level.getBlockState(otherPos);
 
         if (otherState.is(this) && otherState.getValue(HALF) != half) {

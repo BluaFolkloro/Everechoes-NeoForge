@@ -4,7 +4,7 @@
   "texture_size": [128, 128],
   "textures": {
     "0": "everechoes:block/mail_box",
-    "particle": "everechoes:block/mail_box"
+    "particle": "minecraft:block/redstone_block"
   },
   "elements": [
     {

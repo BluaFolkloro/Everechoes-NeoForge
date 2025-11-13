@@ -1,10 +1,13 @@
 {
   "variants": {
-    "half=lower": {
-      "model": "everechoes:block/mail_box"
-    },
-    "half=upper": {
-      "model": "minecraft:block/air"
-    }
+    "half=lower,facing=north": { "model": "everechoes:block/mail_box" },
+    "half=lower,facing=south": { "model": "everechoes:block/mail_box", "y": 180 },
+    "half=lower,facing=west":  { "model": "everechoes:block/mail_box", "y": 270 },
+    "half=lower,facing=east":  { "model": "everechoes:block/mail_box", "y": 90 },
+
+    "half=upper,facing=north": { "model": "everechoes:block/mail_box_upper" },
+    "half=upper,facing=south": { "model": "everechoes:block/mail_box_upper" },
+    "half=upper,facing=west":  { "model": "everechoes:block/mail_box_upper" },
+    "half=upper,facing=east":  { "model": "everechoes:block/mail_box_upper" }
   }
 }
