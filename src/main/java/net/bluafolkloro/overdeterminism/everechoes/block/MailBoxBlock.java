@@ -104,7 +104,16 @@ public class MailBoxBlock extends Block {
             level.removeBlock(otherPos, false);
         }
 
-        return super.playerWillDestroy(level, pos, state, player);
+        if (!level.isClientSide) {
+            if (player.isCreative()) {
+                return state;
+            }
+
+            Block.dropResources(state, level, pos, null, player, player.getMainHandItem());
+            level.removeBlock(pos, false);
+        }
+
+        return state;
     }
 
     @Override
