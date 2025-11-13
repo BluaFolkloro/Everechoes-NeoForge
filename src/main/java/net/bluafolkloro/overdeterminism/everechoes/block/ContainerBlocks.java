@@ -22,6 +22,7 @@ public class ContainerBlocks {
                     .strength(2.0f)
                     .sound(SoundType.METAL)
                     .noOcclusion()
+
             ));
 
     private static <T extends Block> DeferredBlock<T> registerBlock(String name, Supplier<T> block) {
