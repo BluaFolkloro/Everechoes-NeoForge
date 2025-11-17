@@ -1,7 +1,12 @@
 package net.bluafolkloro.overdeterminism.everechoes.block;
 
+import com.mojang.serialization.MapCodec;
+import net.bluafolkloro.overdeterminism.everechoes.block.entity.MailBoxBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -10,24 +15,39 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 import javax.annotation.Nullable;
 
-public class MailBoxBlock extends Block {
+public class MailBoxBlock extends BaseEntityBlock {
+    public static final MapCodec<MailBoxBlock> CODEC = simpleCodec(MailBoxBlock::new);
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final EnumProperty<DoubleBlockHalf> HALF = BlockStateProperties.DOUBLE_BLOCK_HALF;
     private static final VoxelShape LOWER_SHAPE = Block.box(2, 0, 2, 14, 16, 14);
     private static final VoxelShape UPPER_SHAPE = Block.box(2, 0, 2, 14, 10, 14);
+
+    @Override
+    public MapCodec<? extends MailBoxBlock> codec() {
+        return CODEC;
+    }
+
+    @Override
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new MailBoxBlockEntity(pos, state);
+    }
 
     public MailBoxBlock(Properties properties) {
         super(properties);
@@ -37,6 +57,23 @@ public class MailBoxBlock extends Block {
                         .setValue(FACING, Direction.NORTH)
                         .setValue(HALF, DoubleBlockHalf.LOWER)
         );
+    }
+
+    //测试用
+    @Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+        // 客户端只负责动画，直接返回 SUCCESS
+        if (level.isClientSide) {
+            return InteractionResult.SUCCESS;
+        }
+
+        BlockEntity be = level.getBlockEntity(pos);
+        if (be instanceof MailBoxBlockEntity mailBox) {
+            // 先做一个调试用输出，确认交互触发 & BE 存在
+            player.sendSystemMessage(Component.literal("你右键了邮筒（将来这里会打开GUI）"));
+        }
+
+        return InteractionResult.CONSUME;
     }
 
     @Override
@@ -104,20 +141,16 @@ public class MailBoxBlock extends Block {
             level.removeBlock(otherPos, false);
         }
 
-        if (!level.isClientSide) {
-            if (player.isCreative()) {
-                return state;
-            }
-
-            Block.dropResources(state, level, pos, null, player, player.getMainHandItem());
-            level.removeBlock(pos, false);
-        }
-
-        return state;
+        return super.playerWillDestroy(level, pos, state, player);
     }
 
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
         return state.getValue(HALF) == DoubleBlockHalf.LOWER ? LOWER_SHAPE : UPPER_SHAPE;
+    }
+
+    @Override
+    public RenderShape getRenderShape(BlockState state) {
+        return RenderShape.MODEL;
     }
 }

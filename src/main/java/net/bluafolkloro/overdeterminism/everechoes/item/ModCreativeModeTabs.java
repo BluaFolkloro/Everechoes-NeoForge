@@ -1,6 +1,7 @@
 package net.bluafolkloro.overdeterminism.everechoes.item;
 
 import net.bluafolkloro.overdeterminism.everechoes.Everechoes;
+import net.bluafolkloro.overdeterminism.everechoes.block.BirdFigureBlocks;
 import net.bluafolkloro.overdeterminism.everechoes.block.ContainerBlocks;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -25,6 +26,9 @@ public class ModCreativeModeTabs {
                                 output.accept(LetterItems.LETTER);
                                 output.accept(LetterItems.OPENED_LETTER);
                                 output.accept(ContainerBlocks.MAIL_BOX);
+                                output.accept(BirdFigureBlocks.NIGHT_HERON_FIGURE);
+                                output.accept(BirdFigureBlocks.NIGHT_HERON_COCKROACH_FIGURE);
+                                output.accept(BirdFigureBlocks.NIGHT_HERON_THOUGHTFUL_FIGURE);
                             })
                             .build()
             );

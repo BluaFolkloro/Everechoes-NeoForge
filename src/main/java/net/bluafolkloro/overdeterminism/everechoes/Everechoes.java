@@ -1,6 +1,9 @@
 package net.bluafolkloro.overdeterminism.everechoes;
 
+import net.bluafolkloro.overdeterminism.everechoes.block.BirdFigureBlocks;
 import net.bluafolkloro.overdeterminism.everechoes.block.ContainerBlocks;
+import net.bluafolkloro.overdeterminism.everechoes.block.entity.ModBlockEntities;
+import net.bluafolkloro.overdeterminism.everechoes.item.BirdFigureBlockItems;
 import net.bluafolkloro.overdeterminism.everechoes.item.ContainerBlockItems;
 import net.bluafolkloro.overdeterminism.everechoes.item.LetterItems;
 import net.bluafolkloro.overdeterminism.everechoes.item.ModCreativeModeTabs;
@@ -44,9 +47,13 @@ public class Everechoes {
 
         ModCreativeModeTabs.register(modEventBus);
 
+        ModBlockEntities.register(modEventBus);
+
         LetterItems.register(modEventBus);
         ContainerBlocks.register(modEventBus);
         ContainerBlockItems.register(modEventBus);
+        BirdFigureBlocks.register(modEventBus);
+        BirdFigureBlockItems.register(modEventBus);
 
         // Register our mod's ModConfigSpec so that FML can create and load the config file for us
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
