@@ -9,7 +9,7 @@ import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 
 @EventBusSubscriber(
         modid = Everechoes.MODID,
-        value = Dist.CLIENT   // ✅ 只保留 modid + 客户端
+        value = Dist.CLIENT
 )
 public class EverechoesClient {
 
