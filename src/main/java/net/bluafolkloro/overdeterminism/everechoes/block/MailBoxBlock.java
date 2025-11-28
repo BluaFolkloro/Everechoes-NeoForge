@@ -61,14 +61,13 @@ public class MailBoxBlock extends BaseEntityBlock {
     //测试用
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
-        // 客户端只负责动画，直接返回 SUCCESS
         if (level.isClientSide) {
             return InteractionResult.SUCCESS;
         }
 
         BlockEntity be = level.getBlockEntity(pos);
         if (be instanceof MailBoxBlockEntity mailBox && player instanceof ServerPlayer serverPlayer) {
-            // 关键：用带 buf 的 openMenu，把 BlockPos 写进去
+            // 用带 buf 的 openMenu，把 BlockPos 写进去
             serverPlayer.openMenu(mailBox, buf -> {
                 buf.writeBlockPos(pos);
             });

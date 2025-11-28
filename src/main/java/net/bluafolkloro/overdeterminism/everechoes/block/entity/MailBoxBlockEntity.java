@@ -19,7 +19,7 @@ public class MailBoxBlockEntity extends BlockEntity implements MenuProvider {
 
     @Override
     public Component getDisplayName() {
-        return Component.literal("Mail Box");
+        return Component.translatable("block.everechoes.mail_box");
     }
 
     @Override
