@@ -46,12 +46,16 @@ public class Everechoes {
         // Do not add this line if there are no @SubscribeEvent-annotated functions in this class, like onServerStarting() below.
         NeoForge.EVENT_BUS.register(this);
 
+        //注册标签页
         ModCreativeModeTabs.register(modEventBus);
 
+        //注册方块实体
         ModBlockEntities.register(modEventBus);
 
+        //注册菜单
         ModMenuTypes.register(modEventBus);
 
+        //注册方块&物品
         LetterItems.register(modEventBus);
         ContainerBlocks.register(modEventBus);
         ContainerBlockItems.register(modEventBus);
