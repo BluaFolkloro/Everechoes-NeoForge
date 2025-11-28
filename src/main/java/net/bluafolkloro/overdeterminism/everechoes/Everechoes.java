@@ -7,6 +7,7 @@ import net.bluafolkloro.overdeterminism.everechoes.item.BirdFigureBlockItems;
 import net.bluafolkloro.overdeterminism.everechoes.item.ContainerBlockItems;
 import net.bluafolkloro.overdeterminism.everechoes.item.LetterItems;
 import net.bluafolkloro.overdeterminism.everechoes.item.ModCreativeModeTabs;
+import net.bluafolkloro.overdeterminism.everechoes.menu.ModMenuTypes;
 import net.minecraft.world.item.CreativeModeTabs;
 import org.slf4j.Logger;
 
@@ -48,6 +49,8 @@ public class Everechoes {
         ModCreativeModeTabs.register(modEventBus);
 
         ModBlockEntities.register(modEventBus);
+
+        ModMenuTypes.register(modEventBus);
 
         LetterItems.register(modEventBus);
         ContainerBlocks.register(modEventBus);

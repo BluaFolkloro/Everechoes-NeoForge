@@ -4,8 +4,6 @@ import com.mojang.serialization.MapCodec;
 import net.bluafolkloro.overdeterminism.everechoes.block.entity.MailBoxBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -29,6 +27,7 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.server.level.ServerPlayer;
 
 import javax.annotation.Nullable;
 
@@ -68,9 +67,11 @@ public class MailBoxBlock extends BaseEntityBlock {
         }
 
         BlockEntity be = level.getBlockEntity(pos);
-        if (be instanceof MailBoxBlockEntity mailBox) {
-            // 先做一个调试用输出，确认交互触发 & BE 存在
-            player.sendSystemMessage(Component.literal("你右键了邮筒（将来这里会打开GUI）"));
+        if (be instanceof MailBoxBlockEntity mailBox && player instanceof ServerPlayer serverPlayer) {
+            // 关键：用带 buf 的 openMenu，把 BlockPos 写进去
+            serverPlayer.openMenu(mailBox, buf -> {
+                buf.writeBlockPos(pos);
+            });
         }
 
         return InteractionResult.CONSUME;
