@@ -15,7 +15,13 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 public class MailBoxBlockEntity extends BlockEntity implements MenuProvider {
-    private final SimpleContainer items = new SimpleContainer(27);
+    private final SimpleContainer items = new SimpleContainer(27) {
+        @Override
+        public void setChanged() {
+            super.setChanged();
+            MailBoxBlockEntity.this.setChanged();
+        }
+    };
 
     @Override
     public Component getDisplayName() {
