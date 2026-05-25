@@ -19,6 +19,7 @@ public class MailBoxBlockEntity extends BlockEntity implements MenuProvider {
         @Override
         public void setChanged() {
             super.setChanged();
+            // Mark the block entity dirty whenever the inventory changes.
             MailBoxBlockEntity.this.setChanged();
         }
     };

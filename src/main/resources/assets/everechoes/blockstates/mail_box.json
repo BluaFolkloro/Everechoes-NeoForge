@@ -6,8 +6,8 @@
     "half=lower,facing=east":  { "model": "everechoes:block/mail_box", "y": 90 },
 
     "half=upper,facing=north": { "model": "everechoes:block/mail_box_upper" },
-    "half=upper,facing=south": { "model": "everechoes:block/mail_box_upper" },
-    "half=upper,facing=west":  { "model": "everechoes:block/mail_box_upper" },
-    "half=upper,facing=east":  { "model": "everechoes:block/mail_box_upper" }
+    "half=upper,facing=south": { "model": "everechoes:block/mail_box_upper", "y": 180 },
+    "half=upper,facing=west":  { "model": "everechoes:block/mail_box_upper", "y": 270 },
+    "half=upper,facing=east":  { "model": "everechoes:block/mail_box_upper", "y": 90 }
   }
 }

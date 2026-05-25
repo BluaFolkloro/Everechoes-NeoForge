@@ -4,6 +4,8 @@ import com.mojang.serialization.MapCodec;
 import net.bluafolkloro.overdeterminism.everechoes.block.entity.MailBoxBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -27,7 +29,6 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraft.server.level.ServerPlayer;
 
 import javax.annotation.Nullable;
 
@@ -45,6 +46,7 @@ public class MailBoxBlock extends BaseEntityBlock {
 
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        // Only the lower half owns the mailbox inventory.
         if (state.getValue(HALF) == DoubleBlockHalf.UPPER) {
             return null;
         }
@@ -62,18 +64,18 @@ public class MailBoxBlock extends BaseEntityBlock {
         );
     }
 
-    //测试用
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         if (level.isClientSide) {
             return InteractionResult.SUCCESS;
         }
 
+        // Upper-half clicks open the lower-half block entity.
         BlockPos menuPos = state.getValue(HALF) == DoubleBlockHalf.UPPER ? pos.below() : pos;
         BlockEntity be = level.getBlockEntity(menuPos);
         if (be instanceof MailBoxBlockEntity mailBox && player instanceof ServerPlayer serverPlayer) {
-            // 用带 buf 的 openMenu，把 BlockPos 写进去
             serverPlayer.openMenu(mailBox, buf -> {
+                // Send the lower-half position to the client menu.
                 buf.writeBlockPos(menuPos);
             });
         }
@@ -116,7 +118,6 @@ public class MailBoxBlock extends BaseEntityBlock {
         }
     }
 
-
     @Override
     protected BlockState updateShape(BlockState state, Direction facing, BlockState facingState, LevelAccessor level, BlockPos currentPos, BlockPos facingPos) {
         DoubleBlockHalf half = state.getValue(HALF);
@@ -147,6 +148,20 @@ public class MailBoxBlock extends BaseEntityBlock {
         }
 
         return super.playerWillDestroy(level, pos, state, player);
+    }
+
+    @Override
+    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+        // Contents are stored only on the lower half, so drop them from there once.
+        if (!state.is(newState.getBlock()) && state.getValue(HALF) == DoubleBlockHalf.LOWER) {
+            BlockEntity be = level.getBlockEntity(pos);
+            if (be instanceof MailBoxBlockEntity mailBox) {
+                Containers.dropContents(level, pos, mailBox.getItems());
+                level.updateNeighbourForOutputSignal(pos, this);
+            }
+        }
+
+        super.onRemove(state, level, pos, newState, movedByPiston);
     }
 
     @Override
