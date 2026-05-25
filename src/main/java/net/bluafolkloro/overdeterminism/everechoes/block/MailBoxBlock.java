@@ -45,6 +45,10 @@ public class MailBoxBlock extends BaseEntityBlock {
 
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        if (state.getValue(HALF) == DoubleBlockHalf.UPPER) {
+            return null;
+        }
+
         return new MailBoxBlockEntity(pos, state);
     }
 
@@ -65,11 +69,12 @@ public class MailBoxBlock extends BaseEntityBlock {
             return InteractionResult.SUCCESS;
         }
 
-        BlockEntity be = level.getBlockEntity(pos);
+        BlockPos menuPos = state.getValue(HALF) == DoubleBlockHalf.UPPER ? pos.below() : pos;
+        BlockEntity be = level.getBlockEntity(menuPos);
         if (be instanceof MailBoxBlockEntity mailBox && player instanceof ServerPlayer serverPlayer) {
             // 用带 buf 的 openMenu，把 BlockPos 写进去
             serverPlayer.openMenu(mailBox, buf -> {
-                buf.writeBlockPos(pos);
+                buf.writeBlockPos(menuPos);
             });
         }
 
