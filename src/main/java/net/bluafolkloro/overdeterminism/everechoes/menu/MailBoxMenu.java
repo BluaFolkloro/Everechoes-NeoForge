@@ -21,6 +21,8 @@ public class MailBoxMenu extends AbstractContainerMenu {
         this.mailBox = mailbox;
         this.container = mailBox.getItems();
 
+        // Placeholder mailbox GUI layout; the concrete mail system behavior is still to be implemented.
+        // 占位邮箱 GUI 布局，具体邮件系统行为待实现。
         // Mailbox inventory: 3 rows x 9 columns.
         int slot = 0;
         for (int row = 0; row < 3; ++row) {

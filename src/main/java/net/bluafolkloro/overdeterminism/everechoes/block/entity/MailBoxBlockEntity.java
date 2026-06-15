@@ -15,6 +15,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 public class MailBoxBlockEntity extends BlockEntity implements MenuProvider {
+    // Placeholder mailbox storage; the concrete mail system behavior is still to be implemented.
+    // 占位邮箱储存，具体邮件系统行为待实现。
     private final SimpleContainer items = new SimpleContainer(27) {
         @Override
         public void setChanged() {

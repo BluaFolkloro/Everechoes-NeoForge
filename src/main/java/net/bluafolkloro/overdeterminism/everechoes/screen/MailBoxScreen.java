@@ -12,6 +12,8 @@ import net.neoforged.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public class MailBoxScreen extends AbstractContainerScreen<MailBoxMenu> {
 
+    // Placeholder mailbox GUI background; the concrete mail system UI is still to be implemented.
+    // 占位邮箱 GUI 背景，具体邮件系统界面待实现。
     private static final ResourceLocation BG =
             ResourceLocation.fromNamespaceAndPath("minecraft", "textures/gui/container/shulker_box.png");
 
