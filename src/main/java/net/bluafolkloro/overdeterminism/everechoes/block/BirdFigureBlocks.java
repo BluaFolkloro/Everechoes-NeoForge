@@ -18,24 +18,30 @@ public class BirdFigureBlocks {
             DeferredRegister.createBlocks(Everechoes.MODID);
 
     public static final DeferredBlock<BirdFigureBlock> NIGHT_HERON_FIGURE =
-            registerBlock("night_heron_figure", () -> new BirdFigureBlock(BlockBehaviour.Properties.of()
-                    .strength(1.0f)
-                    .sound(SoundType.WOOL)
-                    .noOcclusion()
+            registerBlock("night_heron_figure", () -> new BirdFigureBlock(
+                    BlockBehaviour.Properties.of()
+                            .strength(1.0f)
+                            .sound(SoundType.WOOL)
+                            .noOcclusion(),
+                    Block.box(5.5, 0, 0.7, 10.5, 9, 12.1)
             ));
 
     public static final DeferredBlock<BirdFigureBlock> NIGHT_HERON_COCKROACH_FIGURE =
-            registerBlock("night_heron_cockroach_figure", () -> new BirdFigureBlock(BlockBehaviour.Properties.of()
-                    .strength(1.0f)
-                    .sound(SoundType.WOOL)
-                    .noOcclusion()
+            registerBlock("night_heron_cockroach_figure", () -> new BirdFigureBlock(
+                    BlockBehaviour.Properties.of()
+                            .strength(1.0f)
+                            .sound(SoundType.WOOL)
+                            .noOcclusion(),
+                    Block.box(6, 0, 2, 11, 4.8, 13.4)
             ));
 
     public static final DeferredBlock<BirdFigureBlock> NIGHT_HERON_THOUGHTFUL_FIGURE =
-            registerBlock("night_heron_thoughtful_figure", () -> new BirdFigureBlock(BlockBehaviour.Properties.of()
-                    .strength(1.0f)
-                    .sound(SoundType.WOOL)
-                    .noOcclusion()
+            registerBlock("night_heron_thoughtful_figure", () -> new BirdFigureBlock(
+                    BlockBehaviour.Properties.of()
+                            .strength(1.0f)
+                            .sound(SoundType.WOOL)
+                            .noOcclusion(),
+                    Block.box(5.5, 0, 1, 10.5, 11.3, 12.4)
             ));
 
     private static <T extends Block> DeferredBlock<T> registerBlock(String name, Supplier<T> block) {
