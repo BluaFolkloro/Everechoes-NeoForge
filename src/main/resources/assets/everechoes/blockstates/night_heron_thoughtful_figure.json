@@ -1,5 +1,8 @@
 {
   "variants": {
-    "": {"model": "everechoes:block/night_heron_thoughtful_figure"}
+    "facing=north": { "model": "everechoes:block/night_heron_thoughtful_figure" },
+    "facing=south": { "model": "everechoes:block/night_heron_thoughtful_figure", "y": 180 },
+    "facing=west": { "model": "everechoes:block/night_heron_thoughtful_figure", "y": 270 },
+    "facing=east": { "model": "everechoes:block/night_heron_thoughtful_figure", "y": 90 }
   }
 }

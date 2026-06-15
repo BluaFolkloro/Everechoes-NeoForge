@@ -17,22 +17,22 @@ public class BirdFigureBlocks {
     public static final DeferredRegister.Blocks BLOCKS =
             DeferredRegister.createBlocks(Everechoes.MODID);
 
-    public static final DeferredBlock<Block> NIGHT_HERON_FIGURE =
-            registerBlock("night_heron_figure", () -> new Block(BlockBehaviour.Properties.of()
+    public static final DeferredBlock<BirdFigureBlock> NIGHT_HERON_FIGURE =
+            registerBlock("night_heron_figure", () -> new BirdFigureBlock(BlockBehaviour.Properties.of()
                     .strength(1.0f)
                     .sound(SoundType.WOOL)
                     .noOcclusion()
             ));
 
-    public static final DeferredBlock<Block> NIGHT_HERON_COCKROACH_FIGURE =
-            registerBlock("night_heron_cockroach_figure", () -> new Block(BlockBehaviour.Properties.of()
+    public static final DeferredBlock<BirdFigureBlock> NIGHT_HERON_COCKROACH_FIGURE =
+            registerBlock("night_heron_cockroach_figure", () -> new BirdFigureBlock(BlockBehaviour.Properties.of()
                     .strength(1.0f)
                     .sound(SoundType.WOOL)
                     .noOcclusion()
             ));
 
-    public static final DeferredBlock<Block> NIGHT_HERON_THOUGHTFUL_FIGURE =
-            registerBlock("night_heron_thoughtful_figure", () -> new Block(BlockBehaviour.Properties.of()
+    public static final DeferredBlock<BirdFigureBlock> NIGHT_HERON_THOUGHTFUL_FIGURE =
+            registerBlock("night_heron_thoughtful_figure", () -> new BirdFigureBlock(BlockBehaviour.Properties.of()
                     .strength(1.0f)
                     .sound(SoundType.WOOL)
                     .noOcclusion()
