@@ -26,13 +26,11 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
-import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 import javax.annotation.Nullable;
-import java.util.List;
 
 public class MailBoxBlock extends BaseEntityBlock {
     public static final MapCodec<MailBoxBlock> CODEC = simpleCodec(MailBoxBlock::new);
@@ -142,11 +140,15 @@ public class MailBoxBlock extends BaseEntityBlock {
     @Override
     public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         DoubleBlockHalf half = state.getValue(HALF);
-        BlockPos otherPos = (half == DoubleBlockHalf.UPPER) ? pos.below() : pos.above();
+        if (half == DoubleBlockHalf.LOWER) {
+            return super.playerWillDestroy(level, pos, state, player);
+        }
+
+        BlockPos otherPos = pos.below();
         BlockState otherState = level.getBlockState(otherPos);
 
-        if (otherState.is(this) && otherState.getValue(HALF) != half) {
-            if (!level.isClientSide && !player.isCreative() && half == DoubleBlockHalf.UPPER) {
+        if (otherState.is(this) && otherState.getValue(HALF) == DoubleBlockHalf.LOWER) {
+            if (!level.isClientSide && !player.isCreative()) {
                 Block.dropResources(otherState, level, otherPos, level.getBlockEntity(otherPos), player, player.getMainHandItem());
             }
 
@@ -154,15 +156,6 @@ public class MailBoxBlock extends BaseEntityBlock {
         }
 
         return super.playerWillDestroy(level, pos, state, player);
-    }
-
-    @Override
-    protected List<ItemStack> getDrops(BlockState state, LootParams.Builder params) {
-        if (state.getValue(HALF) == DoubleBlockHalf.UPPER) {
-            return List.of();
-        }
-
-        return super.getDrops(state, params);
     }
 
     @Override
