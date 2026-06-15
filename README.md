@@ -52,6 +52,14 @@ Everechoes 是一个基于 NeoForge 的 Minecraft 模组项目，目前面向 Mi
 - Java：`21`
 - Gradle：使用项目自带 Gradle Wrapper
 
+## 文档
+
+更详细的设计和开发记录位于 `docs/`：
+
+- [开发路线和计划](docs/roadmap.md)
+- [邮政系统架构](docs/postal-design.md)
+- [代码机制笔记](docs/implementation-notes.md)
+
 ## 项目结构
 
 主要源码位于：
