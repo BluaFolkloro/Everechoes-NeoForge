@@ -6,5 +6,6 @@
   "creativetab.everechoes.everechoes_items": "Everechoes",
   "item.everechoes.letter": "Letter",
   "item.everechoes.opened_letter": "Opened Letter",
-  "item.everechoes.sealed_letter": "Sealed Letter"
+  "item.everechoes.sealed_letter": "Sealed Letter",
+  "message.everechoes.letter.missing_recipient_address": "Add a recipient address first"
 }

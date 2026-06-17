@@ -6,5 +6,6 @@
   "creativetab.everechoes.everechoes_items": "常信",
   "item.everechoes.letter": "信件",
   "item.everechoes.opened_letter": "拆封的信件",
-  "item.everechoes.sealed_letter": "封蜡信件"
+  "item.everechoes.sealed_letter": "封蜡信件",
+  "message.everechoes.letter.missing_recipient_address": "需要先填写收件地址"
 }

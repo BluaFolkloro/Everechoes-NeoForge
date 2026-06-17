@@ -5,6 +5,7 @@ import net.bluafolkloro.overdeterminism.everechoes.postal.Address;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 // Mutable letter payload and lifecycle data.
 // 可变的信件内容与生命周期数据。
@@ -29,7 +30,7 @@ public class LetterData {
 
     // Reconstructs letter data from persisted fields and validates state invariants.
     // 从持久化字段重建信件数据，并校验状态不变量。
-    public LetterData(
+    private LetterData(
             UUID letterId,
             LetterState state,
             Address returnAddress,
@@ -48,6 +49,58 @@ public class LetterData {
         this.signatureSender = normalizeOptionalText(signatureSender);
         this.letterRecipient = normalizeOptionalText(letterRecipient);
         validateStateInvariants();
+    }
+
+    // Reconstructs letter data from persisted fields and validates state invariants.
+    // 从持久化字段重建信件数据，并校验状态不变量。
+    public static LetterData reconstruct(
+            UUID letterId,
+            LetterState state,
+            Address returnAddress,
+            Address recipientAddress,
+            String title,
+            String body,
+            String signatureSender,
+            String letterRecipient
+    ) {
+        return new LetterData(
+                letterId,
+                state,
+                returnAddress,
+                recipientAddress,
+                title,
+                body,
+                signatureSender,
+                letterRecipient
+        );
+    }
+
+    // Attempts to reconstruct letter data from persisted fields without throwing on invalid data.
+    // 尝试从持久化字段重建信件数据；数据非法时不抛出异常，而是返回空结果。
+    public static Optional<LetterData> tryReconstruct(
+            UUID letterId,
+            LetterState state,
+            Address returnAddress,
+            Address recipientAddress,
+            String title,
+            String body,
+            String signatureSender,
+            String letterRecipient
+    ) {
+        try {
+            return Optional.of(reconstruct(
+                    letterId,
+                    state,
+                    returnAddress,
+                    recipientAddress,
+                    title,
+                    body,
+                    signatureSender,
+                    letterRecipient
+            ));
+        } catch (RuntimeException exception) {
+            return Optional.empty();
+        }
     }
 
     // Creates an editable draft with generated identity, no destination address, and empty written content.
@@ -95,7 +148,14 @@ public class LetterData {
     // Attempts to seal the letter without throwing when the state is invalid.
     // 尝试封蜡；状态不满足时不抛异常，而是返回 false。
     public boolean trySeal() {
+        return trySeal(null);
+    }
+
+    // Attempts to seal the letter and reports a localized failure message key when user input is incomplete.
+    // 尝试封蜡；当玩家输入不完整时，通过回调提供本地化失败提示键。
+    public boolean trySeal(Consumer<String> failureMessageKeyConsumer) {
         if (!canSeal()) {
+            notifySealFailure(failureMessageKeyConsumer);
             return false;
         }
 
@@ -221,6 +281,18 @@ public class LetterData {
     private void requireDraft() {
         if (!isDraft()) {
             throw new IllegalStateException("Letter data can only be edited while in draft state");
+        }
+    }
+
+    // Sends the most specific sealing failure message key to the caller when one is available.
+    // 在存在明确封蜡失败原因时，将对应的提示翻译键交给调用方处理。
+    private void notifySealFailure(Consumer<String> failureMessageKeyConsumer) {
+        if (failureMessageKeyConsumer == null) {
+            return;
+        }
+
+        if (state == LetterState.DRAFT && recipientAddress == null) {
+            failureMessageKeyConsumer.accept("message.everechoes.letter.missing_recipient_address");
         }
     }
 
