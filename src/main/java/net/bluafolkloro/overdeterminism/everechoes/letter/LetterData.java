@@ -98,7 +98,7 @@ public class LetterData {
                     signatureSender,
                     letterRecipient
             ));
-        } catch (RuntimeException exception) {
+        } catch (NullPointerException | IllegalStateException exception) {
             return Optional.empty();
         }
     }
@@ -139,7 +139,7 @@ public class LetterData {
     // State changes are intentionally one-way: DRAFT -> SEALED -> OPENED.
     // 状态变更有意设计为单向：草稿 -> 蜡封 -> 拆封。
 
-    // Returns whether the sealed letter can be sealed.
+    // Returns whether the letter can be sealed.
     // 返回信件当前是否可以封蜡。
     public boolean canSeal() {
         return state == LetterState.DRAFT && recipientAddress != null;
@@ -163,7 +163,7 @@ public class LetterData {
         return true;
     }
 
-    // Seals the letter or throws if it is not a complete draft.
+    // Seals the letter or throws if it is not a sealable draft.
     // 封蜡信件；如果不是完整草稿则抛出异常。
     public void seal() {
         if (!canSeal()) {
@@ -173,7 +173,7 @@ public class LetterData {
         applyState(LetterState.SEALED);
     }
 
-    // Returns whether the sealed letter can be opened.
+    // Returns whether the letter can be opened.
     // 返回蜡封信件当前是否可以拆封。
     public boolean canOpen() {
         return state == LetterState.SEALED;
