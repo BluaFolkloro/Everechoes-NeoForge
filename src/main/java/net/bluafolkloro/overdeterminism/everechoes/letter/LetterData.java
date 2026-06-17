@@ -98,7 +98,7 @@ public class LetterData {
                     signatureSender,
                     letterRecipient
             ));
-        } catch (NullPointerException | IllegalStateException exception) {
+        } catch (NullPointerException | IllegalArgumentException exception) {
             return Optional.empty();
         }
     }
@@ -303,7 +303,7 @@ public class LetterData {
 
     private void validateStateInvariants() {
         if ((state == LetterState.SEALED || state == LetterState.OPENED) && recipientAddress == null) {
-            throw new IllegalStateException(state + " letter must have a recipient address");
+            throw new IllegalArgumentException(state + " letter must have a recipient address");
         }
     }
 
