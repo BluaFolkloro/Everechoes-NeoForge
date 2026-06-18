@@ -16,7 +16,7 @@ Everechoes 是一个基于 NeoForge 的 Minecraft 模组项目，目前面向 Mi
 
 ### 邮筒
 
-- `everechoes:mail_box`
+- `everechoes:post_box`
 
 邮筒是一个双格方块，下半部分持有方块实体和 27 格占位容器。玩家右键邮筒可打开当前占位 GUI。
 
@@ -74,26 +74,26 @@ src/main/java/net/bluafolkloro/overdeterminism/everechoes
 everechoes
 ├─ block
 │  ├─ entity
-│  │  ├─ MailBoxBlockEntity.java
+│  │  ├─ PostBoxBlockEntity.java
 │  │  └─ ModBlockEntities.java
 │  ├─ BirdFigureBlock.java
 │  ├─ BirdFigureBlocks.java
 │  ├─ ContainerBlocks.java
-│  └─ MailBoxBlock.java
+│  └─ PostBoxBlock.java
 ├─ item
 │  ├─ BirdFigureBlockItems.java
 │  ├─ ContainerBlockItems.java
 │  ├─ LetterItems.java
 │  └─ ModCreativeModeTabs.java
 ├─ menu
-│  ├─ MailBoxMenu.java
+│  ├─ PostBoxMenu.java
 │  └─ ModMenuTypes.java
 ├─ postal
 │  ├─ Address.java
-│  ├─ LetterBoxAddress.java
+│  ├─ PostBoxAddress.java
 │  └─ PlayerAddress.java
 ├─ screen
-│  └─ MailBoxScreen.java
+│  └─ PostBoxScreen.java
 ├─ Config.java
 ├─ Everechoes.java
 └─ EverechoesClient.java

@@ -1,6 +1,6 @@
 package net.bluafolkloro.overdeterminism.everechoes.menu;
 
-import net.bluafolkloro.overdeterminism.everechoes.block.entity.MailBoxBlockEntity;
+import net.bluafolkloro.overdeterminism.everechoes.block.entity.PostBoxBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.Container;
@@ -11,19 +11,19 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
-public class MailBoxMenu extends AbstractContainerMenu {
-    private final MailBoxBlockEntity mailBox;
+public class PostBoxMenu extends AbstractContainerMenu {
+    private final PostBoxBlockEntity postBox;
     private final Container container;
 
     // Server-side constructor.
-    public MailBoxMenu(int windowId, Inventory playerInv, MailBoxBlockEntity mailbox) {
-        super(ModMenuTypes.MAIL_BOX_MENU.get(), windowId);
-        this.mailBox = mailbox;
-        this.container = mailBox.getItems();
+    public PostBoxMenu(int windowId, Inventory playerInv, PostBoxBlockEntity postbox) {
+        super(ModMenuTypes.POST_BOX_MENU.get(), windowId);
+        this.postBox = postbox;
+        this.container = postBox.getItems();
 
-        // Placeholder mailbox GUI layout; the concrete mail system behavior is still to be implemented.
+        // Placeholder postbox GUI layout; the concrete mail system behavior is still to be implemented.
         // 占位邮箱 GUI 布局，具体邮件系统行为待实现。
-        // Mailbox inventory: 3 rows x 9 columns.
+        // Postbox inventory: 3 rows x 9 columns.
         int slot = 0;
         for (int row = 0; row < 3; ++row) {
             for (int col = 0; col < 9; ++col) {
@@ -46,22 +46,22 @@ public class MailBoxMenu extends AbstractContainerMenu {
     }
 
     // Client-side constructor. The server sends the lower-half block position.
-    public MailBoxMenu(int containerId, Inventory playerInv, FriendlyByteBuf extraData) {
+    public PostBoxMenu(int containerId, Inventory playerInv, FriendlyByteBuf extraData) {
         this(
                 containerId,
                 playerInv,
-                getMailBox(playerInv, extraData)
+                getPostBox(playerInv, extraData)
         );
     }
 
-    private static MailBoxBlockEntity getMailBox(Inventory playerInv, FriendlyByteBuf extraData) {
+    private static PostBoxBlockEntity getPostBox(Inventory playerInv, FriendlyByteBuf extraData) {
         BlockPos pos = extraData.readBlockPos();
         BlockEntity be = playerInv.player.level().getBlockEntity(pos);
-        if (be instanceof MailBoxBlockEntity mailBox) {
-            return mailBox;
+        if (be instanceof PostBoxBlockEntity postBox) {
+            return postBox;
         }
 
-        throw new IllegalStateException("Expected mail box block entity at " + pos + ", got " + be);
+        throw new IllegalStateException("Expected postbox block entity at " + pos + ", got " + be);
     }
 
     @Override
@@ -97,17 +97,17 @@ public class MailBoxMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (this.mailBox.isRemoved()) {
+        if (this.postBox.isRemoved()) {
             return false;
         }
 
-        if (player.level() != this.mailBox.getLevel()) {
+        if (player.level() != this.postBox.getLevel()) {
             return false;
         }
 
-        double dx = player.getX() - (this.mailBox.getBlockPos().getX() + 0.5);
-        double dy = player.getY() - (this.mailBox.getBlockPos().getY() + 0.5);
-        double dz = player.getZ() - (this.mailBox.getBlockPos().getZ() + 0.5);
+        double dx = player.getX() - (this.postBox.getBlockPos().getX() + 0.5);
+        double dy = player.getY() - (this.postBox.getBlockPos().getY() + 0.5);
+        double dz = player.getZ() - (this.postBox.getBlockPos().getZ() + 0.5);
         double distSq = dx * dx + dy * dy + dz * dz;
 
         return distSq <= 64.0;

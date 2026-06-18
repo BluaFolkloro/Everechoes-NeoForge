@@ -15,13 +15,13 @@
 - 容器方块与方块物品：`ContainerBlocks`、`ContainerBlockItems`
 - 夜鹭手办方块与方块物品：`BirdFigureBlocks`、`BirdFigureBlockItems`
 
-客户端入口是 `EverechoesClient`，当前用于注册 `MailBoxScreen`。
+客户端入口是 `EverechoesClient`，当前用于注册 `PostBoxScreen`。
 
 ## 邮筒双格方块
 
-`MailBoxBlock` 是双格方块：
+`PostBoxBlock` 是双格方块：
 
-- 下半部分持有 `MailBoxBlockEntity`。
+- 下半部分持有 `PostBoxBlockEntity`。
 - 上半部分没有方块实体。
 - 点击上半部分时，会映射到下半部分打开菜单。
 - 邮筒本体掉落由下半部分负责。
@@ -33,9 +33,9 @@
 
 当前邮筒储存和 GUI 是占位实现：
 
-- `MailBoxBlockEntity` 使用 27 格 `SimpleContainer`。
-- `MailBoxMenu` 使用 3x9 邮筒槽位和玩家背包槽位。
-- `MailBoxScreen` 暂时使用原版潜影盒背景。
+- `PostBoxBlockEntity` 使用 27 格 `SimpleContainer`。
+- `PostBoxMenu` 使用 3x9 邮筒槽位和玩家背包槽位。
+- `PostBoxScreen` 暂时使用原版潜影盒背景。
 
 这些机制后续会被实际邮件系统替换或重构。
 
@@ -68,10 +68,10 @@
 
 `Address` 是 sealed interface，目前有两个实现：
 
-- `LetterBoxAddress`
+- `PostBoxAddress`
 - `PlayerAddress`
 
-`LetterBoxAddress` 要求 `postalCode` 非空且非空白。
+`PostBoxAddress` 要求 `postalCode` 非空且非空白。
 
 `PlayerAddress` 要求 `playerId` 非空。
 

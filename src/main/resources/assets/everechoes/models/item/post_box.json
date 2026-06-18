@@ -1,5 +1,5 @@
 {
-  "parent": "everechoes:block/mail_box",
+  "parent": "everechoes:block/post_box",
   "display": {
     "gui": {
       "rotation": [ 30, 225, 0 ],

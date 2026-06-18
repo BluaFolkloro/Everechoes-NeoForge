@@ -13,9 +13,9 @@ public class ModMenuTypes {
     public static final DeferredRegister<MenuType<?>> MENUS =
             DeferredRegister.create(Registries.MENU, Everechoes.MODID);
 
-    public static final DeferredHolder<MenuType<?>, MenuType<MailBoxMenu>> MAIL_BOX_MENU =
-            MENUS.register("mail_box_menu",
-                    () -> IMenuTypeExtension.create(MailBoxMenu::new)
+    public static final DeferredHolder<MenuType<?>, MenuType<PostBoxMenu>> POST_BOX_MENU =
+            MENUS.register("post_box_menu",
+                    () -> IMenuTypeExtension.create(PostBoxMenu::new)
             );
 
     public static void register(IEventBus bus) {

@@ -1,6 +1,6 @@
 package net.bluafolkloro.overdeterminism.everechoes.block.entity;
 
-import net.bluafolkloro.overdeterminism.everechoes.menu.MailBoxMenu;
+import net.bluafolkloro.overdeterminism.everechoes.menu.PostBoxMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -14,26 +14,26 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class MailBoxBlockEntity extends BlockEntity implements MenuProvider {
-    // Placeholder mailbox storage; the concrete mail system behavior is still to be implemented.
+public class PostBoxBlockEntity extends BlockEntity implements MenuProvider {
+    // Placeholder postbox storage; the concrete mail system behavior is still to be implemented.
     // 占位邮箱储存，具体邮件系统行为待实现。
     private final SimpleContainer items = new SimpleContainer(27) {
         @Override
         public void setChanged() {
             super.setChanged();
             // Mark the block entity dirty whenever the inventory changes.
-            MailBoxBlockEntity.this.setChanged();
+            PostBoxBlockEntity.this.setChanged();
         }
     };
 
     @Override
     public Component getDisplayName() {
-        return Component.translatable("block.everechoes.mail_box");
+        return Component.translatable("block.everechoes.post_box");
     }
 
     @Override
     public AbstractContainerMenu createMenu(int windowId, Inventory playerInv, Player player) {
-        return new MailBoxMenu(windowId, playerInv, this);
+        return new PostBoxMenu(windowId, playerInv, this);
     }
 
     @Override
@@ -52,7 +52,7 @@ public class MailBoxBlockEntity extends BlockEntity implements MenuProvider {
         return items;
     }
 
-    public MailBoxBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.MAIL_BOX.get(), pos, state);
+    public PostBoxBlockEntity(BlockPos pos, BlockState state) {
+        super(ModBlockEntities.POST_BOX.get(), pos, state);
     }
 }

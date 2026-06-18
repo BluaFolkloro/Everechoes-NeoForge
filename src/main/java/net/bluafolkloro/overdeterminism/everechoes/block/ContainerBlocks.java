@@ -17,8 +17,8 @@ public class ContainerBlocks {
     public static final DeferredRegister.Blocks BLOCKS =
             DeferredRegister.createBlocks(Everechoes.MODID);
 
-    public static final DeferredBlock<MailBoxBlock> MAIL_BOX =
-            registerBlock("mail_box", () -> new MailBoxBlock(BlockBehaviour.Properties.of()
+    public static final DeferredBlock<PostBoxBlock> POST_BOX =
+            registerBlock("post_box", () -> new PostBoxBlock(BlockBehaviour.Properties.of()
                     .strength(2.0f)
                     .sound(SoundType.METAL)
                     .noOcclusion()

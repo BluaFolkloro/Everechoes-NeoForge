@@ -13,10 +13,10 @@ public class ModBlockEntities {
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
             DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, Everechoes.MODID);
 
-    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<MailBoxBlockEntity>> MAIL_BOX =
-            BLOCK_ENTITIES.register("mail_box",
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<PostBoxBlockEntity>> POST_BOX =
+            BLOCK_ENTITIES.register("post_box",
                     () -> BlockEntityType.Builder
-                            .of(MailBoxBlockEntity::new, ContainerBlocks.MAIL_BOX.get())
+                            .of(PostBoxBlockEntity::new, ContainerBlocks.POST_BOX.get())
                             .build(null)
             );
 

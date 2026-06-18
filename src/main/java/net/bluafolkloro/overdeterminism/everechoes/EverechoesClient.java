@@ -1,7 +1,7 @@
 package net.bluafolkloro.overdeterminism.everechoes;
 
 import net.bluafolkloro.overdeterminism.everechoes.menu.ModMenuTypes;
-import net.bluafolkloro.overdeterminism.everechoes.screen.MailBoxScreen;
+import net.bluafolkloro.overdeterminism.everechoes.screen.PostBoxScreen;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -15,6 +15,6 @@ public class EverechoesClient {
 
     @SubscribeEvent
     public static void registerScreens(RegisterMenuScreensEvent event) {
-        event.register(ModMenuTypes.MAIL_BOX_MENU.get(), MailBoxScreen::new);
+        event.register(ModMenuTypes.POST_BOX_MENU.get(), PostBoxScreen::new);
     }
 }

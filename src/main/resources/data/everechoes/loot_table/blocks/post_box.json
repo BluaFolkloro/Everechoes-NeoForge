@@ -6,14 +6,14 @@
       "conditions": [
         {
           "condition": "minecraft:block_state_property",
-          "block": "everechoes:mail_box",
+          "block": "everechoes:post_box",
           "properties": {
             "half": "lower"
           }
         }
       ],
       "entries": [
-        { "type": "minecraft:item", "name": "everechoes:mail_box" }
+        { "type": "minecraft:item", "name": "everechoes:post_box" }
       ]
     }
   ]

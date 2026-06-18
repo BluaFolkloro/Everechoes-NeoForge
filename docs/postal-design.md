@@ -11,13 +11,13 @@
 地址基类：
 
 ```java
-public sealed interface Address permits LetterBoxAddress, PlayerAddress {
+public sealed interface Address permits PostBoxAddress, PlayerAddress {
 }
 ```
 
 当前地址类型：
 
-- `LetterBoxAddress(String postalCode)`：邮筒地址。
+- `PostBoxAddress(String postalCode)`：邮筒地址。
 - `PlayerAddress(UUID playerId)`：玩家地址。
 
 `Address` 使用 sealed interface，而不是枚举类型字段。这样 Java 类型本身就能表达地址分支，后续在序列化时再决定是否需要额外类型标签。

@@ -1,7 +1,7 @@
 package net.bluafolkloro.overdeterminism.everechoes.block;
 
 import com.mojang.serialization.MapCodec;
-import net.bluafolkloro.overdeterminism.everechoes.block.entity.MailBoxBlockEntity;
+import net.bluafolkloro.overdeterminism.everechoes.block.entity.PostBoxBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
@@ -32,29 +32,29 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 import javax.annotation.Nullable;
 
-public class MailBoxBlock extends BaseEntityBlock {
-    public static final MapCodec<MailBoxBlock> CODEC = simpleCodec(MailBoxBlock::new);
+public class PostBoxBlock extends BaseEntityBlock {
+    public static final MapCodec<PostBoxBlock> CODEC = simpleCodec(PostBoxBlock::new);
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final EnumProperty<DoubleBlockHalf> HALF = BlockStateProperties.DOUBLE_BLOCK_HALF;
     private static final VoxelShape LOWER_SHAPE = Block.box(2, 0, 2, 14, 16, 14);
     private static final VoxelShape UPPER_SHAPE = Block.box(2, 0, 2, 14, 10, 14);
 
     @Override
-    public MapCodec<? extends MailBoxBlock> codec() {
+    public MapCodec<? extends PostBoxBlock> codec() {
         return CODEC;
     }
 
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        // Only the lower half owns the mailbox inventory.
+        // Only the lower half owns the postbox inventory.
         if (state.getValue(HALF) == DoubleBlockHalf.UPPER) {
             return null;
         }
 
-        return new MailBoxBlockEntity(pos, state);
+        return new PostBoxBlockEntity(pos, state);
     }
 
-    public MailBoxBlock(Properties properties) {
+    public PostBoxBlock(Properties properties) {
         super(properties);
         this.registerDefaultState(
                 this.stateDefinition
@@ -73,8 +73,8 @@ public class MailBoxBlock extends BaseEntityBlock {
         // Upper-half clicks open the lower-half block entity.
         BlockPos menuPos = state.getValue(HALF) == DoubleBlockHalf.UPPER ? pos.below() : pos;
         BlockEntity be = level.getBlockEntity(menuPos);
-        if (be instanceof MailBoxBlockEntity mailBox && player instanceof ServerPlayer serverPlayer) {
-            serverPlayer.openMenu(mailBox, buf -> {
+        if (be instanceof PostBoxBlockEntity postBox && player instanceof ServerPlayer serverPlayer) {
+            serverPlayer.openMenu(postBox, buf -> {
                 // Send the lower-half position to the client menu.
                 buf.writeBlockPos(menuPos);
             });
@@ -163,8 +163,8 @@ public class MailBoxBlock extends BaseEntityBlock {
         // Contents are stored only on the lower half, so drop them from there once.
         if (!state.is(newState.getBlock()) && state.getValue(HALF) == DoubleBlockHalf.LOWER) {
             BlockEntity be = level.getBlockEntity(pos);
-            if (be instanceof MailBoxBlockEntity mailBox) {
-                Containers.dropContents(level, pos, mailBox.getItems());
+            if (be instanceof PostBoxBlockEntity postBox) {
+                Containers.dropContents(level, pos, postBox.getItems());
                 level.updateNeighbourForOutputSignal(pos, this);
             }
         }

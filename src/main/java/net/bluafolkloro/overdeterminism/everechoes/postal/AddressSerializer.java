@@ -1,62 +1,63 @@
 package net.bluafolkloro.overdeterminism.everechoes.postal;
 
-import net.minecraft.nbt.CompoundTag;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.core.UUIDUtil;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
 
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
 public final class AddressSerializer {
-    private static final String TYPE_KEY = "type";
-    private static final String POSTAL_CODE_KEY = "postalCode";
-    private static final String PLAYER_ID_KEY = "playerId";
-
-    private static final String MAILBOX_TYPE = "mailbox";
+    private static final String POSTBOX_TYPE = "postbox";
     private static final String PLAYER_TYPE = "player";
+
+    // Persistent address codec used by DataComponentType.Builder#persistent.
+    // 用于 DataComponentType.Builder#persistent 的地址持久化 Codec。
+    public static final Codec<Address> CODEC = SerializedAddress.CODEC.comapFlatMap(
+            AddressSerializer::decode,
+            AddressSerializer::encode
+    );
+
+    // Network address codec used by DataComponentType.Builder#networkSynchronized.
+    // 用于 DataComponentType.Builder#networkSynchronized 的地址网络同步 StreamCodec。
+    public static final StreamCodec<RegistryFriendlyByteBuf, Address> STREAM_CODEC = ByteBufCodecs.fromCodecWithRegistries(CODEC);
 
     private AddressSerializer() {
     }
 
-    // Serializes a postal address into NBT with an explicit type discriminator.
-    // 将邮政地址序列化为 NBT，并写入明确的类型标识。
-    public static CompoundTag serialize(Address address) {
-        Objects.requireNonNull(address, "address cannot be null");
+    private static DataResult<Address> decode(SerializedAddress serializedAddress) {
+        return switch (serializedAddress.type()) {
+            case POSTBOX_TYPE -> serializedAddress.postalCode()
+                    .<DataResult<Address>>map(postalCode -> DataResult.success(new PostBoxAddress(postalCode)))
+                    .orElseGet(() -> DataResult.error(() -> "Postbox address is missing postalCode"));
+            case PLAYER_TYPE -> serializedAddress.playerId()
+                    .<DataResult<Address>>map(playerId -> DataResult.success(new PlayerAddress(playerId)))
+                    .orElseGet(() -> DataResult.error(() -> "Player address is missing playerId"));
+            default -> DataResult.error(() -> "Unknown address type: " + serializedAddress.type());
+        };
+    }
 
-        CompoundTag tag = new CompoundTag();
-        if (address instanceof LetterBoxAddress letterBoxAddress) {
-            tag.putString(TYPE_KEY, MAILBOX_TYPE);
-            tag.putString(POSTAL_CODE_KEY, letterBoxAddress.postalCode());
-            return tag;
+    private static SerializedAddress encode(Address address) {
+        if (address instanceof PostBoxAddress postBoxAddress) {
+            return new SerializedAddress(POSTBOX_TYPE, Optional.of(postBoxAddress.postalCode()), Optional.empty());
         }
 
         if (address instanceof PlayerAddress playerAddress) {
-            tag.putString(TYPE_KEY, PLAYER_TYPE);
-            tag.putString(PLAYER_ID_KEY, playerAddress.playerId().toString());
-            return tag;
+            return new SerializedAddress(PLAYER_TYPE, Optional.empty(), Optional.of(playerAddress.playerId()));
         }
 
         throw new IllegalArgumentException("Unsupported address type: " + address.getClass().getName());
     }
 
-    // Deserializes a postal address from NBT and rejects malformed data.
-    // 从 NBT 反序列化邮政地址，并拒绝格式错误的数据。
-    public static Address deserialize(CompoundTag tag) {
-        Objects.requireNonNull(tag, "tag cannot be null");
-
-        return switch (tag.getString(TYPE_KEY)) {
-            case MAILBOX_TYPE -> new LetterBoxAddress(tag.getString(POSTAL_CODE_KEY));
-            case PLAYER_TYPE -> new PlayerAddress(UUID.fromString(tag.getString(PLAYER_ID_KEY)));
-            default -> throw new IllegalArgumentException("Unknown address type: " + tag.getString(TYPE_KEY));
-        };
-    }
-
-    // Attempts to deserialize a postal address without throwing on malformed data.
-    // 尝试从 NBT 反序列化邮政地址；数据格式错误时不抛出异常，而是返回空结果。
-    public static Optional<Address> tryDeserialize(CompoundTag tag) {
-        try {
-            return Optional.of(deserialize(tag));
-        } catch (NullPointerException | IllegalArgumentException exception) {
-            return Optional.empty();
-        }
+    private record SerializedAddress(String type, Optional<String> postalCode, Optional<UUID> playerId) {
+        private static final Codec<SerializedAddress> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                Codec.STRING.fieldOf("type").forGetter(SerializedAddress::type),
+                Codec.STRING.optionalFieldOf("postalCode").forGetter(SerializedAddress::postalCode),
+                UUIDUtil.STRING_CODEC.optionalFieldOf("playerId").forGetter(SerializedAddress::playerId)
+        ).apply(instance, SerializedAddress::new));
     }
 }

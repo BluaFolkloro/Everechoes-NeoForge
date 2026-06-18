@@ -1,4 +1,4 @@
 package net.bluafolkloro.overdeterminism.everechoes.postal;
 
-public sealed interface Address permits LetterBoxAddress, PlayerAddress {
+public sealed interface Address permits PostBoxAddress, PlayerAddress {
 }
