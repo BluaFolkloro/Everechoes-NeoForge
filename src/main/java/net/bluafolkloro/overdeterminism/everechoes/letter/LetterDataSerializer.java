@@ -11,6 +11,7 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -69,6 +70,7 @@ public final class LetterDataSerializer {
     // Writes a snapshot of the current LetterData fields.
     // 写入 LetterData 当前字段的快照。
     private static SerializedLetterData encode(LetterData letterData) {
+        Objects.requireNonNull(letterData, "letterData cannot be null");
         return new SerializedLetterData(
                 letterData.letterId(),
                 letterData.state(),

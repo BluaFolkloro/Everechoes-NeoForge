@@ -8,6 +8,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -58,6 +59,7 @@ public final class AddressSerializer {
     // Writes only the fields needed by the concrete Address implementation.
     // 只写入当前具体 Address 实现需要的字段。
     private static SerializedAddress encode(Address address) {
+        Objects.requireNonNull(address, "address cannot be null");
         if (address instanceof MailBoxAddress mailBoxAddress) {
             return new SerializedAddress(MAILBOX_TYPE, Optional.of(mailBoxAddress.postalCode()), Optional.empty());
         }
