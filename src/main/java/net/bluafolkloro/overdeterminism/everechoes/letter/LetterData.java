@@ -28,6 +28,9 @@ public class LetterData {
     // Optional recipient text written in the letter, not a postal address.
     private String letterRecipient;
 
+    // ===== Construction and reconstruction methods =====
+    // ===== 构造与重建方法：集中控制信件对象的创建入口，并保证创建时完成基础校验 =====
+
     // Reconstructs letter data from persisted fields and validates state invariants.
     // 从持久化字段重建信件数据，并校验状态不变量。
     private LetterData(
@@ -118,6 +121,9 @@ public class LetterData {
         );
     }
 
+    // ===== Identity and state query methods =====
+    // ===== 标识与状态查询方法：读取信件身份、生命周期状态，以及常用状态判断 =====
+
     // Returns the stable identity of this letter.
     // 返回这封信的稳定标识。
     public UUID letterId() {
@@ -136,8 +142,23 @@ public class LetterData {
         return state == LetterState.DRAFT;
     }
 
+    // Returns whether the letter has been sealed.
+    // 返回信件是否处于蜡封状态。
+    public boolean isSealed() {
+        return state == LetterState.SEALED;
+    }
+
+    // Returns whether the letter has been opened.
+    // 返回信件是否处于拆封状态。
+    public boolean isOpened() {
+        return state == LetterState.OPENED;
+    }
+
     // State changes are intentionally one-way: DRAFT -> SEALED -> OPENED.
     // 状态变更有意设计为单向：草稿 -> 蜡封 -> 拆封。
+
+    // ===== Lifecycle transition methods =====
+    // ===== 生命周期转换方法：处理封蜡、拆封等状态推进逻辑 =====
 
     // Returns whether the letter can be sealed.
     // 返回信件当前是否可以封蜡。
@@ -200,6 +221,9 @@ public class LetterData {
         applyState(LetterState.OPENED);
     }
 
+    // ===== Postal address methods =====
+    // ===== 邮政地址方法：读取或编辑退回地址与收件地址，编辑操作仅允许在草稿阶段进行 =====
+
     // Returns the postal return address.
     // 返回邮政退回地址。
     public Address returnAddress() {
@@ -219,12 +243,29 @@ public class LetterData {
         return Optional.ofNullable(recipientAddress);
     }
 
+    // Returns the recipient address or throws when the letter has no destination address.
+    // 返回收件地址；如果信件没有收件地址则抛出异常。
+    public Address requireRecipientAddress() {
+        return recipientAddress()
+                .orElseThrow(() -> new IllegalStateException("Letter has no recipient address"));
+    }
+
     // Sets the postal destination address while the letter is a draft.
     // 在草稿状态下设置信件的邮政目标地址。
     public void setRecipientAddress(Address recipientAddress) {
         requireDraft();
         this.recipientAddress = Objects.requireNonNull(recipientAddress, "recipientAddress");
     }
+
+    // Clears the postal destination address while the letter is a draft.
+    // 在草稿状态下清除信件的邮政目标地址。
+    public void clearRecipientAddress() {
+        requireDraft();
+        this.recipientAddress = null;
+    }
+
+    // ===== Written content methods =====
+    // ===== 书写内容方法：读取或编辑标题、正文、落款和信内称呼，编辑操作仅允许在草稿阶段进行 =====
 
     // Returns the written title.
     // 返回书写标题。
@@ -277,6 +318,9 @@ public class LetterData {
         requireDraft();
         this.letterRecipient = normalizeOptionalText(letterRecipient);
     }
+
+    // ===== Internal validation and helper methods =====
+    // ===== 内部校验与辅助方法：集中处理状态限制、失败提示、不变量校验和文本规范化 =====
 
     private void requireDraft() {
         if (!isDraft()) {

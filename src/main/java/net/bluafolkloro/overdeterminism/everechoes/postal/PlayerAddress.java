@@ -5,6 +5,6 @@ import java.util.UUID;
 
 public record PlayerAddress(UUID playerId) implements Address {
     public PlayerAddress {
-        Objects.requireNonNull(playerId, "playerId");
+        Objects.requireNonNull(playerId, "playerId cannot be null");
     }
 }

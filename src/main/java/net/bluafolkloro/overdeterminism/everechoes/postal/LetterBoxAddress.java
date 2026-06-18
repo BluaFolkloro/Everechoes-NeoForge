@@ -4,8 +4,8 @@ import java.util.Objects;
 
 public record LetterBoxAddress(String postalCode) implements Address {
     public LetterBoxAddress {
-        Objects.requireNonNull(postalCode, "postalCode");
-        if (postalCode.isBlank()) {
+        postalCode = Objects.requireNonNull(postalCode, "postalCode cannot be null").strip();
+        if (postalCode.isEmpty()) {
             throw new IllegalArgumentException("postalCode cannot be blank");
         }
     }
