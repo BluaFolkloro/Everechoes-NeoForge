@@ -90,7 +90,7 @@ everechoes
 │  └─ ModMenuTypes.java
 ├─ postal
 │  ├─ Address.java
-│  ├─ PostBoxAddress.java
+│  ├─ MailBoxAddress.java
 │  └─ PlayerAddress.java
 ├─ screen
 │  └─ PostBoxScreen.java

@@ -17,24 +17,24 @@
 
 客户端入口是 `EverechoesClient`，当前用于注册 `PostBoxScreen`。
 
-## 邮筒双格方块
+## 发信邮筒双格方块
 
 `PostBoxBlock` 是双格方块：
 
 - 下半部分持有 `PostBoxBlockEntity`。
 - 上半部分没有方块实体。
 - 点击上半部分时，会映射到下半部分打开菜单。
-- 邮筒本体掉落由下半部分负责。
+- 发信邮筒本体掉落由下半部分负责。
 - 内部物品掉落也只由下半部分负责。
 
 注意：双格方块破坏逻辑需要避免上下半重复掉落，也要避免创造模式破坏时通过邻居更新绕过掉落抑制。
 
-## 邮筒容器和 GUI
+## 发信邮筒容器和 GUI
 
-当前邮筒储存和 GUI 是占位实现：
+当前 `post_box` 储存和 GUI 是占位实现：
 
 - `PostBoxBlockEntity` 使用 27 格 `SimpleContainer`。
-- `PostBoxMenu` 使用 3x9 邮筒槽位和玩家背包槽位。
+- `PostBoxMenu` 使用 3x9 发信邮筒槽位和玩家背包槽位。
 - `PostBoxScreen` 暂时使用原版潜影盒背景。
 
 这些机制后续会被实际邮件系统替换或重构。
@@ -68,10 +68,12 @@
 
 `Address` 是 sealed interface，目前有两个实现：
 
-- `PostBoxAddress`
+- `MailBoxAddress`
 - `PlayerAddress`
 
-`PostBoxAddress` 要求 `postalCode` 非空且非空白。
+`MailBoxAddress` 要求 `postalCode` 非空且非空白。
+
+`MailBoxAddress` 表示未来收信端 `mail_box` 的地址，不表示当前负责发信的 `post_box`。
 
 `PlayerAddress` 要求 `playerId` 非空。
 
@@ -86,4 +88,3 @@
 ```
 
 资源文件改动后，如果只运行已打开的客户端，可能会看到旧资源。需要重新处理资源并重启客户端。
-

@@ -12,7 +12,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public final class AddressSerializer {
-    private static final String POSTBOX_TYPE = "postbox";
+    private static final String MAILBOX_TYPE = "mailbox";
     private static final String PLAYER_TYPE = "player";
 
     // Persistent address codec used by DataComponentType.Builder#persistent.
@@ -31,9 +31,9 @@ public final class AddressSerializer {
 
     private static DataResult<Address> decode(SerializedAddress serializedAddress) {
         return switch (serializedAddress.type()) {
-            case POSTBOX_TYPE -> serializedAddress.postalCode()
-                    .<DataResult<Address>>map(postalCode -> DataResult.success(new PostBoxAddress(postalCode)))
-                    .orElseGet(() -> DataResult.error(() -> "Postbox address is missing postalCode"));
+            case MAILBOX_TYPE -> serializedAddress.postalCode()
+                    .<DataResult<Address>>map(postalCode -> DataResult.success(new MailBoxAddress(postalCode)))
+                    .orElseGet(() -> DataResult.error(() -> "Mailbox address is missing postalCode"));
             case PLAYER_TYPE -> serializedAddress.playerId()
                     .<DataResult<Address>>map(playerId -> DataResult.success(new PlayerAddress(playerId)))
                     .orElseGet(() -> DataResult.error(() -> "Player address is missing playerId"));
@@ -42,8 +42,8 @@ public final class AddressSerializer {
     }
 
     private static SerializedAddress encode(Address address) {
-        if (address instanceof PostBoxAddress postBoxAddress) {
-            return new SerializedAddress(POSTBOX_TYPE, Optional.of(postBoxAddress.postalCode()), Optional.empty());
+        if (address instanceof MailBoxAddress mailBoxAddress) {
+            return new SerializedAddress(MAILBOX_TYPE, Optional.of(mailBoxAddress.postalCode()), Optional.empty());
         }
 
         if (address instanceof PlayerAddress playerAddress) {
