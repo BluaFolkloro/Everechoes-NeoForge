@@ -37,8 +37,10 @@
 - 只接受已封蜡且带收件地址的信件。
 - 放入时写入 `Waybill`（待承运人领取）。
 - 玩家取出时把 `Waybill` 改为玩家承运。
-- 放置后需配置邮域；潜行右键可再次打开配置。
-- 邮区号按邮域递增，标题显示 `AAAXX`。
+- 每个邮筒有稳定的内部 `districtId`；是否入网由 SavedData 中的 `DomainMembership` 决定。
+- `PostalNetwork` 使用 `schemaVersion`。旧版邮域表读取后丢弃，只写新格式。旧邮筒库存保留，绑定不恢复。
+- 潜行右键打开入网界面，提交建立/加入/退出请求。
+- 仅 `ACTIVE` 邮区接收新邮件；标题显示当前 `domainCode` 与邮区号。
 - GUI 暂用原版漏斗背景；正式美化需先预览再改。
 - 旧世界 27 格内容加载时，可投递信件填入前 5 格，其余掉落。
 
@@ -93,7 +95,7 @@
 - `MailBoxAddress`
 - `PlayerAddress`
 
-`MailBoxAddress` 储存 `domainId`、`districtId`、`deliveryId`，并由它们组成 `postalCode`（`AAAXX-YYY`）。旧的 `domain/district/code` 路径不再合法。
+`MailBoxAddress` 分开保存内部 UUID 与显示快照。当前显示格式为暂定的 `EV12 7QF`。旧的 `AAAXX-YYY` 仍可低成本解析。邮筒只拥有外码；完整地址属于未来的收件端。
 
 `MailBoxAddress` 表示未来收信端 `mail_box` 的地址，不表示当前负责发信的 `post_box`。
 

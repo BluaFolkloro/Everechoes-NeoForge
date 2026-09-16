@@ -79,7 +79,7 @@ public class PostBoxBlock extends BaseEntityBlock {
         BlockPos menuPos = state.getValue(HALF) == DoubleBlockHalf.UPPER ? pos.below() : pos;
         BlockEntity be = level.getBlockEntity(menuPos);
         if (be instanceof PostBoxBlockEntity postBox && player instanceof ServerPlayer serverPlayer) {
-            if (player.isShiftKeyDown() || !postBox.hasDistrict()) {
+            if (player.isShiftKeyDown() || !postBox.hasActiveMembership()) {
                 openConfig(serverPlayer, (ServerLevel) level, menuPos, postBox);
             } else {
                 serverPlayer.openMenu(postBox, buf -> buf.writeBlockPos(menuPos));
@@ -97,9 +97,7 @@ public class PostBoxBlock extends BaseEntityBlock {
                                 containerId,
                                 inventory,
                                 pos,
-                                postBox.domainId(),
-                                postBox.districtId(),
-                                network.domainIds()
+                                postBox
                         ),
                         Component.translatable("gui.everechoes.post_box.config")
                 ),
@@ -188,6 +186,9 @@ public class PostBoxBlock extends BaseEntityBlock {
         if (!state.is(newState.getBlock()) && state.getValue(HALF) == DoubleBlockHalf.LOWER) {
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof PostBoxBlockEntity postBox) {
+                if (level instanceof ServerLevel serverLevel) {
+                    postBox.unregister(serverLevel);
+                }
                 Containers.dropContents(level, pos, postBox.getItems());
                 level.updateNeighbourForOutputSignal(pos, this);
             }

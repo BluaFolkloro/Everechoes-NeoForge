@@ -71,7 +71,7 @@ public final class LetterContents {
 
     public static Component formatAddress(Address address, @Nullable Level level) {
         if (address instanceof MailBoxAddress mailBoxAddress) {
-            return Component.literal(mailBoxAddress.format());
+            return Component.literal(mailBoxAddress.postalCode());
         }
 
         if (address instanceof PlayerAddress playerAddress) {
@@ -84,7 +84,7 @@ public final class LetterContents {
 
     public static String addressInputValue(Address address, @Nullable Level level) {
         if (address instanceof MailBoxAddress mailBoxAddress) {
-            return mailBoxAddress.format();
+            return mailBoxAddress.postalCode();
         }
 
         if (address instanceof PlayerAddress playerAddress) {

@@ -1,14 +1,22 @@
 package net.bluafolkloro.overdeterminism.everechoes.block.entity;
 
 import net.bluafolkloro.overdeterminism.everechoes.menu.PostBoxMenu;
+import net.bluafolkloro.overdeterminism.everechoes.postal.DomainMembership;
+import net.bluafolkloro.overdeterminism.everechoes.postal.MembershipState;
+import net.bluafolkloro.overdeterminism.everechoes.postal.NodeRole;
+import net.bluafolkloro.overdeterminism.everechoes.postal.PostalActionContext;
 import net.bluafolkloro.overdeterminism.everechoes.postal.PostalCodes;
+import net.bluafolkloro.overdeterminism.everechoes.postal.PostalDistrict;
+import net.bluafolkloro.overdeterminism.everechoes.postal.PostalDomain;
 import net.bluafolkloro.overdeterminism.everechoes.postal.PostalNetwork;
+import net.bluafolkloro.overdeterminism.everechoes.postal.PostBoxNode;
 import net.bluafolkloro.overdeterminism.everechoes.postal.Waybills;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.Containers;
@@ -22,6 +30,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 import javax.annotation.Nullable;
+import java.util.UUID;
 
 public class PostBoxBlockEntity extends BlockEntity implements MenuProvider {
     public static final int SLOT_COUNT = 5;
@@ -30,15 +39,19 @@ public class PostBoxBlockEntity extends BlockEntity implements MenuProvider {
     private final SimpleContainer items = new SimpleContainer(SLOT_COUNT) {
         @Override
         public boolean canPlaceItem(int index, ItemStack stack) {
-            return Waybills.isDepositable(stack);
+            return Waybills.isDepositable(stack) && PostBoxBlockEntity.this.acceptsMail();
         }
 
         @Override
         public void setItem(int index, ItemStack stack) {
-            if (Waybills.isDepositable(stack)) {
+            if (Waybills.isDepositable(stack) && PostBoxBlockEntity.this.acceptsMail()) {
                 Waybills.markAwaitingCarrier(stack);
+                super.setItem(index, stack);
+                return;
             }
-            super.setItem(index, stack);
+            if (stack.isEmpty()) {
+                super.setItem(index, stack);
+            }
         }
 
         @Override
@@ -49,38 +62,79 @@ public class PostBoxBlockEntity extends BlockEntity implements MenuProvider {
     };
 
     @Nullable
-    private String domainId;
+    private UUID nodeId;
     @Nullable
-    private String districtId;
+    private UUID districtId;
+    @Nullable
+    private NodeRole nodeRole;
+    @Nullable
+    private String domainCode;
+    @Nullable
+    private String districtCode;
+    @Nullable
+    private MembershipState membershipState;
     private final NonNullList<ItemStack> overflow = NonNullList.create();
 
     public PostBoxBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.POST_BOX.get(), pos, state);
     }
 
-    public boolean hasDistrict() {
-        return domainId != null && districtId != null;
+    public UUID nodeId() {
+        if (nodeId == null) {
+            nodeId = UUID.randomUUID();
+        }
+        return nodeId;
     }
 
     @Nullable
-    public String domainId() {
-        return domainId;
-    }
-
-    @Nullable
-    public String districtId() {
+    public UUID districtId() {
         return districtId;
+    }
+
+    @Nullable
+    public NodeRole nodeRole() {
+        return nodeRole;
+    }
+
+    @Nullable
+    public String domainCode() {
+        return domainCode;
+    }
+
+    @Nullable
+    public String districtCode() {
+        return districtCode;
+    }
+
+    @Nullable
+    public MembershipState membershipState() {
+        return membershipState;
+    }
+
+    public PostalActionContext actionContext() {
+        ResourceLocation dimension = level == null ? ResourceLocation.fromNamespaceAndPath("minecraft", "overworld") : level.dimension().location();
+        return new PostalActionContext(districtId, nodeId(), dimension, getBlockPos());
+    }
+
+    public boolean hasActiveMembership() {
+        if (level instanceof ServerLevel serverLevel && districtId != null) {
+            return PostalNetwork.get(serverLevel).isActiveDeliveryDistrict(districtId);
+        }
+        return membershipState == MembershipState.ACTIVE && domainCode != null && districtCode != null;
+    }
+
+    public boolean acceptsMail() {
+        return hasActiveMembership();
     }
 
     @Override
     public Component getDisplayName() {
-        if (hasDistrict()) {
+        if (domainCode != null && districtCode != null) {
             return Component.translatable(
                     "block.everechoes.post_box.district",
-                    PostalCodes.formatDistrict(domainId, districtId)
+                    PostalCodes.formatOutward(domainCode, districtCode)
             );
         }
-
         return Component.translatable("block.everechoes.post_box");
     }
 
@@ -93,29 +147,64 @@ public class PostBoxBlockEntity extends BlockEntity implements MenuProvider {
     public void onLoad() {
         super.onLoad();
         if (level instanceof ServerLevel serverLevel) {
+            syncFromNetwork(serverLevel);
             dropOverflow(serverLevel);
         }
     }
 
-    public boolean assignToDomain(ServerLevel level, String domainId) {
-        PostalNetwork.PostalIds current = hasDistrict() ? new PostalNetwork.PostalIds(this.domainId, this.districtId) : null;
-        return PostalNetwork.get(level).assignDistrict(domainId, current).map(ids -> {
-            this.domainId = ids.domainId();
-            this.districtId = ids.districtId();
+    public void syncFromNetwork(ServerLevel level) {
+        PostalNetwork network = PostalNetwork.get(level);
+        PostBoxNode node = network.registerNode(nodeId(), level.dimension().location(), getBlockPos());
+        districtId = node.districtId();
+        nodeRole = node.role();
+        if (districtId == null) {
+            domainCode = null;
+            districtCode = null;
+            membershipState = null;
             setChanged();
-            return true;
-        }).orElse(false);
+            return;
+        }
+        DomainMembership membership = network.membership(districtId).orElse(null);
+        PostalDomain domain = membership == null ? null : network.domain(membership.domainId()).orElse(null);
+        applyMembership(membership, domain);
+    }
+
+    public void applyMembership(@Nullable DomainMembership membership, @Nullable PostalDomain domain) {
+        if (membership == null || membership.state() == MembershipState.DETACHED) {
+            domainCode = null;
+            districtCode = null;
+            membershipState = membership == null ? null : MembershipState.DETACHED;
+        } else {
+            domainCode = domain == null ? domainCode : domain.domainCode();
+            districtCode = membership.districtCode();
+            membershipState = membership.state();
+        }
+        setChanged();
+    }
+
+    public void unregister(ServerLevel level) {
+        PostalNetwork.get(level).removeNode(nodeId());
     }
 
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         ContainerHelper.saveAllItems(tag, this.items.getItems(), registries);
-        if (domainId != null) {
-            tag.putString("domainId", domainId);
-        }
+        tag.putUUID("nodeId", nodeId());
         if (districtId != null) {
-            tag.putString("districtId", districtId);
+            tag.putUUID("districtId", districtId);
+        }
+        if (nodeRole != null) {
+            tag.putString("nodeRole", nodeRole.name());
+        }
+        if (domainCode != null) {
+            tag.putString("domainCode", domainCode);
+        }
+        if (districtCode != null) {
+            tag.putString("districtCode", districtCode);
+        }
+        if (membershipState != null) {
+            tag.putString("membershipState", membershipState.name());
         }
     }
 
@@ -131,17 +220,27 @@ public class PostBoxBlockEntity extends BlockEntity implements MenuProvider {
                 continue;
             }
             if (Waybills.isDepositable(stack) && dest < SLOT_COUNT) {
-                items.setItem(dest++, stack);
+                items.getItems().set(dest++, stack);
             } else {
                 overflow.add(stack);
             }
         }
 
-        domainId = PostalCodes.canonicalDomain(tag.getString("domainId")).orElse(null);
-        districtId = PostalCodes.canonicalDistrict(tag.getString("districtId")).orElse(null);
-        if (domainId == null || districtId == null) {
-            domainId = null;
-            districtId = null;
+        if (tag.hasUUID("nodeId")) {
+            nodeId = tag.getUUID("nodeId");
+        } else if (tag.hasUUID("districtUuid")) {
+            nodeId = tag.getUUID("districtUuid");
+        }
+        if (tag.hasUUID("districtId") && tag.contains("nodeRole")) {
+            districtId = tag.getUUID("districtId");
+        }
+        if (tag.contains("nodeRole") && !tag.getString("nodeRole").isEmpty()) {
+            nodeRole = NodeRole.valueOf(tag.getString("nodeRole"));
+        }
+        domainCode = PostalCodes.canonicalDomain(tag.getString("domainCode")).orElse(null);
+        districtCode = PostalCodes.canonicalDistrict(tag.getString("districtCode")).orElse(null);
+        if (tag.contains("membershipState") && !tag.getString("membershipState").isEmpty()) {
+            membershipState = MembershipState.valueOf(tag.getString("membershipState"));
         }
     }
 
@@ -153,7 +252,6 @@ public class PostBoxBlockEntity extends BlockEntity implements MenuProvider {
         if (overflow.isEmpty()) {
             return;
         }
-
         for (ItemStack stack : overflow) {
             Containers.dropItemStack(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), stack);
         }

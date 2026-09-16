@@ -24,17 +24,26 @@ public sealed interface Address permits MailBoxAddress, PlayerAddress {
 
 当前地址类型：
 
-- `MailBoxAddress(domainId, districtId, deliveryId)`：三级邮箱地址，指向未来的递送点。
+层级：
+
+```text
+PostalDomain
+└─ PostalDistrict
+   ├─ PostBoxNode（HUB 或 COLLECTION）
+   └─ MailBoxEndpoint（尚未实现）
+```
+
+- `MailBoxAddress` 同时保存内部 UUID（`domainId` / `districtId` / `mailboxId`）和显示快照（`domainCode` / `districtCode` / `deliveryCode`）。
 - `PlayerAddress(UUID playerId)`：当面交给玩家本人。
-- `postalCode` 由上述三段组成，格式为 `AAAXX-YYY`。
+- 当前显示格式为暂定英式外码空格内码，例如 `EV12 7QF`。尚未最终定案。
 
-字段规则：
+显示规则（暂定）：
 
-- `domainId`：1 到 3 个字母，储存为大写。
-- `districtId`：1 到 99 的十进制，储存时省略先导 0。
-- `deliveryId`：1 到 `FFF` 的十六进制，储存为大写且省略先导 0。
-
-写信时允许小写；保存时规范化为大写邮编，例如 `abc1-00a` 存成 `ABC1-A`。
+- `domainCode`：1 到 2 个字母。
+- `districtCode`：1 到 2 位数字，可选一个末尾字母；自动分配暂时只用 1–99。
+- `deliveryCode`：一位数字加两位英式内码字母（排除 C I K M O V）。
+- 规范化输出带一个空格：`EV12 7QF`。
+- `post_box` 只显示外码 `EV12`；完整地址属于未来的 `mail_box`。
 
 `Address` 使用 sealed interface，而不是枚举类型字段。这样 Java 类型本身就能表达地址分支，后续在序列化时再决定是否需要额外类型标签。
 
@@ -65,16 +74,43 @@ DRAFT -> SEALED -> OPENED
 - `SEALED`：不可编辑，必须有收件地址，可用于投递。
 - `OPENED`：不可编辑，表示已拆封阅读。
 
+## 邮域模型
+
+邮域是自治的邮政路由集合，不属于玩家，也不等于维度、坐标区域或某个方块。
+
+- 内部 `domainId` 是不可变 UUID，是归属关系的权威身份。
+- `domainCode` 是地址里显示的 1 到 3 个字母，可以以后改名而不破坏内部引用。
+- 数据存在服务器 SavedData，不依赖区块加载。
+- 没有 owner UUID，也不使用印章、许可证或邀请物品作为加入凭证。
+- GUI 只能替邮区发起建立/加入/退出请求；是否成功由服务端策略决定。
+
+邮域生命周期：
+
+- `ACTIVE`：至少有一个有效邮区。
+- `DORMANT`：暂时没有有效邮区，且不保存虚假邮箱、库存或投递队列。
+- `HISTORICAL`：只用于解析旧地址和邮戳。
+
+邮区通过 `DomainMembership` 加入邮域：
+
+- 状态：`PENDING` → `ACTIVE` → `LEAVING` → `DETACHED`。
+- 加入和退出针对邮区，不针对玩家。
+- 当前默认策略是开放加入；退出不能被永久禁止。
+- 清算接口已预留。尚未实现 `mail_box`，因此不伪造自动投递队列。
+
+当前信件地址仍使用 `MailBoxAddress.domainId` 作为显示用邮域代码，现有 `AAAXX-YYY` 解析成本很低，因此继续允许读取。该显示格式尚未最终定案。
+
+开发版存档策略：`PostalNetwork` 只运行带 `schemaVersion` 的新模型。更早的邮域表在读取时一次性丢弃并改写为新格式，不保留旧代码到内部 ID 的别名。旧邮筒库存保留，但旧邮域绑定作废，加载后回到未加入状态。不扫描、不强制加载未加载区块。
+
 ## 发信邮筒职责
 
 `post_box` 是承运交接口，不是自动传送机：
 
 - 只接受带有效 `LetterData` 的 `sealed_letter`。
+- 仅在邮区 `ACTIVE` 成员资格下接收新邮件。
 - 暂存待领取信件，并把运单标为“待承运人领取”。
 - 玩家从邮筒取出信件后，运单改为“玩家承运中”。
-- 潜行右键打开邮域配置：创建 1 到 3 个字母的邮域，或选择已有邮域。
-- 绑定后按该邮域单独递增邮区号（1 到 99），例如 `ABC1`、`ABC2`。
-- 未绑定邮域的邮筒只打开配置界面。
+- 潜行右键打开入网界面：为该邮区建立邮域、申请加入或申请退出。
+- 未加入有效邮域的邮筒只打开入网界面。
 
 `post_box` 不编辑信件正文，也不签收。收信职责留给未来的 `mail_box` 和当面签收。
 

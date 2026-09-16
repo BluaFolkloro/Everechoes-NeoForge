@@ -118,7 +118,7 @@ public class LetterScreen extends AbstractContainerScreen<LetterMenu> {
                 LetterLimits.ADDRESS_VALUE
         );
         addressValueBox.setHint(Component.translatable("gui.everechoes.letter.address.mailbox_path"));
-        addressValueBox.setMaxLength(9);
+        addressValueBox.setMaxLength(8);
         updateAddressFieldVisibility();
 
         bodyBox = new MultiLineEditBox(

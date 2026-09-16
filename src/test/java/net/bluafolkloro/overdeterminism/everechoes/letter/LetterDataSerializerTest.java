@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class LetterDataSerializerTest {
-    private static final MailBoxAddress RETURN_ADDRESS = new MailBoxAddress("AB", "1", "1");
+    private static final MailBoxAddress RETURN_ADDRESS = MailBoxAddress.display("AB", "1", "1AA");
     private static final PlayerAddress PLAYER_ADDRESS = new PlayerAddress(UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"));
 
     @Test
@@ -40,7 +40,7 @@ class LetterDataSerializerTest {
     @Test
     void openedLetterRoundTrips() {
         LetterData original = LetterData.createDraft(RETURN_ADDRESS)
-                .withRecipientAddress(new MailBoxAddress("CD", "2", "3"))
+                .withRecipientAddress(MailBoxAddress.display("CD", "2", "7QF"))
                 .seal()
                 .open();
 
@@ -77,7 +77,7 @@ class LetterDataSerializerTest {
         JsonObject json = validDraftJson();
         JsonObject recipient = new JsonObject();
         recipient.addProperty("type", "mailbox");
-        recipient.addProperty("postalCode", "A1-0");
+        recipient.addProperty("postalCode", "A1 1CI");
         json.add("recipientAddress", recipient);
         json.addProperty("state", "sealed");
 
@@ -95,9 +95,9 @@ class LetterDataSerializerTest {
     private static JsonObject validDraftJson() {
         JsonObject returnAddress = new JsonObject();
         returnAddress.addProperty("type", "mailbox");
-        returnAddress.addProperty("domainId", "AB");
-        returnAddress.addProperty("districtId", "1");
-        returnAddress.addProperty("deliveryId", "1");
+        returnAddress.addProperty("domainCode", "AB");
+        returnAddress.addProperty("districtCode", "1");
+        returnAddress.addProperty("deliveryCode", "1AA");
 
         JsonObject json = new JsonObject();
         json.addProperty("letterId", UUID.randomUUID().toString());

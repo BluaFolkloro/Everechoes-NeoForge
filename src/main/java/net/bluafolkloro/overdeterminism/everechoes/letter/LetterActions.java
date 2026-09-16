@@ -6,6 +6,7 @@ import net.bluafolkloro.overdeterminism.everechoes.network.LetterActionPayload;
 import net.bluafolkloro.overdeterminism.everechoes.postal.Address;
 import net.bluafolkloro.overdeterminism.everechoes.postal.MailBoxAddress;
 import net.bluafolkloro.overdeterminism.everechoes.postal.PlayerAddress;
+import net.bluafolkloro.overdeterminism.everechoes.postal.PostalNetwork;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -122,7 +123,10 @@ public final class LetterActions {
                     player.displayClientMessage(Component.translatable("message.everechoes.letter.invalid_postal_code"), true);
                     yield new DraftEdit(data, false);
                 }
-                yield new DraftEdit(data.withRecipientAddress(parsed.get()), false);
+                MailBoxAddress resolved = player.getServer() == null
+                        ? parsed.get()
+                        : PostalNetwork.get(player.getServer().overworld()).resolveAddress(parsed.get());
+                yield new DraftEdit(data.withRecipientAddress(resolved), false);
             }
             case PLAYER -> {
                 if (addressValue.isBlank()) {
