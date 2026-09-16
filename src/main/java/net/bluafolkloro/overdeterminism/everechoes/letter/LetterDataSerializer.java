@@ -15,8 +15,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
-// Serialization bridge for mutable LetterData snapshots.
-// LetterData 是可变对象；序列化时这里会读取当前字段形成快照，反序列化时再通过工厂方法重建对象。
+// Serialization bridge for immutable LetterData component values.
+// LetterData 是不可变值对象；序列化时读取字段，反序列化时通过工厂方法重建新的对象。
 //
 // The persistent CODEC is intended for DataComponentType.Builder#persistent.
 // 持久化 CODEC 供 DataComponentType.Builder#persistent 使用，负责把信件数据写入物品组件存档。
@@ -67,8 +67,8 @@ public final class LetterDataSerializer {
                 .orElseGet(() -> DataResult.error(() -> "Invalid letter data"));
     }
 
-    // Writes a snapshot of the current LetterData fields.
-    // 写入 LetterData 当前字段的快照。
+    // Writes the LetterData fields into the flat serialized record.
+    // 把 LetterData 字段写入扁平的序列化记录。
     private static SerializedLetterData encode(LetterData letterData) {
         Objects.requireNonNull(letterData, "letterData cannot be null");
         return new SerializedLetterData(

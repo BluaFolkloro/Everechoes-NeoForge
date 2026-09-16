@@ -12,7 +12,7 @@ Everechoes 是一个基于 NeoForge 的 Minecraft 模组项目，目前面向 Mi
 - `everechoes:letter`：信件
 - `everechoes:opened_letter`：拆封的信件
 
-这些物品目前已完成注册、模型、纹理和语言资源。具体的写信、封蜡、拆信、投递等行为尚未实现。
+这些物品目前已完成注册、模型、纹理、语言资源和信件数据组件。玩家可以写信、封蜡和拆封；数据会随物品保存并同步。邮筒投递尚未实现。
 
 ### 邮筒
 
@@ -139,19 +139,31 @@ everechoes
 │  ├─ BirdFigureBlocks.java
 │  ├─ ContainerBlocks.java
 │  └─ PostBoxBlock.java
+├─ component
+│  └─ ModDataComponents.java
 ├─ item
 │  ├─ BirdFigureBlockItems.java
 │  ├─ ContainerBlockItems.java
+│  ├─ LetterItem.java
 │  ├─ LetterItems.java
 │  └─ ModCreativeModeTabs.java
+├─ letter
+│  ├─ LetterData.java
+│  ├─ LetterDataSerializer.java
+│  └─ LetterState.java
 ├─ menu
+│  ├─ LetterMenu.java
 │  ├─ PostBoxMenu.java
 │  └─ ModMenuTypes.java
+├─ network
+│  ├─ LetterActionPayload.java
+│  └─ ModNetworking.java
 ├─ postal
 │  ├─ Address.java
 │  ├─ MailBoxAddress.java
 │  └─ PlayerAddress.java
 ├─ screen
+│  ├─ LetterScreen.java
 │  └─ PostBoxScreen.java
 ├─ Everechoes.java
 └─ EverechoesClient.java
@@ -159,14 +171,17 @@ everechoes
 
 各层职责：
 
-- `Everechoes`：模组入口，负责注册物品、方块、方块实体、菜单和创造模式标签页。
-- `EverechoesClient`：客户端事件入口，当前用于注册邮筒界面。
+- `Everechoes`：模组入口，负责注册物品、方块、方块实体、菜单、数据组件、网络包和创造模式标签页。
+- `EverechoesClient`：客户端事件入口，当前用于注册邮筒界面和信件界面。
 - `block`：方块定义与方块注册，包括邮筒和夜鹭手办。
 - `block.entity`：方块实体定义与注册，目前用于邮筒储存。
+- `component`：信件 Data Component 注册。
 - `item`：物品注册、方块物品注册和创造模式标签页。
+- `letter`：信件数据、状态机、序列化和服务端写信逻辑。
 - `menu`：服务端容器菜单定义与菜单类型注册。
+- `network`：自定义网络包。
 - `screen`：客户端 GUI 界面。
-- `postal`：邮件系统的基础地址模型，目前包含邮筒地址和玩家地址。
+- `postal`：邮件系统的基础地址模型，目前包含邮箱地址和玩家地址。
 
 主要资源位于：
 
@@ -237,11 +252,8 @@ src/main/templates
 
 当前版本：`0.0.1`
 
-已完成的是基础内容注册、资源接入、部分方块行为，以及 `LetterData`、地址类型和序列化器的初步实现。后续重点包括：
+已完成的是基础内容注册、资源接入、部分方块行为，以及本地信件闭环：`LetterData` 作为 Data Component 挂在三种信件物品上，玩家可以写信、封蜡、拆封，数据可保存并同步。后续重点包括：
 
-- 将信件数据接入 Data Component
-- 信件编辑界面
-- 信件封蜡与拆封状态转换
 - “邮域—邮区—邮编”注册与寻址
 - 邮筒实际投递逻辑
 - 玩家、钥匙、信鸽和收信邮箱的交接与签收

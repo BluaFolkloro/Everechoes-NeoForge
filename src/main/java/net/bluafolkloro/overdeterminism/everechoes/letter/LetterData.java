@@ -7,32 +7,30 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-// Mutable letter payload and lifecycle data.
-// 可变的信件内容与生命周期数据。
-public class LetterData {
+// Immutable letter payload and lifecycle value stored on letter items.
+// 不可变的信件内容与生命周期值，作为信件物品的 Data Component 存储。
+public final class LetterData {
 
     // Stable letter identity; never changes after creation.
     private final UUID letterId;
     // Current lifecycle state: draft, sealed, or opened.
-    private LetterState state;
+    private final LetterState state;
     // Postal return address used for delivery failures.
-    private Address returnAddress;
+    private final Address returnAddress;
     // Optional postal destination address used by the delivery system.
-    private Address recipientAddress;
+    private final Address recipientAddress;
 
-    private String title;
-    private String body;
+    private final String title;
+    private final String body;
 
     // Optional sender text written in the letter signature, not a postal address.
-    private String signatureSender;
+    private final String signatureSender;
     // Optional recipient text written in the letter, not a postal address.
-    private String letterRecipient;
+    private final String letterRecipient;
 
     // ===== Construction and reconstruction methods =====
     // ===== 构造与重建方法：集中控制信件对象的创建入口，并保证创建时完成基础校验 =====
 
-    // Reconstructs letter data from persisted fields and validates state invariants.
-    // 从持久化字段重建信件数据，并校验状态不变量。
     private LetterData(
             UUID letterId,
             LetterState state,
@@ -124,32 +122,22 @@ public class LetterData {
     // ===== Identity and state query methods =====
     // ===== 标识与状态查询方法：读取信件身份、生命周期状态，以及常用状态判断 =====
 
-    // Returns the stable identity of this letter.
-    // 返回这封信的稳定标识。
     public UUID letterId() {
         return letterId;
     }
 
-    // Returns the current lifecycle state.
-    // 返回当前生命周期状态。
     public LetterState state() {
         return state;
     }
 
-    // Returns whether the letter is still editable.
-    // 返回信件是否仍处于可编辑状态。
     public boolean isDraft() {
         return state == LetterState.DRAFT;
     }
 
-    // Returns whether the letter has been sealed.
-    // 返回信件是否处于蜡封状态。
     public boolean isSealed() {
         return state == LetterState.SEALED;
     }
 
-    // Returns whether the letter has been opened.
-    // 返回信件是否处于拆封状态。
     public boolean isOpened() {
         return state == LetterState.OPENED;
     }
@@ -158,165 +146,176 @@ public class LetterData {
     // 状态变更有意设计为单向：草稿 -> 蜡封 -> 拆封。
 
     // ===== Lifecycle transition methods =====
-    // ===== 生命周期转换方法：处理封蜡、拆封等状态推进逻辑 =====
+    // ===== 生命周期转换方法：处理封蜡、拆封等状态推进逻辑；每次成功转换都返回新的不可变值 =====
 
-    // Returns whether the letter can be sealed.
-    // 返回信件当前是否可以封蜡。
     public boolean canSeal() {
         return state == LetterState.DRAFT && recipientAddress != null;
     }
 
-    // Attempts to seal the letter without throwing when the state is invalid.
-    // 尝试封蜡；状态不满足时不抛异常，而是返回 false。
-    public boolean trySeal() {
+    public Optional<LetterData> trySeal() {
         return trySeal(null);
     }
 
-    // Attempts to seal the letter and reports a localized failure message key when user input is incomplete.
-    // 尝试封蜡；当玩家输入不完整时，通过回调提供本地化失败提示键。
-    public boolean trySeal(Consumer<String> failureMessageKeyConsumer) {
+    public Optional<LetterData> trySeal(Consumer<String> failureMessageKeyConsumer) {
         if (!canSeal()) {
             notifySealFailure(failureMessageKeyConsumer);
-            return false;
+            return Optional.empty();
         }
 
-        applyState(LetterState.SEALED);
-        return true;
+        return Optional.of(withState(LetterState.SEALED));
     }
 
-    // Seals the letter or throws if it is not a sealable draft.
-    // 封蜡信件；如果不是完整草稿则抛出异常。
-    public void seal() {
-        if (!canSeal()) {
-            throw new IllegalStateException("Only complete draft letters can be sealed");
-        }
-
-        applyState(LetterState.SEALED);
+    public LetterData seal() {
+        return trySeal().orElseThrow(() -> new IllegalStateException("Only complete draft letters can be sealed"));
     }
 
-    // Returns whether the letter can be opened.
-    // 返回蜡封信件当前是否可以拆封。
     public boolean canOpen() {
         return state == LetterState.SEALED;
     }
 
-    // Attempts to open the letter without throwing when the state is invalid.
-    // 尝试拆封；状态不满足时不抛异常，而是返回 false。
-    public boolean tryOpen() {
+    public Optional<LetterData> tryOpen() {
         if (!canOpen()) {
-            return false;
+            return Optional.empty();
         }
 
-        applyState(LetterState.OPENED);
-        return true;
+        return Optional.of(withState(LetterState.OPENED));
     }
 
-    // Opens the sealed letter or throws if it is not sealed.
-    // 拆封信件；如果信件并非蜡封状态则抛出异常。
-    public void open() {
-        if (!canOpen()) {
-            throw new IllegalStateException("Only sealed letters can be opened");
-        }
-
-        applyState(LetterState.OPENED);
+    public LetterData open() {
+        return tryOpen().orElseThrow(() -> new IllegalStateException("Only sealed letters can be opened"));
     }
 
     // ===== Postal address methods =====
-    // ===== 邮政地址方法：读取或编辑退回地址与收件地址，编辑操作仅允许在草稿阶段进行 =====
+    // ===== 邮政地址方法：读取或在草稿上替换退回地址与收件地址 =====
 
-    // Returns the postal return address.
-    // 返回邮政退回地址。
     public Address returnAddress() {
         return returnAddress;
     }
 
-    // Address and written-content fields can only be edited while the letter is a draft.
-    // 地址与书写内容字段只能在草稿状态下编辑。
-    public void setReturnAddress(Address returnAddress) {
+    public LetterData withReturnAddress(Address returnAddress) {
         requireDraft();
-        this.returnAddress = Objects.requireNonNull(returnAddress, "returnAddress");
+        return copy(
+                this.letterId,
+                this.state,
+                Objects.requireNonNull(returnAddress, "returnAddress"),
+                this.recipientAddress,
+                this.title,
+                this.body,
+                this.signatureSender,
+                this.letterRecipient
+        );
     }
 
-    // Returns the optional postal destination address.
-    // 返回可选的邮政目标地址。
     public Optional<Address> recipientAddress() {
         return Optional.ofNullable(recipientAddress);
     }
 
-    // Returns the recipient address or throws when the letter has no destination address.
-    // 返回收件地址；如果信件没有收件地址则抛出异常。
     public Address requireRecipientAddress() {
         return recipientAddress()
                 .orElseThrow(() -> new IllegalStateException("Letter has no recipient address"));
     }
 
-    // Sets the postal destination address while the letter is a draft.
-    // 在草稿状态下设置信件的邮政目标地址。
-    public void setRecipientAddress(Address recipientAddress) {
+    public LetterData withRecipientAddress(Address recipientAddress) {
         requireDraft();
-        this.recipientAddress = Objects.requireNonNull(recipientAddress, "recipientAddress");
+        return copy(
+                this.letterId,
+                this.state,
+                this.returnAddress,
+                Objects.requireNonNull(recipientAddress, "recipientAddress"),
+                this.title,
+                this.body,
+                this.signatureSender,
+                this.letterRecipient
+        );
     }
 
-    // Clears the postal destination address while the letter is a draft.
-    // 在草稿状态下清除信件的邮政目标地址。
-    public void clearRecipientAddress() {
+    public LetterData withoutRecipientAddress() {
         requireDraft();
-        this.recipientAddress = null;
+        return copy(
+                this.letterId,
+                this.state,
+                this.returnAddress,
+                null,
+                this.title,
+                this.body,
+                this.signatureSender,
+                this.letterRecipient
+        );
     }
 
     // ===== Written content methods =====
-    // ===== 书写内容方法：读取或编辑标题、正文、落款和信内称呼，编辑操作仅允许在草稿阶段进行 =====
+    // ===== 书写内容方法：读取或在草稿上替换标题、正文、落款和信内称呼 =====
 
-    // Returns the written title.
-    // 返回书写标题。
     public String title() {
         return title;
     }
 
-    // Sets the written title while the letter is a draft.
-    // 在草稿状态下设置信件标题。
-    public void setTitle(String title) {
+    public LetterData withTitle(String title) {
         requireDraft();
-        this.title = Objects.requireNonNull(title, "title");
+        return copy(
+                this.letterId,
+                this.state,
+                this.returnAddress,
+                this.recipientAddress,
+                Objects.requireNonNull(title, "title"),
+                this.body,
+                this.signatureSender,
+                this.letterRecipient
+        );
     }
 
-    // Returns the written body.
-    // 返回书写正文。
     public String body() {
         return body;
     }
 
-    // Sets the written body while the letter is a draft.
-    // 在草稿状态下设置信件正文。
-    public void setBody(String body) {
+    public LetterData withBody(String body) {
         requireDraft();
-        this.body = Objects.requireNonNull(body, "body");
+        return copy(
+                this.letterId,
+                this.state,
+                this.returnAddress,
+                this.recipientAddress,
+                this.title,
+                Objects.requireNonNull(body, "body"),
+                this.signatureSender,
+                this.letterRecipient
+        );
     }
 
-    // Returns the optional signature sender text.
-    // 返回可选的落款寄件人文本。
     public Optional<String> signatureSender() {
         return Optional.ofNullable(signatureSender);
     }
 
-    // Sets the optional signature sender text; blank text is treated as absent.
-    // 设置可选的落款寄件人文本；空白文本会视为未填写。
-    public void setSignatureSender(String signatureSender) {
+    public LetterData withSignatureSender(String signatureSender) {
         requireDraft();
-        this.signatureSender = normalizeOptionalText(signatureSender);
+        return copy(
+                this.letterId,
+                this.state,
+                this.returnAddress,
+                this.recipientAddress,
+                this.title,
+                this.body,
+                signatureSender,
+                this.letterRecipient
+        );
     }
 
-    // Returns the optional written recipient text.
-    // 返回可选的信件收件人文本。
     public Optional<String> letterRecipient() {
         return Optional.ofNullable(letterRecipient);
     }
 
-    // Sets the optional written recipient text; blank text is treated as absent.
-    // 设置可选的信件收件人文本；空白文本会视为未填写。
-    public void setLetterRecipient(String letterRecipient) {
+    public LetterData withLetterRecipient(String letterRecipient) {
         requireDraft();
-        this.letterRecipient = normalizeOptionalText(letterRecipient);
+        return copy(
+                this.letterId,
+                this.state,
+                this.returnAddress,
+                this.recipientAddress,
+                this.title,
+                this.body,
+                this.signatureSender,
+                letterRecipient
+        );
     }
 
     // ===== Internal validation and helper methods =====
@@ -328,8 +327,6 @@ public class LetterData {
         }
     }
 
-    // Sends the most specific sealing failure message key to the caller when one is available.
-    // 在存在明确封蜡失败原因时，将对应的提示翻译键交给调用方处理。
     private void notifySealFailure(Consumer<String> failureMessageKeyConsumer) {
         if (failureMessageKeyConsumer == null) {
             return;
@@ -340,9 +337,39 @@ public class LetterData {
         }
     }
 
-    private void applyState(LetterState state) {
-        this.state = Objects.requireNonNull(state, "state");
-        validateStateInvariants();
+    private LetterData withState(LetterState state) {
+        return copy(
+                this.letterId,
+                Objects.requireNonNull(state, "state"),
+                this.returnAddress,
+                this.recipientAddress,
+                this.title,
+                this.body,
+                this.signatureSender,
+                this.letterRecipient
+        );
+    }
+
+    private LetterData copy(
+            UUID letterId,
+            LetterState state,
+            Address returnAddress,
+            Address recipientAddress,
+            String title,
+            String body,
+            String signatureSender,
+            String letterRecipient
+    ) {
+        return new LetterData(
+                letterId,
+                state,
+                returnAddress,
+                recipientAddress,
+                title,
+                body,
+                signatureSender,
+                letterRecipient
+        );
     }
 
     private void validateStateInvariants() {
@@ -353,5 +380,49 @@ public class LetterData {
 
     private static String normalizeOptionalText(String text) {
         return text == null || text.isBlank() ? null : text;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        if (!(other instanceof LetterData letterData)) {
+            return false;
+        }
+
+        return letterId.equals(letterData.letterId)
+                && state == letterData.state
+                && returnAddress.equals(letterData.returnAddress)
+                && Objects.equals(recipientAddress, letterData.recipientAddress)
+                && title.equals(letterData.title)
+                && body.equals(letterData.body)
+                && Objects.equals(signatureSender, letterData.signatureSender)
+                && Objects.equals(letterRecipient, letterData.letterRecipient);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(
+                letterId,
+                state,
+                returnAddress,
+                recipientAddress,
+                title,
+                body,
+                signatureSender,
+                letterRecipient
+        );
+    }
+
+    @Override
+    public String toString() {
+        return "LetterData{"
+                + "letterId=" + letterId
+                + ", state=" + state
+                + ", returnAddress=" + returnAddress
+                + ", recipientAddress=" + recipientAddress
+                + ", title='" + title + '\''
+                + '}';
     }
 }

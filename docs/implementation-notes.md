@@ -9,13 +9,14 @@
 当前注册内容包括：
 
 - 创造模式标签页：`ModCreativeModeTabs`
+- 数据组件：`ModDataComponents`
 - 方块实体：`ModBlockEntities`
 - 菜单类型：`ModMenuTypes`
 - 信件物品：`LetterItems`
 - 容器方块与方块物品：`ContainerBlocks`、`ContainerBlockItems`
 - 夜鹭手办方块与方块物品：`BirdFigureBlocks`、`BirdFigureBlockItems`
 
-客户端入口是 `EverechoesClient`，当前用于注册 `PostBoxScreen`。
+客户端入口是 `EverechoesClient`，当前用于注册 `PostBoxScreen` 和 `LetterScreen`。
 
 ## 发信邮筒双格方块
 
@@ -51,18 +52,37 @@
 
 ## 信件数据模型
 
-`LetterData` 是可变类，用于表达信件生命周期和内容。
+`LetterData` 是不可变值对象，作为信件物品的 Data Component 存储。
 
 设计要点：
 
 - `letterId` 创建后不变。
-- 只有草稿状态可以编辑。
+- 只有草稿状态可以编辑；编辑方法返回新的 `LetterData`。
+- 状态转换是单向的：`DRAFT -> SEALED -> OPENED`。
 - 蜡封和拆封状态必须有收件地址。
 - `signatureSender` 和 `letterRecipient` 内部允许为 `null`。
 - 对外读取可选文本时返回 `Optional`。
 - 空白可选文本会被规范化为 `null`。
+- Data Component 使用 `LetterDataSerializer.CODEC` 持久化，并使用 `STREAM_CODEC` 同步。
 
-后续接入 Data Component 时，需要注意 `LetterData` 是可变对象。存入组件或同步网络包时可能需要复制或序列化，避免共享引用造成状态不一致。
+三种信件物品共享同一组件类型。右键草稿会自动生成 `letterId`，并把退回地址设为当前玩家。封蜡和拆封会转换物品类型，但保留同一份 `letterId` 和信件内容。
+
+## 信件交互
+
+右键信件会打开 `LetterMenu` / `LetterScreen`。
+
+- 草稿：可编辑标题、正文、称呼、落款和收件地址，关闭界面时保存。
+- 收件地址支持邮箱邮编或玩家名；玩家名在服务端解析。
+- 封蜡会把 `letter` 转换成 `sealed_letter`，并保留同一 `letterId`。
+- 拆封会把 `sealed_letter` 转换成 `opened_letter`。
+- 蜡封和拆封信件打开只读界面。
+- 服务端通过 `LetterActionPayload` 校验：菜单仍打开、物品仍在对应手里、仍是同一封信，并且草稿才能编辑。
+
+常用验证命令还包括：
+
+```bash
+./gradlew test
+```
 
 ## 地址模型
 

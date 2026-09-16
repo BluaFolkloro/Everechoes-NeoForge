@@ -45,15 +45,20 @@ public final class AddressSerializer {
     // Restores the concrete Address implementation according to the type discriminator.
     // 根据 type 类型标识恢复具体的 Address 实现类。
     private static DataResult<Address> decode(SerializedAddress serializedAddress) {
-        return switch (serializedAddress.type()) {
-            case MAILBOX_TYPE -> serializedAddress.postalCode()
-                    .<DataResult<Address>>map(postalCode -> DataResult.success(new MailBoxAddress(postalCode)))
-                    .orElseGet(() -> DataResult.error(() -> "Mailbox address is missing postalCode"));
-            case PLAYER_TYPE -> serializedAddress.playerId()
-                    .<DataResult<Address>>map(playerId -> DataResult.success(new PlayerAddress(playerId)))
-                    .orElseGet(() -> DataResult.error(() -> "Player address is missing playerId"));
-            default -> DataResult.error(() -> "Unknown address type: " + serializedAddress.type());
-        };
+        try {
+            return switch (serializedAddress.type()) {
+                case MAILBOX_TYPE -> serializedAddress.postalCode()
+                        .filter(postalCode -> !postalCode.isBlank())
+                        .<DataResult<Address>>map(postalCode -> DataResult.success(new MailBoxAddress(postalCode)))
+                        .orElseGet(() -> DataResult.error(() -> "Mailbox address is missing postalCode"));
+                case PLAYER_TYPE -> serializedAddress.playerId()
+                        .<DataResult<Address>>map(playerId -> DataResult.success(new PlayerAddress(playerId)))
+                        .orElseGet(() -> DataResult.error(() -> "Player address is missing playerId"));
+                default -> DataResult.error(() -> "Unknown address type: " + serializedAddress.type());
+            };
+        } catch (RuntimeException exception) {
+            return DataResult.error(() -> "Invalid address: " + exception.getMessage());
+        }
     }
 
     // Writes only the fields needed by the concrete Address implementation.
