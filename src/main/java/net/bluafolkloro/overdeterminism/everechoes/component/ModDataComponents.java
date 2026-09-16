@@ -3,6 +3,8 @@ package net.bluafolkloro.overdeterminism.everechoes.component;
 import net.bluafolkloro.overdeterminism.everechoes.Everechoes;
 import net.bluafolkloro.overdeterminism.everechoes.letter.LetterData;
 import net.bluafolkloro.overdeterminism.everechoes.letter.LetterDataSerializer;
+import net.bluafolkloro.overdeterminism.everechoes.postal.Waybill;
+import net.bluafolkloro.overdeterminism.everechoes.postal.WaybillSerializer;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
 import net.neoforged.bus.api.IEventBus;
@@ -19,6 +21,15 @@ public class ModDataComponents {
                     builder -> builder
                             .persistent(LetterDataSerializer.CODEC)
                             .networkSynchronized(LetterDataSerializer.STREAM_CODEC)
+                            .cacheEncoding()
+            );
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Waybill>> WAYBILL =
+            COMPONENTS.registerComponentType(
+                    "waybill",
+                    builder -> builder
+                            .persistent(WaybillSerializer.CODEC)
+                            .networkSynchronized(WaybillSerializer.STREAM_CODEC)
                             .cacheEncoding()
             );
 

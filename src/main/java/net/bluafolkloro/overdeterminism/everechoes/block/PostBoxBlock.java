@@ -2,11 +2,16 @@ package net.bluafolkloro.overdeterminism.everechoes.block;
 
 import com.mojang.serialization.MapCodec;
 import net.bluafolkloro.overdeterminism.everechoes.block.entity.PostBoxBlockEntity;
+import net.bluafolkloro.overdeterminism.everechoes.menu.PostBoxConfigMenu;
+import net.bluafolkloro.overdeterminism.everechoes.postal.PostalNetwork;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -74,13 +79,32 @@ public class PostBoxBlock extends BaseEntityBlock {
         BlockPos menuPos = state.getValue(HALF) == DoubleBlockHalf.UPPER ? pos.below() : pos;
         BlockEntity be = level.getBlockEntity(menuPos);
         if (be instanceof PostBoxBlockEntity postBox && player instanceof ServerPlayer serverPlayer) {
-            serverPlayer.openMenu(postBox, buf -> {
-                // Send the lower-half position to the client menu.
-                buf.writeBlockPos(menuPos);
-            });
+            if (player.isShiftKeyDown() || !postBox.hasDistrict()) {
+                openConfig(serverPlayer, (ServerLevel) level, menuPos, postBox);
+            } else {
+                serverPlayer.openMenu(postBox, buf -> buf.writeBlockPos(menuPos));
+            }
         }
 
         return InteractionResult.CONSUME;
+    }
+
+    public static void openConfig(ServerPlayer player, ServerLevel level, BlockPos pos, PostBoxBlockEntity postBox) {
+        PostalNetwork network = PostalNetwork.get(level);
+        player.openMenu(
+                new SimpleMenuProvider(
+                        (containerId, inventory, menuPlayer) -> new PostBoxConfigMenu(
+                                containerId,
+                                inventory,
+                                pos,
+                                postBox.domainId(),
+                                postBox.districtId(),
+                                network.domainIds()
+                        ),
+                        Component.translatable("gui.everechoes.post_box.config")
+                ),
+                buf -> PostBoxConfigMenu.writeOpeningData(buf, pos, postBox, network)
+        );
     }
 
     @Override

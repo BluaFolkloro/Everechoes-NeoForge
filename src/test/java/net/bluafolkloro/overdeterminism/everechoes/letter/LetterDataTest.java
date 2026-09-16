@@ -13,8 +13,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class LetterDataTest {
-    private static final MailBoxAddress RETURN_ADDRESS = new MailBoxAddress("return-1");
-    private static final MailBoxAddress RECIPIENT_ADDRESS = new MailBoxAddress("box-1");
+    private static final MailBoxAddress RETURN_ADDRESS = new MailBoxAddress("AB", "1", "1");
+    private static final MailBoxAddress RECIPIENT_ADDRESS = new MailBoxAddress("CD", "2", "A");
 
     @Test
     void draftCanBeEditedThenSealedThenOpened() {
@@ -57,7 +57,7 @@ class LetterDataTest {
 
         assertThrows(IllegalStateException.class, () -> sealed.withTitle("nope"));
         assertThrows(IllegalStateException.class, () -> sealed.withBody("nope"));
-        assertThrows(IllegalStateException.class, () -> sealed.withRecipientAddress(new MailBoxAddress("other")));
+        assertThrows(IllegalStateException.class, () -> sealed.withRecipientAddress(new MailBoxAddress("EF", "3", "B")));
         assertThrows(IllegalStateException.class, () -> sealed.withReturnAddress(new PlayerAddress(UUID.randomUUID())));
         assertThrows(IllegalStateException.class, () -> opened.withTitle("nope"));
         assertThrows(IllegalStateException.class, () -> opened.withSignatureSender("nope"));

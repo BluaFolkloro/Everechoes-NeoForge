@@ -23,6 +23,11 @@ public class ModMenuTypes {
                     () -> IMenuTypeExtension.create(LetterMenu::new)
             );
 
+    public static final DeferredHolder<MenuType<?>, MenuType<PostBoxConfigMenu>> POST_BOX_CONFIG_MENU =
+            MENUS.register("post_box_config_menu",
+                    () -> IMenuTypeExtension.create(PostBoxConfigMenu::new)
+            );
+
     public static void register(IEventBus bus) {
         MENUS.register(bus);
     }

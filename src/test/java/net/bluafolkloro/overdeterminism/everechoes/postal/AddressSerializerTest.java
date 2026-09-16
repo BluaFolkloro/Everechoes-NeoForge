@@ -12,10 +12,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class AddressSerializerTest {
     @Test
     void mailboxAddressRoundTrips() {
-        MailBoxAddress address = new MailBoxAddress("  district-7  ");
+        MailBoxAddress address = new MailBoxAddress("abc", "12", "00a");
         Address decoded = roundTrip(address);
 
-        assertEquals(new MailBoxAddress("district-7"), decoded);
+        assertEquals(new MailBoxAddress("ABC", "12", "A"), decoded);
+        assertEquals("ABC12-A", ((MailBoxAddress) decoded).postalCode());
+    }
+
+    @Test
+    void mailboxPostalCodeFallbackParsesAaaXxYyy() {
+        JsonObject json = new JsonObject();
+        json.addProperty("type", "mailbox");
+        json.addProperty("postalCode", "ab1-ff");
+
+        Address decoded = AddressSerializer.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow();
+        assertEquals(new MailBoxAddress("AB", "1", "FF"), decoded);
     }
 
     @Test
@@ -35,7 +46,7 @@ class AddressSerializerTest {
     }
 
     @Test
-    void mailboxWithoutPostalCodeIsRejected() {
+    void mailboxWithoutPartsIsRejected() {
         JsonObject json = new JsonObject();
         json.addProperty("type", "mailbox");
 

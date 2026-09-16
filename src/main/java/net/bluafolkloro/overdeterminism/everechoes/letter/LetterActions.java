@@ -113,9 +113,17 @@ public final class LetterActions {
         String addressValue = LetterLimits.sanitizeSingleLine(payload.addressValue(), LetterLimits.ADDRESS_VALUE);
         return switch (payload.addressKind()) {
             case NONE -> new DraftEdit(data.withoutRecipientAddress(), false);
-            case MAILBOX -> mailboxAddress(addressValue)
-                    .map(address -> new DraftEdit(data.withRecipientAddress(address), false))
-                    .orElseGet(() -> new DraftEdit(data.withoutRecipientAddress(), false));
+            case MAILBOX -> {
+                if (addressValue.isBlank()) {
+                    yield new DraftEdit(data.withoutRecipientAddress(), false);
+                }
+                var parsed = MailBoxAddress.parse(addressValue);
+                if (parsed.isEmpty()) {
+                    player.displayClientMessage(Component.translatable("message.everechoes.letter.invalid_postal_code"), true);
+                    yield new DraftEdit(data, false);
+                }
+                yield new DraftEdit(data.withRecipientAddress(parsed.get()), false);
+            }
             case PLAYER -> {
                 if (addressValue.isBlank()) {
                     yield new DraftEdit(data.withoutRecipientAddress(), false);
@@ -129,18 +137,6 @@ public final class LetterActions {
                 yield new DraftEdit(data.withRecipientAddress(resolved.get()), false);
             }
         };
-    }
-
-    private static Optional<Address> mailboxAddress(String postalCode) {
-        if (postalCode.isBlank()) {
-            return Optional.empty();
-        }
-
-        try {
-            return Optional.of(new MailBoxAddress(postalCode));
-        } catch (IllegalArgumentException exception) {
-            return Optional.empty();
-        }
     }
 
     private static Optional<Address> resolvePlayerAddress(MinecraftServer server, String rawName) {

@@ -32,13 +32,15 @@
 
 ## 发信邮筒容器和 GUI
 
-当前 `post_box` 储存和 GUI 是占位实现：
+`post_box` 是 5 格承运交接口：
 
-- `PostBoxBlockEntity` 使用 27 格 `SimpleContainer`。
-- `PostBoxMenu` 使用 3x9 发信邮筒槽位和玩家背包槽位。
-- `PostBoxScreen` 暂时使用原版潜影盒背景。
-
-这些机制后续会被实际邮件系统替换或重构。
+- 只接受已封蜡且带收件地址的信件。
+- 放入时写入 `Waybill`（待承运人领取）。
+- 玩家取出时把 `Waybill` 改为玩家承运。
+- 放置后需配置邮域；潜行右键可再次打开配置。
+- 邮区号按邮域递增，标题显示 `AAAXX`。
+- GUI 暂用原版漏斗背景；正式美化需先预览再改。
+- 旧世界 27 格内容加载时，可投递信件填入前 5 格，其余掉落。
 
 ## 夜鹭手办
 
@@ -76,7 +78,7 @@
 - 封蜡会把 `letter` 转换成 `sealed_letter`，并保留同一 `letterId`。
 - 拆封会把 `sealed_letter` 转换成 `opened_letter`。
 - 蜡封和拆封信件打开只读界面。
-- 服务端通过 `LetterActionPayload` 校验：菜单仍打开、物品仍在对应手里、仍是同一封信，并且草稿才能编辑。
+- 服务端通过 `LetterActionPayload` 校验：物品仍在对应手里、仍是同一封信，并且草稿才能编辑。关闭写信界面时保存包可能晚于关菜单包，因此不要求菜单仍开着。
 
 常用验证命令还包括：
 
@@ -91,9 +93,11 @@
 - `MailBoxAddress`
 - `PlayerAddress`
 
-`MailBoxAddress` 要求 `postalCode` 非空且非空白。
+`MailBoxAddress` 储存 `domainId`、`districtId`、`deliveryId`，并由它们组成 `postalCode`（`AAAXX-YYY`）。旧的 `domain/district/code` 路径不再合法。
 
 `MailBoxAddress` 表示未来收信端 `mail_box` 的地址，不表示当前负责发信的 `post_box`。
+
+`Waybill` 是独立运输组件，不保存信件正文。
 
 `PlayerAddress` 要求 `playerId` 非空。
 

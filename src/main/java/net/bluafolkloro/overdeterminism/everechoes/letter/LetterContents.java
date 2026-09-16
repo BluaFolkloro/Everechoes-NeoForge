@@ -63,12 +63,15 @@ public final class LetterContents {
 
         ItemStack updated = current.transmuteCopy(expected);
         set(updated, data);
+        if (data.isOpened()) {
+            updated.remove(ModDataComponents.WAYBILL.get());
+        }
         player.setItemInHand(hand, updated);
     }
 
     public static Component formatAddress(Address address, @Nullable Level level) {
         if (address instanceof MailBoxAddress mailBoxAddress) {
-            return Component.literal(mailBoxAddress.postalCode());
+            return Component.literal(mailBoxAddress.format());
         }
 
         if (address instanceof PlayerAddress playerAddress) {
@@ -81,7 +84,7 @@ public final class LetterContents {
 
     public static String addressInputValue(Address address, @Nullable Level level) {
         if (address instanceof MailBoxAddress mailBoxAddress) {
-            return mailBoxAddress.postalCode();
+            return mailBoxAddress.format();
         }
 
         if (address instanceof PlayerAddress playerAddress) {

@@ -4,6 +4,8 @@ import net.bluafolkloro.overdeterminism.everechoes.letter.LetterContents;
 import net.bluafolkloro.overdeterminism.everechoes.letter.LetterData;
 import net.bluafolkloro.overdeterminism.everechoes.letter.LetterState;
 import net.bluafolkloro.overdeterminism.everechoes.menu.LetterMenu;
+import net.bluafolkloro.overdeterminism.everechoes.postal.Waybill;
+import net.bluafolkloro.overdeterminism.everechoes.postal.Waybills;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -91,6 +93,17 @@ public class LetterItem extends Item {
                 () -> tooltipComponents.add(Component.translatable("item.everechoes.letter.tooltip.no_recipient")
                         .withStyle(ChatFormatting.DARK_GRAY))
         );
+
+        Waybill waybill = Waybills.get(stack);
+        if (waybill != null) {
+            if (waybill.state() == Waybill.CustodyState.AWAITING_CARRIER) {
+                tooltipComponents.add(Component.translatable("item.everechoes.letter.tooltip.awaiting_carrier")
+                        .withStyle(ChatFormatting.DARK_AQUA));
+            } else {
+                tooltipComponents.add(Component.translatable("item.everechoes.letter.tooltip.in_transit")
+                        .withStyle(ChatFormatting.DARK_AQUA));
+            }
+        }
     }
 
     @Override

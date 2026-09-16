@@ -11,16 +11,20 @@ import net.neoforged.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class PostBoxScreen extends AbstractContainerScreen<PostBoxMenu> {
-
-    // Placeholder postbox GUI background; the concrete mail system UI is still to be implemented.
-    // 占位邮箱 GUI 背景，具体邮件系统界面待实现。
     private static final ResourceLocation BG =
-            ResourceLocation.fromNamespaceAndPath("minecraft", "textures/gui/container/shulker_box.png");
+            ResourceLocation.fromNamespaceAndPath("minecraft", "textures/gui/container/hopper.png");
 
     public PostBoxScreen(PostBoxMenu menu, Inventory playerInv, Component title) {
         super(menu, playerInv, title);
         this.imageWidth = 176;
-        this.imageHeight = 166;
+        this.imageHeight = 133;
+        this.inventoryLabelY = this.imageHeight - 94;
+    }
+
+    @Override
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        super.render(graphics, mouseX, mouseY, partialTick);
+        this.renderTooltip(graphics, mouseX, mouseY);
     }
 
     @Override

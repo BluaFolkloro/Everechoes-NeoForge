@@ -117,6 +117,8 @@ public class LetterScreen extends AbstractContainerScreen<LetterMenu> {
                 LetterContents.addressInputValue(data.recipientAddress().orElse(null), minecraft.level),
                 LetterLimits.ADDRESS_VALUE
         );
+        addressValueBox.setHint(Component.translatable("gui.everechoes.letter.address.mailbox_path"));
+        addressValueBox.setMaxLength(9);
         updateAddressFieldVisibility();
 
         bodyBox = new MultiLineEditBox(
