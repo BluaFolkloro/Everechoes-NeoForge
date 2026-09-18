@@ -9,10 +9,11 @@ import java.util.UUID;
 public record PostalActionContext(
         @Nullable UUID sourceDistrictId,
         @Nullable UUID sourceNodeId,
+        @Nullable UUID actorId,
         @Nullable ResourceLocation dimension,
         @Nullable BlockPos position
 ) {
     public static PostalActionContext empty() {
-        return new PostalActionContext(null, null, null, null);
+        return new PostalActionContext(null, null, null, null, null);
     }
 }

@@ -1,24 +1,37 @@
 package net.bluafolkloro.overdeterminism.everechoes.postal;
 
 public final class OpenDomainPolicies {
-    public static final DomainCreationPolicy CREATION = OpenDomainPolicies::canCreate;
+    public static final DomainCreationPolicy CREATION = new OpenCreationPolicy();
     public static final DomainMembershipPolicy MEMBERSHIP = new OpenMembershipPolicy();
     public static final DomainExitPolicy EXIT = new OpenExitPolicy();
 
     private OpenDomainPolicies() {
     }
 
-    private static PolicyDecision canCreate(PostalNetwork network, DomainCreationRequest request) {
-        if (PostalCodes.canonicalDomain(request.domainCode()).isEmpty()) {
-            return PolicyDecision.deny("message.everechoes.post_box.invalid_domain");
+    private static final class OpenCreationPolicy implements DomainCreationPolicy {
+        @Override
+        public String policyId() {
+            return PostalPolicies.OPEN;
         }
-        if (network.findLiveDomainByCode(request.domainCode()).isPresent()) {
-            return PolicyDecision.deny("message.everechoes.post_box.domain_exists");
+
+        @Override
+        public PolicyDecision canCreate(PostalNetwork network, DomainCreationRequest request) {
+            if (PostalCodes.canonicalDomain(request.domainCode()).isEmpty()) {
+                return PolicyDecision.deny("message.everechoes.post_box.invalid_domain");
+            }
+            if (network.findDomainByCode(request.domainCode()).isPresent()) {
+                return PolicyDecision.deny("message.everechoes.post_box.domain_exists");
+            }
+            return PolicyDecision.allow();
         }
-        return PolicyDecision.allow();
     }
 
     private static final class OpenMembershipPolicy implements DomainMembershipPolicy {
+        @Override
+        public String policyId() {
+            return PostalPolicies.OPEN;
+        }
+
         @Override
         public PolicyDecision canJoin(PostalNetwork network, DomainJoinRequest request) {
             return network.domain(request.domainId())
@@ -34,6 +47,11 @@ public final class OpenDomainPolicies {
     }
 
     private static final class OpenExitPolicy implements DomainExitPolicy {
+        @Override
+        public String policyId() {
+            return PostalPolicies.OPEN;
+        }
+
         @Override
         public PolicyDecision canRequestExit(PostalNetwork network, DomainMembership membership) {
             if (membership.state() != MembershipState.ACTIVE) {

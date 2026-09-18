@@ -19,7 +19,7 @@ public record PostBoxConfigPayload(Action action, BlockPos pos, String domainCod
 
     public enum Action {
         CREATE_DISTRICT,
-        JOIN_NEARBY,
+        JOIN_DISTRICT,
         ESTABLISH_DOMAIN,
         JOIN_DOMAIN,
         LEAVE_DOMAIN,

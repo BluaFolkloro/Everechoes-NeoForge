@@ -111,9 +111,9 @@ public class PostBoxBlockEntity extends BlockEntity implements MenuProvider {
         return membershipState;
     }
 
-    public PostalActionContext actionContext() {
+    public PostalActionContext actionContext(@Nullable UUID actorId) {
         ResourceLocation dimension = level == null ? ResourceLocation.fromNamespaceAndPath("minecraft", "overworld") : level.dimension().location();
-        return new PostalActionContext(districtId, nodeId(), dimension, getBlockPos());
+        return new PostalActionContext(districtId, nodeId(), actorId, dimension, getBlockPos());
     }
 
     public boolean hasActiveMembership() {

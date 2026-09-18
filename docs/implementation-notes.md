@@ -37,7 +37,10 @@
 - 只接受已封蜡且带收件地址的信件。
 - 放入时写入 `Waybill`（待承运人领取）。
 - 玩家取出时把 `Waybill` 改为玩家承运。
-- 每个邮筒有稳定的内部 `districtId`；是否入网由 SavedData 中的 `DomainMembership` 决定。
+- 每个邮筒有稳定的内部 `nodeId`；多个节点可共享一个 `districtId`。是否入网由 SavedData 中的 `DomainMembership` 决定。
+- `DistrictCoverage` 保存邮区的连续区块集合；新邮区从主邮筒所在区块开始，附属邮筒必须位于辖区内。区块可被多个邮区同时覆盖；反向索引是 `chunk → Set<districtId>` 缓存，可从辖区重建。
+- `PostalNetwork` 建立区块到邮区的空间索引，并从有效邮区实时派生邮域范围；邮域不保存重复辖区。
+- `PostalExplorationTracker` 只在服务端玩家进入新块时记录坐标，不扫描区块文件，也不主动加载区块。
 - `PostalNetwork` 使用 `schemaVersion`。旧版邮域表读取后丢弃，只写新格式。旧邮筒库存保留，绑定不恢复。
 - 潜行右键打开入网界面，提交建立/加入/退出请求。
 - 仅 `ACTIVE` 邮区接收新邮件；标题显示当前 `domainCode` 与邮区号。
@@ -95,7 +98,7 @@
 - `MailBoxAddress`
 - `PlayerAddress`
 
-`MailBoxAddress` 分开保存内部 UUID 与显示快照。当前显示格式为暂定的 `EV12 7QF`。旧的 `AAAXX-YYY` 仍可低成本解析。邮筒只拥有外码；完整地址属于未来的收件端。
+`MailBoxAddress` 分开保存内部 UUID 与显示快照。当前显示格式为暂定的 `EV12 7QF`。旧的 `AAAXX-YYY` 不再猜测转换，避免多个旧地址被错误合并。邮筒只拥有外码；完整地址属于未来的收件端。
 
 `MailBoxAddress` 表示未来收信端 `mail_box` 的地址，不表示当前负责发信的 `post_box`。
 

@@ -91,6 +91,7 @@ public class PostBoxBlock extends BaseEntityBlock {
 
     public static void openConfig(ServerPlayer player, ServerLevel level, BlockPos pos, PostBoxBlockEntity postBox) {
         PostalNetwork network = PostalNetwork.get(level);
+        postBox.syncFromNetwork(level);
         player.openMenu(
                 new SimpleMenuProvider(
                         (containerId, inventory, menuPlayer) -> new PostBoxConfigMenu(
@@ -101,7 +102,7 @@ public class PostBoxBlock extends BaseEntityBlock {
                         ),
                         Component.translatable("gui.everechoes.post_box.config")
                 ),
-                buf -> PostBoxConfigMenu.writeOpeningData(buf, pos, postBox, network)
+                buf -> PostBoxConfigMenu.writeOpeningData(buf, pos, postBox, network, player.getUUID())
         );
     }
 

@@ -10,13 +10,11 @@ import java.util.regex.Pattern;
 public final class PostalCodes {
     public static final int DOMAIN_MAX = 2;
     public static final int DISTRICT_MAX = 99;
-    public static final int NEARBY_NODE_RANGE = 128;
     public static final String INWARD_LETTERS = "ABDEFGHJLNPQRSTUWXYZ";
 
     private static final Pattern UK_COMPACT = Pattern.compile(
             "^([A-Za-z]{1,2})([1-9][0-9]?[A-Za-z]?)([0-9])([A-Za-z]{2})$"
     );
-    private static final Pattern LEGACY_FULL = Pattern.compile("^([A-Za-z]{1,3})([1-9][0-9]?)-([0-9A-Fa-f]{1,3})$");
     private static final Pattern DOMAIN = Pattern.compile("^[A-Za-z]{1,2}$");
     private static final Pattern DISTRICT = Pattern.compile("^[1-9][0-9]?[A-Za-z]?$");
     private static final Pattern AUTO_DISTRICT = Pattern.compile("^[1-9][0-9]?$");
@@ -71,18 +69,6 @@ public final class PostalCodes {
             return codes(uk.group(1), uk.group(2), uk.group(3) + uk.group(4));
         }
 
-        Matcher legacy = LEGACY_FULL.matcher(raw.strip());
-        if (legacy.matches()) {
-            String domainRaw = legacy.group(1);
-            if (domainRaw.length() > DOMAIN_MAX) {
-                domainRaw = domainRaw.substring(0, DOMAIN_MAX);
-            }
-            Optional<String> domain = canonicalDomain(domainRaw);
-            Optional<String> district = canonicalDistrict(legacy.group(2));
-            if (domain.isPresent() && district.isPresent()) {
-                return Optional.of(new ParsedPostalCode(domain.get(), district.get(), "1AA"));
-            }
-        }
         return Optional.empty();
     }
 

@@ -24,13 +24,11 @@ class AddressSerializerTest {
     }
 
     @Test
-    void mailboxPostalCodeFallbackParsesLegacyAndUk() {
+    void mailboxPostalCodeFallbackRejectsLegacyAndParsesUk() {
         JsonObject legacy = new JsonObject();
         legacy.addProperty("type", "mailbox");
         legacy.addProperty("postalCode", "ab1-ff");
-        MailBoxAddress legacyAddress = (MailBoxAddress) AddressSerializer.CODEC.parse(JsonOps.INSTANCE, legacy).result().orElseThrow();
-        assertEquals("AB", legacyAddress.domainCode());
-        assertEquals("1", legacyAddress.districtCode());
+        assertTrue(AddressSerializer.CODEC.parse(JsonOps.INSTANCE, legacy).error().isPresent());
 
         JsonObject uk = new JsonObject();
         uk.addProperty("type", "mailbox");

@@ -32,7 +32,7 @@ public class PostBoxConfigScreen extends AbstractContainerScreen<PostBoxConfigMe
     @Nullable
     private CycleButton<String> domainCycle;
     @Nullable
-    private CycleButton<PostBoxConfigMenu.NearbyDistrict> nearbyCycle;
+    private CycleButton<PostBoxConfigMenu.CoveringDistrict> districtCycle;
 
     public PostBoxConfigScreen(PostBoxConfigMenu menu, Inventory playerInv, Component title) {
         super(menu, playerInv, title);
@@ -50,18 +50,39 @@ public class PostBoxConfigScreen extends AbstractContainerScreen<PostBoxConfigMe
                     .bounds(leftPos + 8, y, 160, 20)
                     .build());
             y += 24;
-            List<PostBoxConfigMenu.NearbyDistrict> nearby = menu.nearbyDistricts();
-            if (!nearby.isEmpty()) {
-                nearbyCycle = addRenderableWidget(CycleButton.builder((PostBoxConfigMenu.NearbyDistrict value) -> Component.literal(value.label()))
-                        .withValues(nearby)
-                        .withInitialValue(nearby.getFirst())
-                        .create(leftPos + 8, y, 80, 20, Component.translatable("gui.everechoes.post_box.nearby"), (button, value) -> {
+            List<PostBoxConfigMenu.CoveringDistrict> joinable = menu.joinableDistricts();
+            if (!joinable.isEmpty()) {
+                List<PostBoxConfigMenu.CoveringDistrict> choices = new java.util.ArrayList<>();
+                PostBoxConfigMenu.CoveringDistrict prompt = new PostBoxConfigMenu.CoveringDistrict(
+                        null,
+                        Component.translatable("gui.everechoes.post_box.choose_district").getString(),
+                        null,
+                        null,
+                        true,
+                        null
+                );
+                if (joinable.size() > 1) {
+                    choices.add(prompt);
+                }
+                choices.addAll(joinable);
+                districtCycle = addRenderableWidget(CycleButton.builder((PostBoxConfigMenu.CoveringDistrict value) -> Component.literal(value.label()))
+                        .withValues(choices)
+                        .withInitialValue(choices.getFirst())
+                        .create(leftPos + 8, y, 80, 20, Component.translatable("gui.everechoes.post_box.covering_district"), (button, value) -> {
                         }));
-                addRenderableWidget(Button.builder(Component.translatable("gui.everechoes.post_box.join_nearby"), button -> send(
-                                PostBoxConfigPayload.Action.JOIN_NEARBY,
-                                "",
-                                nearbyCycle == null ? nearby.getFirst().districtId() : nearbyCycle.getValue().districtId()
-                        ))
+                addRenderableWidget(Button.builder(Component.translatable("gui.everechoes.post_box.join_district"), button -> {
+                            UUID target = districtCycle == null ? null : districtCycle.getValue().districtId();
+                            if (target == null) {
+                                if (minecraft != null && minecraft.player != null) {
+                                    minecraft.player.displayClientMessage(
+                                            Component.translatable("gui.everechoes.post_box.choose_district"),
+                                            true
+                                    );
+                                }
+                                return;
+                            }
+                            send(PostBoxConfigPayload.Action.JOIN_DISTRICT, "", target);
+                        })
                         .bounds(leftPos + 92, y, 76, 20)
                         .build());
                 y += 24;
@@ -120,6 +141,13 @@ public class PostBoxConfigScreen extends AbstractContainerScreen<PostBoxConfigMe
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
         graphics.drawString(font, title, 8, 8, INK, false);
         graphics.drawString(font, statusLine(), 8, 22, INK, false);
+        if (menu.districtId() == null && !menu.blockedDistricts().isEmpty()) {
+            PostBoxConfigMenu.CoveringDistrict blocked = menu.blockedDistricts().getFirst();
+            Component reason = blocked.reasonKey() == null
+                    ? Component.translatable("gui.everechoes.post_box.covered_not_joinable")
+                    : Component.translatable(blocked.reasonKey());
+            graphics.drawString(font, reason, 8, 32, INK, false);
+        }
     }
 
     private Component statusLine() {

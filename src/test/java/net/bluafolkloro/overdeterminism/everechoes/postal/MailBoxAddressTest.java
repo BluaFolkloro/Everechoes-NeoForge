@@ -32,6 +32,8 @@ class MailBoxAddressTest {
         assertTrue(MailBoxAddress.parse("EV12 7CI").isEmpty());
         assertTrue(MailBoxAddress.parse("EV12").isEmpty());
         assertTrue(MailBoxAddress.parse("ABC12 1AA").isEmpty());
+        assertTrue(MailBoxAddress.parse("AB1-FF").isEmpty());
+        assertTrue(MailBoxAddress.parse("ABC1-001").isEmpty());
     }
 
     @Test

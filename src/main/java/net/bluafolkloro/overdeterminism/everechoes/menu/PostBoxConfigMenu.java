@@ -1,6 +1,7 @@
 package net.bluafolkloro.overdeterminism.everechoes.menu;
 
 import net.bluafolkloro.overdeterminism.everechoes.block.entity.PostBoxBlockEntity;
+import net.bluafolkloro.overdeterminism.everechoes.postal.DomainLifecycle;
 import net.bluafolkloro.overdeterminism.everechoes.postal.DomainMembership;
 import net.bluafolkloro.overdeterminism.everechoes.postal.MembershipState;
 import net.bluafolkloro.overdeterminism.everechoes.postal.NodeRole;
@@ -18,6 +19,7 @@ import net.minecraft.world.item.ItemStack;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -34,10 +36,10 @@ public class PostBoxConfigMenu extends AbstractContainerMenu {
     @Nullable
     private final MembershipState membershipState;
     private final List<String> domainCodes;
-    private final List<NearbyDistrict> nearbyDistricts;
+    private final List<CoveringDistrict> coveringDistricts;
 
     public PostBoxConfigMenu(int containerId, Inventory playerInv, BlockPos pos, PostBoxBlockEntity postBox) {
-        this(containerId, playerInv, snapshot(pos, postBox));
+        this(containerId, playerInv, snapshot(pos, postBox, playerInv.player.getUUID()));
     }
 
     public PostBoxConfigMenu(int containerId, Inventory playerInv, FriendlyByteBuf extraData) {
@@ -53,11 +55,11 @@ public class PostBoxConfigMenu extends AbstractContainerMenu {
         this.districtCode = snapshot.districtCode;
         this.membershipState = snapshot.membershipState;
         this.domainCodes = snapshot.domainCodes;
-        this.nearbyDistricts = snapshot.nearbyDistricts;
+        this.coveringDistricts = snapshot.coveringDistricts;
     }
 
-    public static void writeOpeningData(FriendlyByteBuf buffer, BlockPos pos, PostBoxBlockEntity postBox, PostalNetwork network) {
-        Snapshot snapshot = snapshot(pos, postBox, network);
+    public static void writeOpeningData(FriendlyByteBuf buffer, BlockPos pos, PostBoxBlockEntity postBox, PostalNetwork network, UUID actorId) {
+        Snapshot snapshot = snapshot(pos, postBox, network, actorId);
         buffer.writeBlockPos(snapshot.pos);
         buffer.writeBoolean(snapshot.districtId != null);
         if (snapshot.districtId != null) {
@@ -71,10 +73,14 @@ public class PostBoxConfigMenu extends AbstractContainerMenu {
         for (String code : snapshot.domainCodes) {
             buffer.writeUtf(code, 8);
         }
-        buffer.writeVarInt(snapshot.nearbyDistricts.size());
-        for (NearbyDistrict nearby : snapshot.nearbyDistricts) {
-            buffer.writeUUID(nearby.districtId());
-            buffer.writeUtf(nearby.label(), 16);
+        buffer.writeVarInt(snapshot.coveringDistricts.size());
+        for (CoveringDistrict district : snapshot.coveringDistricts) {
+            buffer.writeUUID(district.districtId());
+            buffer.writeUtf(district.label(), 16);
+            buffer.writeUtf(district.domainCode() == null ? "" : district.domainCode(), 8);
+            buffer.writeUtf(district.districtCode() == null ? "" : district.districtCode(), 8);
+            buffer.writeBoolean(district.joinable());
+            buffer.writeUtf(district.reasonKey() == null ? "" : district.reasonKey(), 64);
         }
     }
 
@@ -111,8 +117,16 @@ public class PostBoxConfigMenu extends AbstractContainerMenu {
         return domainCodes;
     }
 
-    public List<NearbyDistrict> nearbyDistricts() {
-        return nearbyDistricts;
+    public List<CoveringDistrict> coveringDistricts() {
+        return coveringDistricts;
+    }
+
+    public List<CoveringDistrict> joinableDistricts() {
+        return coveringDistricts.stream().filter(CoveringDistrict::joinable).toList();
+    }
+
+    public List<CoveringDistrict> blockedDistricts() {
+        return coveringDistricts.stream().filter(district -> !district.joinable()).toList();
     }
 
     public boolean inDomain() {
@@ -135,24 +149,43 @@ public class PostBoxConfigMenu extends AbstractContainerMenu {
         return dx * dx + dy * dy + dz * dz <= 64.0;
     }
 
-    private static Snapshot snapshot(BlockPos pos, PostBoxBlockEntity postBox) {
+    private static Snapshot snapshot(BlockPos pos, PostBoxBlockEntity postBox, UUID actorId) {
         PostalNetwork network = postBox.getLevel() instanceof ServerLevel serverLevel
                 ? PostalNetwork.get(serverLevel)
                 : new PostalNetwork();
-        return snapshot(pos, postBox, network);
+        return snapshot(pos, postBox, network, actorId);
     }
 
-    private static Snapshot snapshot(BlockPos pos, PostBoxBlockEntity postBox, PostalNetwork network) {
-        List<NearbyDistrict> nearby = new ArrayList<>();
+    private static Snapshot snapshot(BlockPos pos, PostBoxBlockEntity postBox, PostalNetwork network, UUID actorId) {
+        List<CoveringDistrict> covering = new ArrayList<>();
         if (postBox.districtId() == null && postBox.getLevel() != null) {
-            for (PostalDistrict district : network.nearbyJoinableDistricts(postBox.getLevel().dimension().location(), pos)) {
+            for (PostalNetwork.CoverageMatch match : network.coverageMatches(postBox.nodeId(), postBox.actionContext(actorId))) {
+                PostalDistrict district = match.district();
                 DomainMembership membership = network.membership(district.districtId()).orElse(null);
                 PostalDomain domain = membership == null ? null : network.domain(membership.domainId()).orElse(null);
-                String label = domain != null && membership != null
-                        ? PostalCodes.formatOutward(domain.domainCode(), membership.districtCode())
+                boolean showOutward = membership != null
+                        && membership.isDeliveryEndpoint()
+                        && domain != null
+                        && domain.lifecycle() != DomainLifecycle.HISTORICAL;
+                String domainCode = showOutward ? domain.domainCode() : null;
+                String districtCode = showOutward ? membership.districtCode() : null;
+                String label = domainCode != null && districtCode != null
+                        ? PostalCodes.formatOutward(domainCode, districtCode)
                         : district.districtId().toString().substring(0, 8);
-                nearby.add(new NearbyDistrict(district.districtId(), label));
+                covering.add(new CoveringDistrict(
+                        district.districtId(),
+                        label,
+                        domainCode,
+                        districtCode,
+                        match.joinable(),
+                        match.reasonKey()
+                ));
             }
+            covering.sort(Comparator
+                    .comparing((CoveringDistrict district) -> district.domainCode() == null ? "" : district.domainCode())
+                    .thenComparing(district -> district.districtCode() == null ? "" : district.districtCode())
+                    .thenComparing(CoveringDistrict::label)
+                    .thenComparing(district -> district.districtId().toString()));
         }
         return new Snapshot(
                 pos,
@@ -162,7 +195,7 @@ public class PostBoxConfigMenu extends AbstractContainerMenu {
                 postBox.districtCode(),
                 postBox.membershipState(),
                 network.liveDomainCodes(),
-                nearby
+                covering
         );
     }
 
@@ -178,10 +211,17 @@ public class PostBoxConfigMenu extends AbstractContainerMenu {
         for (int index = 0; index < domainCount; index++) {
             domainCodes.add(extraData.readUtf(8));
         }
-        int nearbyCount = extraData.readVarInt();
-        List<NearbyDistrict> nearby = new ArrayList<>();
-        for (int index = 0; index < nearbyCount; index++) {
-            nearby.add(new NearbyDistrict(extraData.readUUID(), extraData.readUtf(16)));
+        int coverageCount = extraData.readVarInt();
+        List<CoveringDistrict> covering = new ArrayList<>();
+        for (int index = 0; index < coverageCount; index++) {
+            covering.add(new CoveringDistrict(
+                    extraData.readUUID(),
+                    extraData.readUtf(16),
+                    emptyToNull(extraData.readUtf(8)),
+                    emptyToNull(extraData.readUtf(8)),
+                    extraData.readBoolean(),
+                    emptyToNull(extraData.readUtf(64))
+            ));
         }
         return new Snapshot(
                 pos,
@@ -191,7 +231,7 @@ public class PostBoxConfigMenu extends AbstractContainerMenu {
                 districtCode,
                 state.isEmpty() ? null : MembershipState.valueOf(state),
                 domainCodes,
-                nearby
+                covering
         );
     }
 
@@ -200,7 +240,14 @@ public class PostBoxConfigMenu extends AbstractContainerMenu {
         return value == null || value.isEmpty() ? null : value;
     }
 
-    public record NearbyDistrict(UUID districtId, String label) {
+    public record CoveringDistrict(
+            @Nullable UUID districtId,
+            String label,
+            @Nullable String domainCode,
+            @Nullable String districtCode,
+            boolean joinable,
+            @Nullable String reasonKey
+    ) {
     }
 
     private record Snapshot(
@@ -211,7 +258,7 @@ public class PostBoxConfigMenu extends AbstractContainerMenu {
             @Nullable String districtCode,
             @Nullable MembershipState membershipState,
             List<String> domainCodes,
-            List<NearbyDistrict> nearbyDistricts
+            List<CoveringDistrict> coveringDistricts
     ) {
     }
 }

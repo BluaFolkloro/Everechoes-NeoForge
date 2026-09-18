@@ -12,20 +12,28 @@ import net.minecraft.world.level.saveddata.SavedData;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 public class PostalNetwork extends SavedData {
-    public static final int SCHEMA_VERSION = 4;
+    public static final int SCHEMA_VERSION = 5;
     private static final String DATA_NAME = "everechoes_postal_network";
 
     private final Map<UUID, PostalDomain> domains = new LinkedHashMap<>();
     private final Map<UUID, PostalDistrict> districts = new LinkedHashMap<>();
     private final Map<UUID, DomainMembership> memberships = new LinkedHashMap<>();
     private final Map<UUID, PostBoxNode> nodes = new LinkedHashMap<>();
+    private final Map<UUID, DistrictCoverage> coverages = new LinkedHashMap<>();
+    private final Map<PostalChunk, Set<UUID>> coverageIndex = new LinkedHashMap<>();
+    private final Map<ResourceLocation, Set<Long>> exploredChunks = new LinkedHashMap<>();
     private final DomainCreationPolicy creationPolicy;
     private final DomainMembershipPolicy membershipPolicy;
     private final DomainExitPolicy exitPolicy;
@@ -37,7 +45,7 @@ public class PostalNetwork extends SavedData {
                 OpenDomainPolicies.CREATION,
                 OpenDomainPolicies.MEMBERSHIP,
                 OpenDomainPolicies.EXIT,
-                NearbyNodeAdmissionPolicy.INSTANCE,
+                CoveredNodeAdmissionPolicy.INSTANCE,
                 PostalPolicies.interaction(PostalPolicies.ALLOW_CONFIG)
         );
     }
@@ -47,7 +55,7 @@ public class PostalNetwork extends SavedData {
             DomainMembershipPolicy membershipPolicy,
             DomainExitPolicy exitPolicy
     ) {
-        this(creationPolicy, membershipPolicy, exitPolicy, NearbyNodeAdmissionPolicy.INSTANCE, PostalPolicies.interaction(PostalPolicies.ALLOW_CONFIG));
+        this(creationPolicy, membershipPolicy, exitPolicy, CoveredNodeAdmissionPolicy.INSTANCE, PostalPolicies.interaction(PostalPolicies.ALLOW_CONFIG));
     }
 
     public PostalNetwork(
@@ -87,6 +95,114 @@ public class PostalNetwork extends SavedData {
         return Optional.ofNullable(nodes.get(nodeId));
     }
 
+    public Optional<DistrictCoverage> coverage(UUID districtId) {
+        return Optional.ofNullable(coverages.get(districtId));
+    }
+
+    public List<PostalDistrict> districtsAt(ResourceLocation dimension, BlockPos position) {
+        return districtsAt(PostalChunk.at(dimension, position));
+    }
+
+    public List<PostalDistrict> districtsAt(PostalChunk chunk) {
+        Set<UUID> ids = coverageIndex.get(chunk);
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        List<PostalDistrict> result = new ArrayList<>();
+        for (UUID districtId : Set.copyOf(ids)) {
+            PostalDistrict district = districts.get(districtId);
+            if (district != null) {
+                result.add(district);
+            }
+        }
+        return Collections.unmodifiableList(result);
+    }
+
+    public List<PostalDistrict> joinableDistrictsAt(UUID nodeId, PostalActionContext context) {
+        List<PostalDistrict> joinable = new ArrayList<>();
+        for (CoverageMatch match : coverageMatches(nodeId, context)) {
+            if (match.joinable()) {
+                joinable.add(match.district());
+            }
+        }
+        return Collections.unmodifiableList(joinable);
+    }
+
+    public List<CoverageMatch> coverageMatches(UUID nodeId, PostalActionContext context) {
+        if (context.dimension() == null || context.position() == null) {
+            return List.of();
+        }
+        PostBoxNode node = nodes.get(nodeId);
+        List<CoverageMatch> matches = new ArrayList<>();
+        for (PostalDistrict district : districtsAt(context.dimension(), context.position())) {
+            if (node == null) {
+                matches.add(new CoverageMatch(district, false, "message.everechoes.post_box.unknown_district"));
+                continue;
+            }
+            if (node.districtId() != null) {
+                matches.add(new CoverageMatch(district, false, "message.everechoes.post_box.node_already_assigned"));
+                continue;
+            }
+            PolicyDecision interaction = interactionPolicy.canSubmit(context);
+            if (!interaction.allowed()) {
+                matches.add(new CoverageMatch(district, false, interaction.reasonKey()));
+                continue;
+            }
+            PolicyDecision admission = nodeAdmissionPolicy.canAdmit(
+                    this,
+                    new NodeJoinRequest(nodeId, district.districtId(), context, true)
+            );
+            matches.add(new CoverageMatch(district, admission.allowed(), admission.reasonKey()));
+        }
+        return Collections.unmodifiableList(matches);
+    }
+
+    public void rebuildCoverageIndex() {
+        coverageIndex.clear();
+        for (DistrictCoverage coverage : coverages.values()) {
+            indexCoverage(coverage);
+        }
+    }
+
+    public record CoverageMatch(PostalDistrict district, boolean joinable, @Nullable String reasonKey) {
+    }
+
+    public boolean isExplored(PostalChunk chunk) {
+        return exploredChunks.getOrDefault(chunk.dimension(), Set.of()).contains(chunk.packed());
+    }
+
+    public boolean recordExplored(PostalChunk chunk) {
+        boolean added = exploredChunks.computeIfAbsent(chunk.dimension(), ignored -> new LinkedHashSet<>()).add(chunk.packed());
+        if (added) {
+            setDirty();
+        }
+        return added;
+    }
+
+    public Set<PostalChunk> exploredChunks(ResourceLocation dimension) {
+        Set<PostalChunk> result = new LinkedHashSet<>();
+        for (long packed : exploredChunks.getOrDefault(dimension, Set.of())) {
+            result.add(PostalChunk.unpack(dimension, packed));
+        }
+        return Set.copyOf(result);
+    }
+
+    public Set<PostalChunk> domainCoverage(UUID domainId) {
+        Set<PostalChunk> result = new LinkedHashSet<>();
+        for (DomainMembership membership : memberships.values()) {
+            if (!membership.domainId().equals(domainId)
+                    || !membership.isDeliveryEndpoint()
+                    || !isServedDistrict(membership.districtId())) {
+                continue;
+            }
+            DistrictCoverage coverage = coverages.get(membership.districtId());
+            if (coverage != null) {
+                result.addAll(coverage.chunks());
+            }
+        }
+        return Set.copyOf(result);
+    }
+
     public List<PostBoxNode> nodesOf(UUID districtId) {
         PostalDistrict district = districts.get(districtId);
         if (district == null) {
@@ -120,27 +236,39 @@ public class PostalNetwork extends SavedData {
                 .findFirst());
     }
 
+    public Optional<PostalDomain> findDomainByCode(String rawCode) {
+        return PostalCodes.canonicalDomain(rawCode).flatMap(code -> domains.values().stream()
+                .filter(domain -> domain.domainCode().equals(code))
+                .findFirst());
+    }
+
     public Optional<PostalDistrict> findDistrictByCode(UUID domainId, String districtCode) {
         return PostalCodes.canonicalDistrict(districtCode).flatMap(code -> memberships.values().stream()
                 .filter(membership -> membership.domainId().equals(domainId) && membership.districtCode().equals(code))
-                .filter(DomainMembership::isDeliveryEndpoint)
+                .filter(membership -> isActiveDeliveryDistrict(membership.districtId()))
                 .map(membership -> districts.get(membership.districtId()))
                 .findFirst());
     }
 
     public boolean isActiveDeliveryDistrict(UUID districtId) {
         DomainMembership membership = memberships.get(districtId);
-        PostalDistrict district = districts.get(districtId);
+        PostalDomain domain = membership == null ? null : domains.get(membership.domainId());
         return membership != null
                 && membership.isDeliveryEndpoint()
-                && district != null
-                && !district.isEmpty()
-                && hubOf(districtId).isPresent();
+                && domain != null
+                && domain.lifecycle() == DomainLifecycle.ACTIVE
+                && isServedDistrict(districtId);
     }
 
     public boolean isServedDistrict(UUID districtId) {
         PostalDistrict district = districts.get(districtId);
-        return district != null && !district.isEmpty() && hubOf(districtId).isPresent();
+        DistrictCoverage coverage = coverages.get(districtId);
+        return district != null
+                && !district.isEmpty()
+                && coverage != null
+                && hubOf(districtId).isPresent()
+                && nodesOf(districtId).stream().allMatch(node ->
+                coverage.contains(PostalChunk.at(node.dimension(), node.position())));
     }
 
     public MailBoxAddress resolveAddress(MailBoxAddress display) {
@@ -153,6 +281,7 @@ public class PostalNetwork extends SavedData {
     }
 
     public PostBoxNode registerNode(UUID nodeId, ResourceLocation dimension, BlockPos position) {
+        recordExplored(PostalChunk.at(dimension, position));
         PostBoxNode existing = nodes.get(nodeId);
         PostBoxNode node = existing == null
                 ? new PostBoxNode(nodeId, null, NodeRole.COLLECTION, dimension, position, NodeState.REGISTERED)
@@ -170,9 +299,17 @@ public class PostalNetwork extends SavedData {
         if (node == null || node.districtId() != null) {
             return Optional.empty();
         }
+        PostalChunk initialChunk = PostalChunk.at(node.dimension(), node.position());
         UUID districtId = UUID.randomUUID();
         PostalDistrict district = new PostalDistrict(districtId, List.of(hubNodeId), 1);
+        DistrictCoverage coverage = new DistrictCoverage(
+                districtId,
+                Set.of(initialChunk),
+                1
+        );
         districts.put(districtId, district);
+        coverages.put(districtId, coverage);
+        indexCoverage(coverage);
         nodes.put(hubNodeId, node.withDistrict(districtId, NodeRole.HUB));
         setDirty();
         return Optional.of(district);
@@ -193,6 +330,93 @@ public class PostalNetwork extends SavedData {
         nodes.put(nodeId, joined);
         setDirty();
         return Optional.of(joined);
+    }
+
+    public Optional<DistrictCoverage> replaceDistrictCoverage(
+            UUID districtId,
+            Collection<PostalChunk> proposedChunks,
+            PostalActionContext context
+    ) {
+        DistrictCoverage current = coverages.get(districtId);
+        if (current == null) {
+            return Optional.empty();
+        }
+        return replaceDistrictCoverage(districtId, proposedChunks, current.revision(), context);
+    }
+
+    public Optional<DistrictCoverage> replaceDistrictCoverage(
+            UUID districtId,
+            Collection<PostalChunk> proposedChunks,
+            int expectedRevision,
+            PostalActionContext context
+    ) {
+        PolicyDecision validation = validateCoverageReplacement(districtId, proposedChunks, expectedRevision, context);
+        if (!validation.allowed()) {
+            return Optional.empty();
+        }
+        Set<PostalChunk> proposed = Set.copyOf(proposedChunks);
+        DistrictCoverage current = coverages.get(districtId);
+        DistrictCoverage updated = current.withChunks(proposed);
+        unindexCoverage(current);
+        coverages.put(districtId, updated);
+        indexCoverage(updated);
+        setDirty();
+        return Optional.of(updated);
+    }
+
+    public PolicyDecision validateCoverageReplacement(
+            UUID districtId,
+            Collection<PostalChunk> proposedChunks,
+            PostalActionContext context
+    ) {
+        DistrictCoverage current = coverages.get(districtId);
+        int expectedRevision = current == null ? -1 : current.revision();
+        return validateCoverageReplacement(districtId, proposedChunks, expectedRevision, context);
+    }
+
+    public PolicyDecision validateCoverageReplacement(
+            UUID districtId,
+            Collection<PostalChunk> proposedChunks,
+            int expectedRevision,
+            PostalActionContext context
+    ) {
+        PolicyDecision interaction = interactionPolicy.canSubmit(context);
+        if (!interaction.allowed()) {
+            return interaction;
+        }
+        if (!districts.containsKey(districtId)) {
+            return PolicyDecision.deny("message.everechoes.coverage.unknown_district");
+        }
+        DistrictCoverage current = coverages.get(districtId);
+        if (current == null || current.revision() != expectedRevision) {
+            return PolicyDecision.deny("message.everechoes.coverage.stale_revision");
+        }
+        if (proposedChunks == null || proposedChunks.isEmpty()) {
+            return PolicyDecision.deny("message.everechoes.coverage.empty");
+        }
+        if (proposedChunks.size() > DistrictCoverage.MAX_CHUNKS) {
+            return PolicyDecision.deny("message.everechoes.coverage.too_large");
+        }
+        if (proposedChunks.stream().anyMatch(Objects::isNull)) {
+            return PolicyDecision.deny("message.everechoes.coverage.invalid");
+        }
+        Set<PostalChunk> proposed = Set.copyOf(proposedChunks);
+        if (proposed.stream().map(PostalChunk::dimension).distinct().count() != 1) {
+            return PolicyDecision.deny("message.everechoes.coverage.multiple_dimensions");
+        }
+        if (!DistrictCoverage.isValidShape(proposed)) {
+            return PolicyDecision.deny("message.everechoes.coverage.disconnected");
+        }
+        if (proposed.stream().anyMatch(chunk -> !isExplored(chunk))) {
+            return PolicyDecision.deny("message.everechoes.coverage.unexplored");
+        }
+        boolean excludesNode = nodesOf(districtId).stream()
+                .map(node -> PostalChunk.at(node.dimension(), node.position()))
+                .anyMatch(chunk -> !proposed.contains(chunk));
+        if (excludesNode) {
+            return PolicyDecision.deny("message.everechoes.coverage.excludes_node");
+        }
+        return PolicyDecision.allow();
     }
 
     public Optional<PostBoxNode> leaveDistrict(UUID nodeId) {
@@ -222,29 +446,24 @@ public class PostalNetwork extends SavedData {
         PostalDistrict district = districts.get(districtId);
         if (district != null) {
             PostalDistrict updated = district.removing(nodeId);
-            districts.put(districtId, updated);
-            if (node.role() == NodeRole.HUB) {
+            if (updated.isEmpty()) {
+                removeEmptyDistrict(updated);
+            } else {
+                districts.put(districtId, updated);
+            }
+            if (!updated.isEmpty() && node.role() == NodeRole.HUB) {
                 promoteHub(updated);
             }
-            refreshDistrictService(districtId);
+            if (!updated.isEmpty()) {
+                refreshDistrictService(districtId);
+            }
         }
         setDirty();
     }
 
-    public List<PostalDistrict> nearbyJoinableDistricts(ResourceLocation dimension, BlockPos position) {
-        List<PostalDistrict> result = new ArrayList<>();
-        long rangeSq = (long) PostalCodes.NEARBY_NODE_RANGE * PostalCodes.NEARBY_NODE_RANGE;
-        for (PostalDistrict district : districts.values()) {
-            if (district.isEmpty()) {
-                continue;
-            }
-            boolean nearby = nodesOf(district.districtId()).stream().anyMatch(node ->
-                    node.dimension().equals(dimension) && node.position().distSqr(position) <= rangeSq);
-            if (nearby) {
-                result.add(district);
-            }
-        }
-        return result;
+    public boolean covers(UUID districtId, ResourceLocation dimension, BlockPos position) {
+        DistrictCoverage coverage = coverages.get(districtId);
+        return coverage != null && coverage.contains(PostalChunk.at(dimension, position));
     }
 
     public Optional<PostalDomain> establishAndJoin(UUID districtId, String rawCode, PostalActionContext context, long joinedAt) {
@@ -272,9 +491,9 @@ public class PostalNetwork extends SavedData {
                 domainCode.get(),
                 DomainLifecycle.DORMANT,
                 1,
-                PostalPolicies.OPEN,
-                PostalPolicies.OPEN,
-                PostalPolicies.OPEN
+                creationPolicy.policyId(),
+                membershipPolicy.policyId(),
+                exitPolicy.policyId()
         );
         domains.put(domain.domainId(), domain);
         Optional<DomainMembership> membership = requestJoin(districtId, domain.domainId(), context, joinedAt);
@@ -303,9 +522,9 @@ public class PostalNetwork extends SavedData {
                 domainCode.get(),
                 DomainLifecycle.DORMANT,
                 1,
-                PostalPolicies.OPEN,
-                PostalPolicies.OPEN,
-                PostalPolicies.OPEN
+                creationPolicy.policyId(),
+                membershipPolicy.policyId(),
+                exitPolicy.policyId()
         );
         domains.put(domain.domainId(), domain);
         setDirty();
@@ -329,7 +548,8 @@ public class PostalNetwork extends SavedData {
         if (existing != null && existing.state() != MembershipState.DETACHED) {
             return Optional.empty();
         }
-        if (!membershipPolicy.canJoin(this, new DomainJoinRequest(districtId, domainId, context)).allowed()) {
+        DomainMembershipPolicy policy = membershipPolicyFor(domain).orElse(null);
+        if (policy == null || !policy.canJoin(this, new DomainJoinRequest(districtId, domainId, context)).allowed()) {
             return Optional.empty();
         }
         String districtCode;
@@ -345,7 +565,7 @@ public class PostalNetwork extends SavedData {
             updated = domain.withNextDistrict(Math.max(domain.nextDistrict(), next + 1));
         }
         domains.put(domainId, updated);
-        MembershipState state = membershipPolicy.autoActivate() ? MembershipState.ACTIVE : MembershipState.PENDING;
+        MembershipState state = policy.autoActivate() ? MembershipState.ACTIVE : MembershipState.PENDING;
         DomainMembership membership = new DomainMembership(
                 districtId,
                 domainId,
@@ -389,7 +609,9 @@ public class PostalNetwork extends SavedData {
         if (leaving.isEmpty()) {
             return Optional.empty();
         }
-        if (exitPolicy.canCompleteExit(this, leaving.get()).allowed()) {
+        PostalDomain domain = domains.get(leaving.get().domainId());
+        DomainExitPolicy policy = domain == null ? null : exitPolicyFor(domain).orElse(null);
+        if (policy != null && policy.canCompleteExit(this, leaving.get()).allowed()) {
             return completeLeave(districtId);
         }
         return leaving;
@@ -400,7 +622,9 @@ public class PostalNetwork extends SavedData {
         if (membership == null) {
             return Optional.empty();
         }
-        if (!exitPolicy.canRequestExit(this, membership).allowed()) {
+        PostalDomain domain = domains.get(membership.domainId());
+        DomainExitPolicy policy = domain == null ? null : exitPolicyFor(domain).orElse(null);
+        if (policy == null || !policy.canRequestExit(this, membership).allowed()) {
             return Optional.empty();
         }
         DomainMembership leaving = membership.withState(MembershipState.LEAVING);
@@ -415,7 +639,9 @@ public class PostalNetwork extends SavedData {
         if (membership == null) {
             return Optional.empty();
         }
-        if (!exitPolicy.canCompleteExit(this, membership).allowed()) {
+        PostalDomain domain = domains.get(membership.domainId());
+        DomainExitPolicy policy = domain == null ? null : exitPolicyFor(domain).orElse(null);
+        if (policy == null || !policy.canCompleteExit(this, membership).allowed()) {
             return Optional.empty();
         }
         DomainMembership detached = membership.withState(MembershipState.DETACHED);
@@ -428,6 +654,12 @@ public class PostalNetwork extends SavedData {
     public Optional<PostalDomain> retireDomain(UUID domainId) {
         PostalDomain domain = domains.get(domainId);
         if (domain == null) {
+            return Optional.empty();
+        }
+        boolean hasAttachedDistrict = memberships.values().stream()
+                .anyMatch(membership -> membership.domainId().equals(domainId)
+                        && membership.state() != MembershipState.DETACHED);
+        if (hasAttachedDistrict) {
             return Optional.empty();
         }
         PostalDomain historical = domain.withLifecycle(DomainLifecycle.HISTORICAL);
@@ -446,6 +678,8 @@ public class PostalNetwork extends SavedData {
         readDistricts(network, tag);
         readMemberships(network, tag);
         readNodes(network, tag);
+        readExploredChunks(network, tag);
+        readCoverages(network, tag);
         return network;
     }
 
@@ -456,6 +690,8 @@ public class PostalNetwork extends SavedData {
         writeDistricts(tag);
         writeMemberships(tag);
         writeNodes(tag);
+        writeExploredChunks(tag);
+        writeCoverages(tag);
         return tag;
     }
 
@@ -465,6 +701,40 @@ public class PostalNetwork extends SavedData {
             if (node != null) {
                 nodes.put(nodeId, node.withRole(NodeRole.HUB));
                 return;
+            }
+        }
+    }
+
+    private void removeEmptyDistrict(PostalDistrict district) {
+        UUID districtId = district.districtId();
+        DomainMembership membership = memberships.get(districtId);
+        if (membership != null && membership.state() != MembershipState.DETACHED) {
+            memberships.put(districtId, membership.withState(MembershipState.DETACHED));
+            refreshLifecycle(membership.domainId());
+        }
+        districts.remove(districtId);
+        DistrictCoverage coverage = coverages.remove(districtId);
+        unindexCoverage(coverage);
+    }
+
+    private void indexCoverage(DistrictCoverage coverage) {
+        for (PostalChunk chunk : coverage.chunks()) {
+            coverageIndex.computeIfAbsent(chunk, ignored -> new LinkedHashSet<>()).add(coverage.districtId());
+        }
+    }
+
+    private void unindexCoverage(@Nullable DistrictCoverage coverage) {
+        if (coverage == null) {
+            return;
+        }
+        for (PostalChunk chunk : coverage.chunks()) {
+            Set<UUID> owners = coverageIndex.get(chunk);
+            if (owners == null) {
+                continue;
+            }
+            owners.remove(coverage.districtId());
+            if (owners.isEmpty()) {
+                coverageIndex.remove(chunk);
             }
         }
     }
@@ -479,7 +749,24 @@ public class PostalNetwork extends SavedData {
             if (membership != null && membership.isDeliveryEndpoint()) {
                 leaveDomain(districtId);
             }
+            if (membership != null) {
+                refreshLifecycle(membership.domainId());
+            }
         }
+    }
+
+    private Optional<DomainMembershipPolicy> membershipPolicyFor(PostalDomain domain) {
+        if (membershipPolicy.policyId().equals(domain.membershipPolicyId())) {
+            return Optional.of(membershipPolicy);
+        }
+        return PostalPolicies.findMembership(domain.membershipPolicyId());
+    }
+
+    private Optional<DomainExitPolicy> exitPolicyFor(PostalDomain domain) {
+        if (exitPolicy.policyId().equals(domain.exitPolicyId())) {
+            return Optional.of(exitPolicy);
+        }
+        return PostalPolicies.findExit(domain.exitPolicyId());
     }
 
     private void refreshLifecycle(UUID domainId) {
@@ -580,6 +867,43 @@ public class PostalNetwork extends SavedData {
         tag.put("nodes", list);
     }
 
+    private void writeExploredChunks(CompoundTag tag) {
+        List<PostalChunk> chunks = new ArrayList<>();
+        for (Map.Entry<ResourceLocation, Set<Long>> entry : exploredChunks.entrySet()) {
+            for (long packed : entry.getValue()) {
+                chunks.add(PostalChunk.unpack(entry.getKey(), packed));
+            }
+        }
+        tag.put("exploredChunks", writeChunkGroups(chunks));
+    }
+
+    private void writeCoverages(CompoundTag tag) {
+        ListTag list = new ListTag();
+        for (DistrictCoverage coverage : coverages.values()) {
+            CompoundTag coverageTag = new CompoundTag();
+            coverageTag.putUUID("districtId", coverage.districtId());
+            coverageTag.putInt("revision", coverage.revision());
+            coverageTag.put("chunks", writeChunkGroups(coverage.chunks()));
+            list.add(coverageTag);
+        }
+        tag.put("coverages", list);
+    }
+
+    private static ListTag writeChunkGroups(Collection<PostalChunk> chunks) {
+        Map<ResourceLocation, List<Long>> byDimension = new LinkedHashMap<>();
+        for (PostalChunk chunk : chunks) {
+            byDimension.computeIfAbsent(chunk.dimension(), ignored -> new ArrayList<>()).add(chunk.packed());
+        }
+        ListTag groups = new ListTag();
+        for (Map.Entry<ResourceLocation, List<Long>> entry : byDimension.entrySet()) {
+            CompoundTag group = new CompoundTag();
+            group.putString("dimension", entry.getKey().toString());
+            group.putLongArray("positions", entry.getValue().stream().mapToLong(Long::longValue).toArray());
+            groups.add(group);
+        }
+        return groups;
+    }
+
     private static void readDomains(PostalNetwork network, CompoundTag tag) {
         ListTag list = tag.getList("domains", Tag.TAG_COMPOUND);
         for (int index = 0; index < list.size(); index++) {
@@ -645,6 +969,53 @@ public class PostalNetwork extends SavedData {
                     NodeState.valueOf(nodeTag.getString("state"))
             ));
         }
+    }
+
+    private static void readExploredChunks(PostalNetwork network, CompoundTag tag) {
+        for (PostalChunk chunk : readChunkGroups(tag.getList("exploredChunks", Tag.TAG_COMPOUND))) {
+            network.exploredChunks.computeIfAbsent(chunk.dimension(), ignored -> new LinkedHashSet<>()).add(chunk.packed());
+        }
+    }
+
+    private static void readCoverages(PostalNetwork network, CompoundTag tag) {
+        ListTag list = tag.getList("coverages", Tag.TAG_COMPOUND);
+        for (int index = 0; index < list.size(); index++) {
+            CompoundTag coverageTag = list.getCompound(index);
+            UUID districtId = coverageTag.getUUID("districtId");
+            Set<PostalChunk> chunks = readChunkGroups(coverageTag.getList("chunks", Tag.TAG_COMPOUND));
+            if (!network.districts.containsKey(districtId)
+                    || !DistrictCoverage.isValidShape(chunks)
+                    || network.nodesOf(districtId).stream()
+                    .map(node -> PostalChunk.at(node.dimension(), node.position()))
+                    .anyMatch(chunk -> !chunks.contains(chunk))) {
+                continue;
+            }
+            DistrictCoverage coverage = new DistrictCoverage(
+                    districtId,
+                    chunks,
+                    Math.max(1, coverageTag.getInt("revision"))
+            );
+            network.coverages.put(districtId, coverage);
+            network.indexCoverage(coverage);
+            for (PostalChunk chunk : chunks) {
+                network.exploredChunks.computeIfAbsent(chunk.dimension(), ignored -> new LinkedHashSet<>()).add(chunk.packed());
+            }
+        }
+    }
+
+    private static Set<PostalChunk> readChunkGroups(ListTag groups) {
+        Set<PostalChunk> chunks = new LinkedHashSet<>();
+        for (int index = 0; index < groups.size(); index++) {
+            CompoundTag group = groups.getCompound(index);
+            ResourceLocation dimension = ResourceLocation.tryParse(group.getString("dimension"));
+            if (dimension == null) {
+                continue;
+            }
+            for (long packed : group.getLongArray("positions")) {
+                chunks.add(PostalChunk.unpack(dimension, packed));
+            }
+        }
+        return chunks;
     }
 
     private static String defaultPolicy(String policyId) {

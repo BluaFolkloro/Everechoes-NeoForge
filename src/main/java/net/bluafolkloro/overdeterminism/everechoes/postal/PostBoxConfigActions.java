@@ -31,10 +31,10 @@ public final class PostBoxConfigActions {
 
         postBox.syncFromNetwork(level);
         PostalNetwork network = PostalNetwork.get(level);
-        PostalActionContext actionContext = postBox.actionContext();
+        PostalActionContext actionContext = postBox.actionContext(player.getUUID());
         boolean changed = switch (payload.action()) {
             case CREATE_DISTRICT -> createDistrict(player, network, postBox, actionContext);
-            case JOIN_NEARBY -> joinNearby(player, network, postBox, actionContext, payload.targetDistrictId());
+            case JOIN_DISTRICT -> joinDistrict(player, network, postBox, actionContext, payload.targetDistrictId());
             case ESTABLISH_DOMAIN -> establishDomain(player, network, postBox, actionContext, payload.domainCode());
             case JOIN_DOMAIN -> joinDomain(player, network, postBox, actionContext, payload.domainCode());
             case LEAVE_DOMAIN -> leaveDomain(player, network, postBox);
@@ -55,7 +55,7 @@ public final class PostBoxConfigActions {
         return true;
     }
 
-    private static boolean joinNearby(
+    private static boolean joinDistrict(
             ServerPlayer player,
             PostalNetwork network,
             PostBoxBlockEntity postBox,
@@ -84,7 +84,7 @@ public final class PostBoxConfigActions {
         if (network.establishAndJoin(postBox.districtId(), domainCode, context, System.currentTimeMillis()).isEmpty()) {
             if (PostalCodes.canonicalDomain(domainCode).isEmpty()) {
                 player.displayClientMessage(Component.translatable("message.everechoes.post_box.invalid_domain"), true);
-            } else if (network.findLiveDomainByCode(domainCode).isPresent()) {
+            } else if (network.findDomainByCode(domainCode).isPresent()) {
                 player.displayClientMessage(Component.translatable("message.everechoes.post_box.domain_exists"), true);
             } else {
                 player.displayClientMessage(Component.translatable("message.everechoes.post_box.join_denied"), true);
