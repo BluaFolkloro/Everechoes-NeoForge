@@ -11,10 +11,8 @@ import net.bluafolkloro.overdeterminism.everechoes.item.ModCreativeModeTabs;
 import net.bluafolkloro.overdeterminism.everechoes.item.PostalItems;
 import net.bluafolkloro.overdeterminism.everechoes.menu.ModMenuTypes;
 import net.bluafolkloro.overdeterminism.everechoes.network.ModNetworking;
-import net.bluafolkloro.overdeterminism.everechoes.postal.PostalExplorationTracker;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.neoforge.common.NeoForge;
 
 // The value here should match an entry in the META-INF/neoforge.mods.toml file
 @Mod(Everechoes.MODID)
@@ -36,10 +34,6 @@ public class Everechoes {
 
         //注册网络包
         modEventBus.addListener(ModNetworking::register);
-
-        //记录玩家实际进入过的区块，供未来邮政地图册选择，不主动加载世界区块。
-        NeoForge.EVENT_BUS.addListener(PostalExplorationTracker::onPlayerTick);
-        NeoForge.EVENT_BUS.addListener(PostalExplorationTracker::onPlayerLogout);
 
         //注册方块&物品
         LetterItems.register(modEventBus);

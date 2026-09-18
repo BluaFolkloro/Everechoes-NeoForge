@@ -99,7 +99,7 @@ DRAFT -> SEALED -> OPENED
 
 ## 邮区辖区与邮域范围
 
-地图空间属于邮区，而不是直接属于邮域。每个 `PostalDistrict` 通过独立的 `DistrictCoverage` 保存自己的辖区。`postal_atlas` 是查看和提交辖区变更的界面，不是辖区所有权或管理权凭证，也不永久保存 `districtId`。手持图册对已加入邮区的邮筒使用，打开该邮筒所属邮区；HUB 与 COLLECTION 均可作为入口，但不能根据所在区块猜测目标邮区。`PostalNetwork.atlasWindow` 提供有上限的只读窗口（默认 21×21，`PostalAtlasLimits.MAX_WINDOW_CELLS`），只读取已有探索记录、辖区和节点坐标，不加载世界区块，也不倾倒全图探索数据。重叠写入 `ownedPacked` 与 `foreignPacked`，不是拒绝原因。提交走现有 `validateCoverageReplacement` / `replaceDistrictCoverage`，并带 `expectedRevision`。`schemaVersion` 仍为 5。
+地图空间属于邮区，而不是直接属于邮域。每个 `PostalDistrict` 通过独立的 `DistrictCoverage` 保存自己的辖区。辖区是坐标元数据，不表示对应区块已经生成，也不应因此被加载。`postal_atlas` 是查看和提交辖区变更的界面，不是辖区所有权或管理权凭证，也不永久保存 `districtId`。手持图册对已加入邮区的邮筒使用，打开该邮筒所属邮区；HUB 与 COLLECTION 均可作为入口，但不能根据所在区块猜测目标邮区。`PostalNetwork.atlasWindow` 提供有上限的只读窗口（默认 21×21，`PostalAtlasLimits.MAX_WINDOW_CELLS`），只读取辖区和节点坐标，不加载世界区块。重叠写入 `ownedPacked` 与 `foreignPacked`，不是拒绝原因。提交走现有 `validateCoverageReplacement` / `replaceDistrictCoverage`，并带 `expectedRevision`。合法坐标由 `Level.MAX_LEVEL_SIZE` 换算的静态区块范围约束，不采用动态世界边界。`schemaVersion` 仍为 5。
 
 邮区辖区遵循以下不变量：
 
@@ -107,7 +107,7 @@ DRAFT -> SEALED -> OPENED
 - 一个邮区的辖区非空、位于同一维度，并按区块四方向相邻保持连续。
 - 区块与邮区是多对多：同一区块可被多个邮区覆盖，查询返回全部匹配，不按“先到先得”决胜。
 - 空间重叠不产生所有权、管理权、自动成员或自动中转。邮筒和未来邮箱仍各属一个邮区。
-- 只能登记服务器已经记录为探索过的区块。探索记录来自玩家实际进入的区块以及已加载邮筒所在区块，不扫描世界区块文件。
+- 可以登记尚未生成、尚未加载、玩家从未到达的合法区块坐标。不扫描世界区块文件，也不为验证而加载区块。
 - 邮区的所有邮筒节点必须位于本邮区辖区内；不能通过缩小辖区制造范围外节点。
 - 新邮区以主邮筒所在区块作为初始辖区。新邮筒只有位于目标邮区辖区内才能加入。
 - 最后一个邮筒被移除时，邮区及其辖区一并删除，避免没有实体服务节点的永久占位辖区。

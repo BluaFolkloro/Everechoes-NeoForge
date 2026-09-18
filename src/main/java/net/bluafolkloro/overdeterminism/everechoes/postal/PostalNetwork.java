@@ -33,7 +33,6 @@ public class PostalNetwork extends SavedData {
     private final Map<UUID, PostBoxNode> nodes = new LinkedHashMap<>();
     private final Map<UUID, DistrictCoverage> coverages = new LinkedHashMap<>();
     private final Map<PostalChunk, Set<UUID>> coverageIndex = new LinkedHashMap<>();
-    private final Map<ResourceLocation, Set<Long>> exploredChunks = new LinkedHashMap<>();
     private final DomainCreationPolicy creationPolicy;
     private final DomainMembershipPolicy membershipPolicy;
     private final DomainExitPolicy exitPolicy;
@@ -167,26 +166,6 @@ public class PostalNetwork extends SavedData {
     public record CoverageMatch(PostalDistrict district, boolean joinable, @Nullable String reasonKey) {
     }
 
-    public boolean isExplored(PostalChunk chunk) {
-        return exploredChunks.getOrDefault(chunk.dimension(), Set.of()).contains(chunk.packed());
-    }
-
-    public boolean recordExplored(PostalChunk chunk) {
-        boolean added = exploredChunks.computeIfAbsent(chunk.dimension(), ignored -> new LinkedHashSet<>()).add(chunk.packed());
-        if (added) {
-            setDirty();
-        }
-        return added;
-    }
-
-    public Set<PostalChunk> exploredChunks(ResourceLocation dimension) {
-        Set<PostalChunk> result = new LinkedHashSet<>();
-        for (long packed : exploredChunks.getOrDefault(dimension, Set.of())) {
-            result.add(PostalChunk.unpack(dimension, packed));
-        }
-        return Set.copyOf(result);
-    }
-
     public Optional<PostalAtlasSnapshot> atlasWindow(
             UUID districtId,
             ResourceLocation dimension,
@@ -214,16 +193,17 @@ public class PostalNetwork extends SavedData {
             return Optional.empty();
         }
 
-        Set<Long> exploredPacked = new LinkedHashSet<>();
         Set<Long> ownedPacked = new LinkedHashSet<>();
         Set<Long> foreignPacked = new LinkedHashSet<>();
         for (int dx = 0; dx < width; dx++) {
             for (int dz = 0; dz < height; dz++) {
-                PostalChunk cell = new PostalChunk(dimension, originX + dx, originZ + dz);
-                long packed = cell.packed();
-                if (isExplored(cell)) {
-                    exploredPacked.add(packed);
+                int x = originX + dx;
+                int z = originZ + dz;
+                if (!PostalAtlasLimits.isLegalChunk(x, z)) {
+                    continue;
                 }
+                PostalChunk cell = new PostalChunk(dimension, x, z);
+                long packed = cell.packed();
                 Set<UUID> owners = coverageIndex.get(cell);
                 if (owners == null || owners.isEmpty()) {
                     continue;
@@ -291,7 +271,6 @@ public class PostalNetwork extends SavedData {
                 originZ,
                 width,
                 height,
-                exploredPacked,
                 ownedPacked,
                 foreignPacked,
                 hubPacked,
@@ -397,7 +376,6 @@ public class PostalNetwork extends SavedData {
     }
 
     public PostBoxNode registerNode(UUID nodeId, ResourceLocation dimension, BlockPos position) {
-        recordExplored(PostalChunk.at(dimension, position));
         PostBoxNode existing = nodes.get(nodeId);
         PostBoxNode node = existing == null
                 ? new PostBoxNode(nodeId, null, NodeRole.COLLECTION, dimension, position, NodeState.REGISTERED)
@@ -517,14 +495,15 @@ public class PostalNetwork extends SavedData {
             return PolicyDecision.deny("message.everechoes.coverage.invalid");
         }
         Set<PostalChunk> proposed = Set.copyOf(proposedChunks);
-        if (proposed.stream().map(PostalChunk::dimension).distinct().count() != 1) {
+        if (proposed.stream().anyMatch(chunk -> !PostalAtlasLimits.isLegalChunk(chunk.x(), chunk.z()))) {
+            return PolicyDecision.deny("message.everechoes.coverage.out_of_bounds");
+        }
+        if (proposed.stream().map(PostalChunk::dimension).distinct().count() != 1
+                || !current.dimension().equals(proposed.iterator().next().dimension())) {
             return PolicyDecision.deny("message.everechoes.coverage.multiple_dimensions");
         }
         if (!DistrictCoverage.isValidShape(proposed)) {
             return PolicyDecision.deny("message.everechoes.coverage.disconnected");
-        }
-        if (proposed.stream().anyMatch(chunk -> !isExplored(chunk))) {
-            return PolicyDecision.deny("message.everechoes.coverage.unexplored");
         }
         boolean excludesNode = nodesOf(districtId).stream()
                 .map(node -> PostalChunk.at(node.dimension(), node.position()))
@@ -794,7 +773,6 @@ public class PostalNetwork extends SavedData {
         readDistricts(network, tag);
         readMemberships(network, tag);
         readNodes(network, tag);
-        readExploredChunks(network, tag);
         readCoverages(network, tag);
         return network;
     }
@@ -806,7 +784,6 @@ public class PostalNetwork extends SavedData {
         writeDistricts(tag);
         writeMemberships(tag);
         writeNodes(tag);
-        writeExploredChunks(tag);
         writeCoverages(tag);
         return tag;
     }
@@ -983,16 +960,6 @@ public class PostalNetwork extends SavedData {
         tag.put("nodes", list);
     }
 
-    private void writeExploredChunks(CompoundTag tag) {
-        List<PostalChunk> chunks = new ArrayList<>();
-        for (Map.Entry<ResourceLocation, Set<Long>> entry : exploredChunks.entrySet()) {
-            for (long packed : entry.getValue()) {
-                chunks.add(PostalChunk.unpack(entry.getKey(), packed));
-            }
-        }
-        tag.put("exploredChunks", writeChunkGroups(chunks));
-    }
-
     private void writeCoverages(CompoundTag tag) {
         ListTag list = new ListTag();
         for (DistrictCoverage coverage : coverages.values()) {
@@ -1087,12 +1054,6 @@ public class PostalNetwork extends SavedData {
         }
     }
 
-    private static void readExploredChunks(PostalNetwork network, CompoundTag tag) {
-        for (PostalChunk chunk : readChunkGroups(tag.getList("exploredChunks", Tag.TAG_COMPOUND))) {
-            network.exploredChunks.computeIfAbsent(chunk.dimension(), ignored -> new LinkedHashSet<>()).add(chunk.packed());
-        }
-    }
-
     private static void readCoverages(PostalNetwork network, CompoundTag tag) {
         ListTag list = tag.getList("coverages", Tag.TAG_COMPOUND);
         for (int index = 0; index < list.size(); index++) {
@@ -1113,9 +1074,6 @@ public class PostalNetwork extends SavedData {
             );
             network.coverages.put(districtId, coverage);
             network.indexCoverage(coverage);
-            for (PostalChunk chunk : chunks) {
-                network.exploredChunks.computeIfAbsent(chunk.dimension(), ignored -> new LinkedHashSet<>()).add(chunk.packed());
-            }
         }
     }
 

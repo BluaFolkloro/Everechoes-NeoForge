@@ -2,12 +2,16 @@ package net.bluafolkloro.overdeterminism.everechoes.network;
 
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.DecoderException;
+import net.bluafolkloro.overdeterminism.everechoes.postal.DistrictCoverage;
 import net.bluafolkloro.overdeterminism.everechoes.postal.PostalAtlasLimits;
+import net.bluafolkloro.overdeterminism.everechoes.postal.PostalAtlasSnapshot;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -59,5 +63,44 @@ class PostalAtlasLimitsCodecTest {
         buffer.writeLong(11L);
         Set<Long> values = PostalAtlasSyncPayload.readPackedSet(buffer, PostalAtlasLimits.MAX_WINDOW_CELLS);
         assertEquals(Set.of(10L, 11L), values);
+    }
+
+    @Test
+    void writeSnapshotReadSnapshotRoundTripDoesNotWriteExploredSet() {
+        ResourceLocation overworld = ResourceLocation.fromNamespaceAndPath("minecraft", "overworld");
+        UUID districtId = UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
+        PostalAtlasSnapshot original = new PostalAtlasSnapshot(
+                districtId,
+                overworld,
+                4,
+                "EV",
+                "1",
+                0,
+                0,
+                PostalAtlasLimits.WINDOW_SIZE,
+                PostalAtlasLimits.WINDOW_SIZE,
+                Set.of(0L, 1L),
+                Set.of(1L),
+                Set.of(0L),
+                Set.of(2L),
+                Set.of(0L, 1L, 2L),
+                Set.of(0L, 2L),
+                3,
+                DistrictCoverage.MAX_CHUNKS
+        );
+
+        FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
+        PostalAtlasSyncPayload.writeSnapshot(buffer, original, true);
+        PostalAtlasSnapshot decoded = PostalAtlasSyncPayload.readSnapshot(buffer);
+        assertEquals(0, buffer.readableBytes());
+        assertEquals(original, decoded);
+        assertEquals(original.ownedPacked(), decoded.ownedPacked());
+        assertEquals(original.foreignPacked(), decoded.foreignPacked());
+        assertEquals(original.hubPacked(), decoded.hubPacked());
+        assertEquals(original.collectionPacked(), decoded.collectionPacked());
+        assertEquals(original.savedCoveragePacked(), decoded.savedCoveragePacked());
+        assertEquals(original.nodePacked(), decoded.nodePacked());
+        assertEquals(original.savedCoverageSize(), decoded.savedCoverageSize());
+        assertEquals(original.maxChunks(), decoded.maxChunks());
     }
 }

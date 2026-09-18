@@ -26,8 +26,7 @@ public class PostalAtlasScreen extends AbstractContainerScreen<PostalAtlasMenu> 
     private static final int PANEL = 0xFF2B2118;
     private static final int PAPER = 0xFFF5E6C8;
     private static final int INK = 0x3F2A14;
-    private static final int UNEXPLORED = 0xFF3A3024;
-    private static final int EXPLORED = 0xFFE3D5A3;
+    private static final int EMPTY = 0xFFE3D5A3;
     private static final int SAVED = 0xFFC4A35A;
     private static final int ADD = 0xFFE8D48A;
     private static final int REMOVE = 0xFF80052C;
@@ -142,7 +141,7 @@ public class PostalAtlasScreen extends AbstractContainerScreen<PostalAtlasMenu> 
                 long packed = ChunkPos.asLong(snapshot.originX() + cx, snapshot.originZ() + cz);
                 int x = gridX + cx * CELL;
                 int y = gridY + cz * CELL;
-                graphics.fill(x, y, x + CELL - 1, y + CELL - 1, cellColor(snapshot, saved, packed));
+                graphics.fill(x, y, x + CELL - 1, y + CELL - 1, cellColor(saved, packed));
                 boolean inProposed = proposed.contains(packed);
                 boolean inSaved = saved.contains(packed);
                 if (inProposed && !inSaved) {
@@ -172,12 +171,9 @@ public class PostalAtlasScreen extends AbstractContainerScreen<PostalAtlasMenu> 
         }
     }
 
-    private int cellColor(PostalAtlasSnapshot snapshot, Set<Long> saved, long packed) {
+    private int cellColor(Set<Long> saved, long packed) {
         boolean inProposed = proposed.contains(packed);
         boolean inSaved = saved.contains(packed);
-        if (!snapshot.exploredPacked().contains(packed) && !inProposed && !inSaved) {
-            return UNEXPLORED;
-        }
         if (inProposed && !inSaved) {
             return ADD;
         }
@@ -187,20 +183,19 @@ public class PostalAtlasScreen extends AbstractContainerScreen<PostalAtlasMenu> 
         if (inProposed || inSaved) {
             return SAVED;
         }
-        return EXPLORED;
+        return EMPTY;
     }
 
     private void renderLegend(GuiGraphics graphics) {
         int x = leftPos + 168;
         int y = topPos + 88;
-        legendRow(graphics, x, y, UNEXPLORED, "gui.everechoes.atlas.legend.unexplored");
-        legendRow(graphics, x, y + 10, EXPLORED, "gui.everechoes.atlas.legend.explored");
-        legendRow(graphics, x, y + 20, SAVED, "gui.everechoes.atlas.legend.coverage");
-        legendRow(graphics, x, y + 30, ADD, "gui.everechoes.atlas.legend.add");
-        legendRow(graphics, x, y + 40, REMOVE, "gui.everechoes.atlas.legend.remove");
-        legendRow(graphics, x, y + 50, FOREIGN, "gui.everechoes.atlas.legend.foreign");
-        legendRow(graphics, x, y + 60, INK | 0xFF000000, "gui.everechoes.atlas.legend.hub");
-        legendRow(graphics, x, y + 70, INK | 0xFF000000, "gui.everechoes.atlas.legend.collection");
+        legendRow(graphics, x, y, EMPTY, "gui.everechoes.atlas.legend.empty");
+        legendRow(graphics, x, y + 10, SAVED, "gui.everechoes.atlas.legend.coverage");
+        legendRow(graphics, x, y + 20, ADD, "gui.everechoes.atlas.legend.add");
+        legendRow(graphics, x, y + 30, REMOVE, "gui.everechoes.atlas.legend.remove");
+        legendRow(graphics, x, y + 40, FOREIGN, "gui.everechoes.atlas.legend.foreign");
+        legendRow(graphics, x, y + 50, INK | 0xFF000000, "gui.everechoes.atlas.legend.hub");
+        legendRow(graphics, x, y + 60, INK | 0xFF000000, "gui.everechoes.atlas.legend.collection");
     }
 
     private void legendRow(GuiGraphics graphics, int x, int y, int color, String key) {
@@ -242,7 +237,11 @@ public class PostalAtlasScreen extends AbstractContainerScreen<PostalAtlasMenu> 
         }
         Set<PostalChunk> chunks = new LinkedHashSet<>();
         for (long packed : proposed) {
-            chunks.add(PostalChunk.unpack(menu.snapshot().dimension(), packed));
+            PostalChunk chunk = PostalChunk.unpack(menu.snapshot().dimension(), packed);
+            if (!PostalAtlasLimits.isLegalChunk(chunk.x(), chunk.z())) {
+                return "message.everechoes.coverage.out_of_bounds";
+            }
+            chunks.add(chunk);
         }
         if (!DistrictCoverage.isValidShape(chunks)) {
             return "message.everechoes.coverage.disconnected";
@@ -264,15 +263,17 @@ public class PostalAtlasScreen extends AbstractContainerScreen<PostalAtlasMenu> 
         if (cx >= width || cz >= height) {
             return false;
         }
-        long packed = ChunkPos.asLong(snapshot.originX() + cx, snapshot.originZ() + cz);
+        int chunkX = snapshot.originX() + cx;
+        int chunkZ = snapshot.originZ() + cz;
+        if (!PostalAtlasLimits.isLegalChunk(chunkX, chunkZ)) {
+            return true;
+        }
+        long packed = ChunkPos.asLong(chunkX, chunkZ);
         if (proposed.contains(packed)) {
             if (snapshot.nodePacked().contains(packed)) {
                 return true;
             }
             proposed.remove(packed);
-            return true;
-        }
-        if (!snapshot.exploredPacked().contains(packed)) {
             return true;
         }
         proposed.add(packed);

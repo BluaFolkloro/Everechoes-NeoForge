@@ -16,7 +16,6 @@ public record PostalAtlasSnapshot(
         int originZ,
         int width,
         int height,
-        Set<Long> exploredPacked,
         Set<Long> ownedPacked,
         Set<Long> foreignPacked,
         Set<Long> hubPacked,
@@ -31,7 +30,6 @@ public record PostalAtlasSnapshot(
         Objects.requireNonNull(dimension, "dimension");
         domainCode = domainCode == null ? "" : domainCode;
         districtCode = districtCode == null ? "" : districtCode;
-        exploredPacked = Set.copyOf(exploredPacked);
         ownedPacked = Set.copyOf(ownedPacked);
         foreignPacked = Set.copyOf(foreignPacked);
         hubPacked = Set.copyOf(hubPacked);

@@ -9,10 +9,13 @@ import net.bluafolkloro.overdeterminism.everechoes.postal.PostalAtlasLimits;
 import net.bluafolkloro.overdeterminism.everechoes.postal.PostalAtlasSnapshot;
 import net.bluafolkloro.overdeterminism.everechoes.postal.PostalChunk;
 import net.bluafolkloro.overdeterminism.everechoes.postal.PostalNetwork;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
@@ -115,9 +118,16 @@ public final class PostalAtlasActions {
             deny(player, menu, "message.everechoes.atlas.too_many");
             return;
         }
-        if (payload.dimension() != null && !payload.dimension().equals(dimension)) {
-            deny(player, menu, "message.everechoes.coverage.multiple_dimensions");
-            return;
+        if (payload.dimension() != null) {
+            ResourceKey<Level> dimKey = ResourceKey.create(Registries.DIMENSION, payload.dimension());
+            if (!player.server.levelKeys().contains(dimKey)) {
+                deny(player, menu, "message.everechoes.coverage.unknown_dimension");
+                return;
+            }
+            if (!payload.dimension().equals(dimension)) {
+                deny(player, menu, "message.everechoes.coverage.multiple_dimensions");
+                return;
+            }
         }
 
         Set<PostalChunk> chunks = new LinkedHashSet<>();

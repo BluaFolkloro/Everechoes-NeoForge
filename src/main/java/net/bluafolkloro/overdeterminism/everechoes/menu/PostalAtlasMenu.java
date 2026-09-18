@@ -166,7 +166,6 @@ public class PostalAtlasMenu extends AbstractContainerMenu {
                 base.originZ(),
                 width,
                 height,
-                base.exploredPacked(),
                 Set.copyOf(owned),
                 base.foreignPacked(),
                 base.hubPacked(),

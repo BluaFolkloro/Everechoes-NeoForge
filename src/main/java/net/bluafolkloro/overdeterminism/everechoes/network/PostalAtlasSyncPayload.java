@@ -96,7 +96,6 @@ public record PostalAtlasSyncPayload(
         buffer.writeInt(snapshot.originZ());
         buffer.writeVarInt(snapshot.width());
         buffer.writeVarInt(snapshot.height());
-        writePackedSet(buffer, snapshot.exploredPacked(), PostalAtlasLimits.MAX_WINDOW_CELLS);
         writePackedSet(buffer, snapshot.ownedPacked(), PostalAtlasLimits.MAX_WINDOW_CELLS);
         writePackedSet(buffer, snapshot.foreignPacked(), PostalAtlasLimits.MAX_WINDOW_CELLS);
         writePackedSet(buffer, snapshot.hubPacked(), PostalAtlasLimits.MAX_WINDOW_CELLS);
@@ -128,7 +127,6 @@ public record PostalAtlasSyncPayload(
                 || width * height > PostalAtlasLimits.MAX_WINDOW_CELLS) {
             throw new DecoderException("atlas window " + width + "x" + height + " exceeds limits");
         }
-        Set<Long> exploredPacked = readPackedSet(buffer, PostalAtlasLimits.MAX_WINDOW_CELLS);
         Set<Long> ownedPacked = readPackedSet(buffer, PostalAtlasLimits.MAX_WINDOW_CELLS);
         Set<Long> foreignPacked = readPackedSet(buffer, PostalAtlasLimits.MAX_WINDOW_CELLS);
         Set<Long> hubPacked = readPackedSet(buffer, PostalAtlasLimits.MAX_WINDOW_CELLS);
@@ -147,7 +145,6 @@ public record PostalAtlasSyncPayload(
                 originZ,
                 width,
                 height,
-                exploredPacked,
                 ownedPacked,
                 foreignPacked,
                 hubPacked,

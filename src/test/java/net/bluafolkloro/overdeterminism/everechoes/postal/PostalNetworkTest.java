@@ -95,7 +95,7 @@ class PostalNetworkTest {
     }
 
     @Test
-    void coverageMustBeExploredConnectedAndKeepEveryNode() {
+    void coverageMustBeConnectedAndKeepEveryNode() {
         PostalNetwork network = new PostalNetwork();
         UUID firstHub = register(network, 0, 0);
         UUID secondHub = register(network, 48, 0);
@@ -110,20 +110,18 @@ class PostalNetworkTest {
                 "message.everechoes.coverage.disconnected",
                 network.validateCoverageReplacement(first.districtId(), Set.of(chunk0, chunk2), PostalActionContext.empty()).reasonKey()
         );
-        assertEquals(
-                "message.everechoes.coverage.unexplored",
-                network.validateCoverageReplacement(first.districtId(), Set.of(chunk0, chunk1), PostalActionContext.empty()).reasonKey()
-        );
+        assertTrue(network.validateCoverageReplacement(
+                first.districtId(),
+                Set.of(chunk0, chunk1),
+                PostalActionContext.empty()
+        ).allowed());
 
-        network.recordExplored(chunk1);
-        network.recordExplored(chunk2);
         int originalRevision = network.coverage(first.districtId()).orElseThrow().revision();
         network.replaceDistrictCoverage(first.districtId(), Set.of(chunk0, chunk1, chunk2), originalRevision, PostalActionContext.empty()).orElseThrow();
         assertEquals(
                 "message.everechoes.coverage.stale_revision",
                 network.validateCoverageReplacement(first.districtId(), Set.of(chunk0, chunk1), originalRevision, PostalActionContext.empty()).reasonKey()
         );
-        network.recordExplored(chunk3);
         assertTrue(network.replaceDistrictCoverage(second.districtId(), Set.of(chunk1, chunk2, chunk3), PostalActionContext.empty()).isPresent());
         assertEquals(2, network.districtsAt(chunk1).size());
 
@@ -280,7 +278,6 @@ class PostalNetworkTest {
         assertEquals("1", loaded.membership(district.districtId()).orElseThrow().districtCode());
         assertEquals("EV", loaded.findLiveDomainByCode("EV").orElseThrow().domainCode());
         assertEquals(Set.of(new PostalChunk(OVERWORLD, 0, 0)), loaded.coverage(district.districtId()).orElseThrow().chunks());
-        assertTrue(loaded.isExplored(new PostalChunk(OVERWORLD, 0, 0)));
         assertEquals(List.of(district.districtId()), loaded.districtsAt(new PostalChunk(OVERWORLD, 0, 0)).stream().map(PostalDistrict::districtId).toList());
     }
 
@@ -314,9 +311,6 @@ class PostalNetworkTest {
         PostalChunk chunk1 = new PostalChunk(OVERWORLD, 1, 0);
         PostalChunk chunk2 = new PostalChunk(OVERWORLD, 2, 0);
         PostalChunk chunk3 = new PostalChunk(OVERWORLD, 3, 0);
-        network.recordExplored(chunk1);
-        network.recordExplored(chunk2);
-        network.recordExplored(chunk3);
         network.replaceDistrictCoverage(first.districtId(), Set.of(chunk0, chunk1, chunk2), PostalActionContext.empty()).orElseThrow();
         network.replaceDistrictCoverage(second.districtId(), Set.of(chunk1, chunk2, chunk3), PostalActionContext.empty()).orElseThrow();
 
@@ -376,9 +370,7 @@ class PostalNetworkTest {
     private static void mapLine(PostalNetwork network, UUID districtId, int firstChunkX, int lastChunkX) {
         Set<PostalChunk> chunks = new LinkedHashSet<>();
         for (int x = firstChunkX; x <= lastChunkX; x++) {
-            PostalChunk chunk = new PostalChunk(OVERWORLD, x, 0);
-            network.recordExplored(chunk);
-            chunks.add(chunk);
+            chunks.add(new PostalChunk(OVERWORLD, x, 0));
         }
         network.replaceDistrictCoverage(districtId, chunks, PostalActionContext.empty()).orElseThrow();
     }
