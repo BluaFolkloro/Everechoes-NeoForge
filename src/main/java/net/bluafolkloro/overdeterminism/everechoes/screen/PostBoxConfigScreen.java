@@ -5,6 +5,7 @@ import net.bluafolkloro.overdeterminism.everechoes.network.PostBoxConfigPayload;
 import net.bluafolkloro.overdeterminism.everechoes.postal.MembershipState;
 import net.bluafolkloro.overdeterminism.everechoes.postal.NodeRole;
 import net.bluafolkloro.overdeterminism.everechoes.postal.PostalCodes;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.CycleButton;
@@ -129,6 +130,16 @@ public class PostBoxConfigScreen extends AbstractContainerScreen<PostBoxConfigMe
         addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> onClose())
                 .bounds(leftPos + 48, topPos + 158, 80, 20)
                 .build());
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        InputConstants.Key key = InputConstants.getKey(keyCode, scanCode);
+        if (this.minecraft.options.keyInventory.isActiveAndMatches(key)) {
+            return true;
+        }
+
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     @Override
