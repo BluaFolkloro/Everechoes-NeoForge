@@ -4,6 +4,7 @@ import net.bluafolkloro.overdeterminism.everechoes.menu.ModMenuTypes;
 import net.bluafolkloro.overdeterminism.everechoes.screen.LetterScreen;
 import net.bluafolkloro.overdeterminism.everechoes.screen.PostBoxConfigScreen;
 import net.bluafolkloro.overdeterminism.everechoes.screen.PostBoxScreen;
+import net.bluafolkloro.overdeterminism.everechoes.screen.PostalAtlasScreen;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -20,5 +21,6 @@ public class EverechoesClient {
         event.register(ModMenuTypes.POST_BOX_MENU.get(), PostBoxScreen::new);
         event.register(ModMenuTypes.POST_BOX_CONFIG_MENU.get(), PostBoxConfigScreen::new);
         event.register(ModMenuTypes.LETTER_MENU.get(), LetterScreen::new);
+        event.register(ModMenuTypes.POSTAL_ATLAS_MENU.get(), PostalAtlasScreen::new);
     }
 }

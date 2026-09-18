@@ -12,7 +12,13 @@ Everechoes 是一个基于 NeoForge 的 Minecraft 模组项目，目前面向 Mi
 - `everechoes:letter`：信件
 - `everechoes:opened_letter`：拆封的信件
 
-这些物品目前已完成注册、模型、纹理、语言资源和信件数据组件。玩家可以写信、封蜡和拆封；数据会随物品保存并同步。邮筒投递尚未实现。
+这些物品目前已完成注册、模型、纹理、语言资源和信件数据组件。玩家可以写信、封蜡和拆封；数据会随物品保存并同步。封蜡信件可以投入已入网邮筒，由玩家领取承运。
+
+### 邮政图册
+
+- `everechoes:postal_atlas`
+
+手持图册对已经加入邮区的邮筒使用，打开该邮筒所属邮区的辖区编辑界面。图册不保存邮区身份，也不是所有权或入网凭证。界面显示已探索区块、当前辖区、本次拟提交范围、其他邮区重叠（合法）和邮筒节点。提交由服务端按 `DistrictCoverage` 规则与 `expectedRevision` 校验。未加入邮区的邮筒无法打开编辑界面。
 
 ### 邮筒
 
@@ -35,6 +41,7 @@ Everechoes 是一个基于 NeoForge 的 Minecraft 模组项目，目前面向 Mi
 - 邮区以主邮筒所在区块作为初始辖区，附属邮筒必须位于已登记辖区内
 - 记录玩家实际进入过的区块，不为邮政地图查询主动加载区块
 - 邮域范围由仍在服务的 `ACTIVE` 邮区辖区自动合成
+- 可用邮政图册查看并提交邮区辖区变更（区块网格，不加载地形）
 - 中文和英文语言资源
 
 收信邮箱、钥匙和签收尚未实现。
@@ -151,28 +158,28 @@ everechoes
 ├─ component
 │  └─ ModDataComponents.java
 ├─ item
-│  ├─ BirdFigureBlockItems.java
-│  ├─ ContainerBlockItems.java
-│  ├─ LetterItem.java
 │  ├─ LetterItems.java
+│  ├─ PostalItems.java
 │  └─ ModCreativeModeTabs.java
 ├─ letter
 │  ├─ LetterData.java
-│  ├─ LetterDataSerializer.java
-│  └─ LetterState.java
+│  └─ LetterDataSerializer.java
 ├─ menu
 │  ├─ LetterMenu.java
 │  ├─ PostBoxMenu.java
+│  ├─ PostalAtlasMenu.java
 │  └─ ModMenuTypes.java
 ├─ network
 │  ├─ LetterActionPayload.java
+│  ├─ PostalAtlasRequestPayload.java
 │  └─ ModNetworking.java
 ├─ postal
-│  ├─ Address.java
-│  ├─ MailBoxAddress.java
-│  └─ PlayerAddress.java
+│  ├─ PostalNetwork.java
+│  ├─ DistrictCoverage.java
+│  └─ PostalAtlasSnapshot.java
 ├─ screen
 │  ├─ LetterScreen.java
+│  ├─ PostalAtlasScreen.java
 │  └─ PostBoxScreen.java
 ├─ Everechoes.java
 └─ EverechoesClient.java
@@ -190,7 +197,7 @@ everechoes
 - `menu`：服务端容器菜单定义与菜单类型注册。
 - `network`：自定义网络包。
 - `screen`：客户端 GUI 界面。
-- `postal`：邮件系统的基础地址模型，目前包含邮箱地址和玩家地址。
+- `postal`：邮域/邮区、辖区、探索记录、地址与 `atlasWindow` 查询。
 
 主要资源位于：
 
@@ -261,10 +268,9 @@ src/main/templates
 
 当前版本：`0.0.1`
 
-已完成的是基础内容注册、资源接入、本地信件闭环，以及邮筒玩家承运入口。后续重点包括：
+已完成的是基础内容注册、资源接入、本地信件闭环、邮筒玩家承运入口，以及邮政图册辖区编辑 MVP。后续重点包括：
 
-- “邮域—邮区—邮编”注册与寻址
-- 邮筒实际投递逻辑
+- 邮区代理中转与 `mail_box` 邮编端点
 - 玩家、钥匙、信鸽和收信邮箱的交接与签收
 - 多人游戏下的收件人与投递数据同步
 - 无沿途区块加载的信鸽逻辑旅行

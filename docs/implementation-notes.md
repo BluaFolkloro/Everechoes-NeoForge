@@ -41,6 +41,9 @@
 - `DistrictCoverage` 保存邮区的连续区块集合；新邮区从主邮筒所在区块开始，附属邮筒必须位于辖区内。区块可被多个邮区同时覆盖；反向索引是 `chunk → Set<districtId>` 缓存，可从辖区重建。
 - `PostalNetwork` 建立区块到邮区的空间索引，并从有效邮区实时派生邮域范围；邮域不保存重复辖区。
 - `PostalExplorationTracker` 只在服务端玩家进入新块时记录坐标，不扫描区块文件，也不主动加载区块。
+- `PostalAtlasLimits`：`WINDOW_SIZE=21`，`MAX_WINDOW_CELLS=441`，`MAX_SUBMIT_CHUNKS=DistrictCoverage.MAX_CHUNKS`（4096）。
+- `PostalNetwork.atlasWindow` 返回 `PostalAtlasSnapshot`；非法窗口或未知邮区为 `Optional.empty()`。`includeSavedCoverage=false` 时 `savedCoveragePacked` 为空，但 `savedCoverageSize` 仍是完整辖区大小。`nodePacked` 含本邮区全部节点区块；`hubPacked` / `collectionPacked` 按窗口裁剪。
+- `postal_atlas` 物品对已加入邮区的邮筒 `useOn` 打开 `PostalAtlasMenu`。C2S `postal_atlas_request`（PAN/SUBMIT）不信任客户端 `districtId`；提交集合在解码时若 `count` 超过上限会抛 `DecoderException`。S2C `postal_atlas_sync` 推送窗口或提交结果。屏幕代码绘制 21×21 网格；正式 GUI 贴图仍待预览确认。
 - `PostalNetwork` 使用 `schemaVersion`。旧版邮域表读取后丢弃，只写新格式。旧邮筒库存保留，绑定不恢复。
 - 潜行右键打开入网界面，提交建立/加入/退出请求。
 - 仅 `ACTIVE` 邮区接收新邮件；标题显示当前 `domainCode` 与邮区号。

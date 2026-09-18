@@ -187,6 +187,122 @@ public class PostalNetwork extends SavedData {
         return Set.copyOf(result);
     }
 
+    public Optional<PostalAtlasSnapshot> atlasWindow(
+            UUID districtId,
+            ResourceLocation dimension,
+            int originX,
+            int originZ,
+            int width,
+            int height,
+            boolean includeSavedCoverage
+    ) {
+        if (!districts.containsKey(districtId)) {
+            return Optional.empty();
+        }
+        DistrictCoverage coverage = coverages.get(districtId);
+        if (coverage == null) {
+            return Optional.empty();
+        }
+        if (width < 1
+                || height < 1
+                || width > PostalAtlasLimits.WINDOW_SIZE
+                || height > PostalAtlasLimits.WINDOW_SIZE
+                || width * height > PostalAtlasLimits.MAX_WINDOW_CELLS) {
+            return Optional.empty();
+        }
+        if (dimension == null) {
+            return Optional.empty();
+        }
+
+        Set<Long> exploredPacked = new LinkedHashSet<>();
+        Set<Long> ownedPacked = new LinkedHashSet<>();
+        Set<Long> foreignPacked = new LinkedHashSet<>();
+        for (int dx = 0; dx < width; dx++) {
+            for (int dz = 0; dz < height; dz++) {
+                PostalChunk cell = new PostalChunk(dimension, originX + dx, originZ + dz);
+                long packed = cell.packed();
+                if (isExplored(cell)) {
+                    exploredPacked.add(packed);
+                }
+                Set<UUID> owners = coverageIndex.get(cell);
+                if (owners == null || owners.isEmpty()) {
+                    continue;
+                }
+                if (owners.contains(districtId)) {
+                    ownedPacked.add(packed);
+                }
+                for (UUID ownerId : owners) {
+                    if (!ownerId.equals(districtId)) {
+                        foreignPacked.add(packed);
+                        break;
+                    }
+                }
+            }
+        }
+
+        Set<Long> hubPacked = new LinkedHashSet<>();
+        Set<Long> collectionPacked = new LinkedHashSet<>();
+        Set<Long> nodePacked = new LinkedHashSet<>();
+        int maxX = originX + width;
+        int maxZ = originZ + height;
+        for (PostBoxNode node : nodesOf(districtId)) {
+            PostalChunk nodeChunk = PostalChunk.at(node.dimension(), node.position());
+            long packed = nodeChunk.packed();
+            nodePacked.add(packed);
+            if (!node.dimension().equals(dimension)) {
+                continue;
+            }
+            if (nodeChunk.x() < originX || nodeChunk.x() >= maxX || nodeChunk.z() < originZ || nodeChunk.z() >= maxZ) {
+                continue;
+            }
+            if (node.role() == NodeRole.HUB) {
+                hubPacked.add(packed);
+            } else if (node.role() == NodeRole.COLLECTION) {
+                collectionPacked.add(packed);
+            }
+        }
+
+        Set<Long> savedCoveragePacked = Set.of();
+        if (includeSavedCoverage) {
+            savedCoveragePacked = new LinkedHashSet<>();
+            for (PostalChunk chunk : coverage.chunks()) {
+                savedCoveragePacked.add(chunk.packed());
+            }
+        }
+
+        String domainCode = "";
+        String districtCode = "";
+        DomainMembership membership = memberships.get(districtId);
+        if (membership != null && membership.isDeliveryEndpoint()) {
+            PostalDomain domain = domains.get(membership.domainId());
+            if (domain != null && domain.lifecycle() != DomainLifecycle.HISTORICAL) {
+                domainCode = domain.domainCode();
+                districtCode = membership.districtCode();
+            }
+        }
+
+        return Optional.of(new PostalAtlasSnapshot(
+                districtId,
+                dimension,
+                coverage.revision(),
+                domainCode,
+                districtCode,
+                originX,
+                originZ,
+                width,
+                height,
+                exploredPacked,
+                ownedPacked,
+                foreignPacked,
+                hubPacked,
+                collectionPacked,
+                savedCoveragePacked,
+                nodePacked,
+                coverage.chunks().size(),
+                DistrictCoverage.MAX_CHUNKS
+        ));
+    }
+
     public Set<PostalChunk> domainCoverage(UUID domainId) {
         Set<PostalChunk> result = new LinkedHashSet<>();
         for (DomainMembership membership : memberships.values()) {

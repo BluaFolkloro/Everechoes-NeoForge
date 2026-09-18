@@ -25,6 +25,7 @@ public class ModCreativeModeTabs {
                                 output.accept(LetterItems.SEALED_LETTER);
                                 output.accept(LetterItems.LETTER);
                                 output.accept(LetterItems.OPENED_LETTER);
+                                output.accept(PostalItems.POSTAL_ATLAS);
                                 output.accept(ContainerBlocks.POST_BOX);
                                 output.accept(BirdFigureBlocks.NIGHT_HERON_FIGURE);
                                 output.accept(BirdFigureBlocks.NIGHT_HERON_COCKROACH_FIGURE);

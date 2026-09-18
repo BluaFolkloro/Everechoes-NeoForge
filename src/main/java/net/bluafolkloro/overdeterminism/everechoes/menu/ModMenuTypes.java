@@ -28,6 +28,11 @@ public class ModMenuTypes {
                     () -> IMenuTypeExtension.create(PostBoxConfigMenu::new)
             );
 
+    public static final DeferredHolder<MenuType<?>, MenuType<PostalAtlasMenu>> POSTAL_ATLAS_MENU =
+            MENUS.register("postal_atlas_menu",
+                    () -> IMenuTypeExtension.create(PostalAtlasMenu::new)
+            );
+
     public static void register(IEventBus bus) {
         MENUS.register(bus);
     }

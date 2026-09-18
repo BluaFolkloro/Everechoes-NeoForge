@@ -8,6 +8,7 @@ import net.bluafolkloro.overdeterminism.everechoes.item.BirdFigureBlockItems;
 import net.bluafolkloro.overdeterminism.everechoes.item.ContainerBlockItems;
 import net.bluafolkloro.overdeterminism.everechoes.item.LetterItems;
 import net.bluafolkloro.overdeterminism.everechoes.item.ModCreativeModeTabs;
+import net.bluafolkloro.overdeterminism.everechoes.item.PostalItems;
 import net.bluafolkloro.overdeterminism.everechoes.menu.ModMenuTypes;
 import net.bluafolkloro.overdeterminism.everechoes.network.ModNetworking;
 import net.bluafolkloro.overdeterminism.everechoes.postal.PostalExplorationTracker;
@@ -42,6 +43,7 @@ public class Everechoes {
 
         //注册方块&物品
         LetterItems.register(modEventBus);
+        PostalItems.register(modEventBus);
         ContainerBlocks.register(modEventBus);
         ContainerBlockItems.register(modEventBus);
         BirdFigureBlocks.register(modEventBus);

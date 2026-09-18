@@ -21,5 +21,15 @@ public final class ModNetworking {
                 PostBoxConfigPayload.STREAM_CODEC,
                 PostBoxConfigActions::handle
         );
+        registrar.playToServer(
+                PostalAtlasRequestPayload.TYPE,
+                PostalAtlasRequestPayload.STREAM_CODEC,
+                PostalAtlasActions::handleRequest
+        );
+        registrar.playToClient(
+                PostalAtlasSyncPayload.TYPE,
+                PostalAtlasSyncPayload.STREAM_CODEC,
+                PostalAtlasActions::handleSync
+        );
     }
 }

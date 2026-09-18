@@ -99,7 +99,7 @@ DRAFT -> SEALED -> OPENED
 
 ## 邮区辖区与邮域范围
 
-地图空间属于邮区，而不是直接属于邮域。每个 `PostalDistrict` 通过独立的 `DistrictCoverage` 保存自己的辖区；地图册将来只是查看和提交辖区变更的界面，不是辖区所有权或管理权凭证。
+地图空间属于邮区，而不是直接属于邮域。每个 `PostalDistrict` 通过独立的 `DistrictCoverage` 保存自己的辖区。`postal_atlas` 是查看和提交辖区变更的界面，不是辖区所有权或管理权凭证，也不永久保存 `districtId`。手持图册对已加入邮区的邮筒使用，打开该邮筒所属邮区；HUB 与 COLLECTION 均可作为入口，但不能根据所在区块猜测目标邮区。`PostalNetwork.atlasWindow` 提供有上限的只读窗口（默认 21×21，`PostalAtlasLimits.MAX_WINDOW_CELLS`），只读取已有探索记录、辖区和节点坐标，不加载世界区块，也不倾倒全图探索数据。重叠写入 `ownedPacked` 与 `foreignPacked`，不是拒绝原因。提交走现有 `validateCoverageReplacement` / `replaceDistrictCoverage`，并带 `expectedRevision`。`schemaVersion` 仍为 5。
 
 邮区辖区遵循以下不变量：
 
@@ -157,5 +157,5 @@ DRAFT -> SEALED -> OPENED
 - 钥匙复制、重新配锁和旧钥匙失效的规则。
 - 邮箱被破坏后，邮区/邮编是否保留。
 - 当面签收的交互方式。
-- 地图册提交辖区变更时采用何种审批策略，以及服务器是否调整单邮区区块上限。
+- 地图册提交辖区变更时采用何种审批策略，以及服务器是否调整单邮区区块上限。当前 MVP 沿用 `InteractionPolicy` 与硬上限 `DistrictCoverage.MAX_CHUNKS`。
 - 邮区代理中转协议的确认、撤销、优先级和最大跳数。
