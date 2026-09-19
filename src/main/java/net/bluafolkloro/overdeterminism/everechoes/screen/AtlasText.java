@@ -27,12 +27,26 @@ final class AtlasText {
             Align align,
             int color
     ) {
+        draw(graphics, font, text, area, originX, originY, align, color, false);
+    }
+
+    static void draw(
+            GuiGraphics graphics,
+            Font font,
+            Component text,
+            AtlasLayout.Rect area,
+            int originX,
+            int originY,
+            Align align,
+            int color,
+            boolean ellipsize
+    ) {
         if (area.w() <= 0 || area.h() <= 0) {
             return;
         }
         int lineH = font.lineHeight;
         int y = originY + area.textY(lineH);
-        Component shown = fit(font, text, area.w());
+        Component shown = ellipsize ? fit(font, text, area.w()) : text;
         int tw = font.width(shown);
         int localX = switch (align) {
             case LEFT -> area.x();

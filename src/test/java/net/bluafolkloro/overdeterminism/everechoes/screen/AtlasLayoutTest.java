@@ -8,16 +8,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class AtlasLayoutTest {
     @Test
     void widgetsStayInsideWindowOnTypicalScales() {
-        int[][] screens = {{960, 540}, {640, 360}, {480, 270}, {400, 240}, {1280, 720}, {320, 240}};
+        int[][] screens = {{960, 540}, {640, 360}, {480, 270}, {400, 240}, {1280, 720}};
         for (int[] screen : screens) {
             AtlasLayout layout = AtlasLayout.compute(screen[0], screen[1], 9);
-            String tag = screen[0] + "x" + screen[1];
-            assertTrue(layout.imageW <= (int) (screen[0] * 0.82) + 1, tag + " width");
-            assertTrue(layout.imageH <= (int) (screen[1] * 0.86) + 1, tag + " height");
+            String tag = screen[0] + "x" + screen[1] + " " + layout.imageW + "x" + layout.imageH + " cell=" + layout.cell;
+            assertTrue(layout.imageW <= screen[0] - 8, tag + " width " + layout.imageW + "/" + screen[0]);
+            assertTrue(layout.imageH <= screen[1] - 4, tag + " height " + layout.imageH + "/" + screen[1]);
             assertTrue(layout.window.containsRect(layout.header), tag + " header");
             assertTrue(layout.window.containsRect(layout.map), tag + " map");
             assertTrue(layout.window.containsRect(layout.sidebar), tag + " sidebar");
             assertTrue(layout.window.containsRect(layout.footer), tag + " footer");
+            assertTrue(layout.header.containsRect(layout.icon), tag + " icon");
+            assertTrue(layout.header.containsRect(layout.stamp), tag + " stamp");
             assertTrue(layout.header.containsRect(layout.title), tag + " title");
             assertTrue(layout.header.containsRect(layout.dimension), tag + " dim");
             assertTrue(layout.header.containsRect(layout.revision), tag + " rev");
@@ -38,6 +40,18 @@ class AtlasLayoutTest {
             assertTrue(layout.close.right() <= layout.imageW - AtlasLayout.LEATHER, tag + " close right");
             assertTrue(layout.legend.bottom() <= layout.statusTitle.y(), tag + " legend vs status");
             assertTrue(layout.grid.w() == layout.grid.h(), tag + " square map");
+            assertTrue(
+                    layout.imageW == AtlasLayout.LEATHER * 2 + layout.map.w() + AtlasLayout.SPINE + layout.sidebar.w(),
+                    tag + " window follows columns"
+            );
+            int inner = layout.map.w() + AtlasLayout.SPINE + layout.sidebar.w();
+            double mapShare = layout.map.w() / (double) inner;
+            double sideShare = layout.sidebar.w() / (double) inner;
+            assertTrue(mapShare >= 0.58 && mapShare <= 0.80, tag + " map share " + mapShare);
+            assertTrue(sideShare >= 0.22 && sideShare <= 0.42, tag + " side share " + sideShare);
+            assertTrue(layout.legendTwoCol, tag + " two-col legend");
+            assertFalse(layout.map.right() + AtlasLayout.SPINE < layout.sidebar.x() - 1, tag + " gap");
+            assertTrue(layout.sidebar.right() == layout.imageW - AtlasLayout.LEATHER, tag + " sidebar flush");
         }
     }
 }

@@ -6,7 +6,6 @@ import net.bluafolkloro.overdeterminism.everechoes.postal.DistrictCoverage;
 import net.bluafolkloro.overdeterminism.everechoes.postal.PostalAtlasLimits;
 import net.bluafolkloro.overdeterminism.everechoes.postal.PostalAtlasSnapshot;
 import net.bluafolkloro.overdeterminism.everechoes.postal.PostalChunk;
-import net.bluafolkloro.overdeterminism.everechoes.postal.PostalCodes;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
@@ -42,8 +41,8 @@ public class PostalAtlasScreen extends AbstractContainerScreen<PostalAtlasMenu> 
     private static final int SAVED = 0xFFC4A35A;
     private static final int ADD = 0xFFE8D48A;
     private static final int REMOVE = 0xFFA06058;
-    private static final int GRID = 0xFFD1C084;
-    private static final int INDEX = 0xFF8A7038;
+    private static final int GRID = 0xFFE2D4B0;
+    private static final int INDEX = 0xFFC4B078;
     private static final int HOVER = 0xFF5A3A20;
     private static final int STAMP = 0xFF80052C;
     private static final int PAPER_LINE = 0xFFD1C084;
@@ -67,7 +66,7 @@ public class PostalAtlasScreen extends AbstractContainerScreen<PostalAtlasMenu> 
 
     @Override
     protected void init() {
-        layout = AtlasLayout.compute(this.width, this.height, this.font.lineHeight);
+        layout = AtlasLayout.compute(this.width, this.height, this.font.lineHeight, textNeed());
         this.imageWidth = layout.imageW;
         this.imageHeight = layout.imageH;
         super.init();
@@ -158,11 +157,20 @@ public class PostalAtlasScreen extends AbstractContainerScreen<PostalAtlasMenu> 
     protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
         int x0 = leftPos;
         int y0 = topPos;
-        graphics.fill(x0, y0, x0 + imageWidth, y0 + imageHeight, 0xFF5A3C2C);
-        fillLocal(graphics, layout.header, 0xFFEDE4C8);
-        fillLocal(graphics, layout.map, 0xFFEDE4C8);
-        fillLocal(graphics, layout.sidebar, 0xFFEDE4C8);
-        fillLocal(graphics, layout.footer, 0xFFE8DCC0);
+        AtlasNine.nine(graphics, LEATHER, x0, y0, imageWidth, imageHeight, 64, 8);
+        AtlasNine.nine(
+                graphics,
+                PAPER,
+                x0 + AtlasLayout.LEATHER,
+                y0 + AtlasLayout.LEATHER,
+                imageWidth - AtlasLayout.LEATHER * 2,
+                imageHeight - AtlasLayout.LEATHER * 2,
+                64,
+                4
+        );
+        blitBrassCorners(graphics);
+        AtlasNine.blit(graphics, ENVELOPE, leftPos + layout.icon.x(), topPos + layout.icon.y(), 16, 16, 16);
+        AtlasNine.blit(graphics, POSTMARK, leftPos + layout.stamp.x(), topPos + layout.stamp.y(), 40, 16, 40, 16);
         hairline(graphics, layout.map);
         hairline(graphics, layout.sidebar);
         vline(graphics, layout.col0, layout.header.y() + 3, layout.header.h() - 6);
@@ -186,8 +194,8 @@ public class PostalAtlasScreen extends AbstractContainerScreen<PostalAtlasMenu> 
         AtlasText.draw(graphics, font, Component.translatable("gui.everechoes.atlas.title"), layout.title, ox, oy, AtlasText.Align.LEFT, INK_LABEL);
         AtlasText.draw(graphics, font, dimensionName(snapshot.dimension()), layout.dimension, ox, oy, AtlasText.Align.CENTER, INK);
         AtlasText.draw(graphics, font, Component.translatable("gui.everechoes.atlas.rev", snapshot.revision()), layout.revision, ox, oy, AtlasText.Align.RIGHT, INK);
-        AtlasText.draw(graphics, font, districtLabel(snapshot), layout.district, ox, oy, AtlasText.Align.LEFT, INK_LABEL);
-        AtlasText.draw(graphics, font, Component.translatable("gui.everechoes.atlas.chunk", menu.pos().getX() >> 4, menu.pos().getZ() >> 4), layout.chunk, ox, oy, AtlasText.Align.CENTER, INK);
+        AtlasText.draw(graphics, font, districtLabel(snapshot), layout.district, ox, oy, AtlasText.Align.LEFT, INK_LABEL, true);
+        AtlasText.draw(graphics, font, chunkLabel(), layout.chunk, ox, oy, AtlasText.Align.CENTER, INK);
         AtlasText.draw(graphics, font, Component.translatable("gui.everechoes.atlas.count", proposed.size(), snapshot.maxChunks()), layout.count, ox, oy, AtlasText.Align.RIGHT, INK);
         AtlasText.draw(graphics, font, Component.translatable("gui.everechoes.atlas.nav"), layout.navTitle, ox, oy, AtlasText.Align.CENTER, INK_LABEL);
         AtlasText.draw(graphics, font, Component.translatable("gui.everechoes.atlas.legend.title"), layout.legendTitle, ox, oy, AtlasText.Align.CENTER, INK_LABEL);
@@ -340,17 +348,14 @@ public class PostalAtlasScreen extends AbstractContainerScreen<PostalAtlasMenu> 
         ResourceLocation[] overlays = {null, CELL_ADD, CELL_REMOVE, CELL_FOREIGN, ICON_HUB, ICON_COLLECTION, CELL_HERE};
         int colW = layout.legendTwoCol ? layout.legend.w() / 2 : layout.legend.w();
         for (int i = 0; i < keys.length; i++) {
-            int col = layout.legendTwoCol ? i / 4 : 0;
-            int row = layout.legendTwoCol ? i % 4 : i;
-            if (y + (row + 1) * rowH > topPos + layout.legend.bottom()) {
-                break;
-            }
+            int col = layout.legendTwoCol ? (i < 4 ? 0 : 1) : 0;
+            int row = layout.legendTwoCol ? (i < 4 ? i : i - 4) : i;
             legendRow(graphics, x + col * colW, y + row * rowH, fills[i], overlays[i], keys[i]);
         }
     }
 
     private void legendRow(GuiGraphics graphics, int x, int y, int fill, @Nullable ResourceLocation overlay, String key) {
-        int rowH = layout.lineH + 2;
+        int rowH = layout.lineH + 1;
         int iconY = y + (rowH - 8) / 2;
         int textY = y + (rowH - font.lineHeight) / 2;
         graphics.fill(x, iconY, x + 8, iconY + 8, fill);
@@ -362,9 +367,42 @@ public class PostalAtlasScreen extends AbstractContainerScreen<PostalAtlasMenu> 
 
     private Component districtLabel(PostalAtlasSnapshot snapshot) {
         if (!snapshot.domainCode().isEmpty() && !snapshot.districtCode().isEmpty()) {
-            return Component.literal(PostalCodes.formatOutward(snapshot.domainCode(), snapshot.districtCode()));
+            String code = net.bluafolkloro.overdeterminism.everechoes.postal.PostalCodes.formatOutward(
+                    snapshot.domainCode(), snapshot.districtCode());
+            return Component.translatable("gui.everechoes.atlas.district", code);
+        }
+        if (!snapshot.districtCode().isEmpty()) {
+            return Component.translatable("gui.everechoes.atlas.district", snapshot.districtCode());
         }
         return Component.translatable("gui.everechoes.atlas.untitled_district");
+    }
+
+    private AtlasLayout.TextNeed textNeed() {
+        return new AtlasLayout.TextNeed(
+                font.width(Component.translatable("gui.everechoes.atlas.chunk", "+99", "+99")),
+                font.width(Component.translatable("gui.everechoes.atlas.count", 4096, 4096)),
+                font.width(Component.translatable("gui.everechoes.atlas.unchanged")),
+                font.width(Component.translatable("gui.everechoes.atlas.footer_delta", 0, 0)),
+                font.width(Component.translatable("gui.everechoes.atlas.submit")) + 20,
+                font.width(Component.translatable("gui.everechoes.atlas.revert")) + 20,
+                font.width(Component.translatable("gui.everechoes.atlas.close")) + 16,
+                8 + 6 + font.width(Component.translatable("gui.everechoes.atlas.legend.here")),
+                font.width(Component.translatable("gui.everechoes.atlas.title")),
+                font.width(Component.translatable("gui.everechoes.atlas.rev", 99)),
+                font.width(Component.translatable("gui.everechoes.dimension.overworld"))
+        );
+    }
+
+    private Component chunkLabel() {
+        return Component.translatable(
+                "gui.everechoes.atlas.chunk",
+                signed(menu.pos().getX() >> 4),
+                signed(menu.pos().getZ() >> 4)
+        );
+    }
+
+    private static String signed(int value) {
+        return (value >= 0 ? "+" : "") + value;
     }
 
     private Component dimensionName(ResourceLocation dimension) {
@@ -387,7 +425,8 @@ public class PostalAtlasScreen extends AbstractContainerScreen<PostalAtlasMenu> 
     }
 
     private Component footerSummary() {
-        return Component.translatable("gui.everechoes.atlas.footer_delta", addedCount(), removedCount());
+        String key = layout.compact ? "gui.everechoes.atlas.footer_delta_compact" : "gui.everechoes.atlas.footer_delta";
+        return Component.translatable(key, addedCount(), removedCount());
     }
 
     private int addedCount() {
@@ -451,7 +490,7 @@ public class PostalAtlasScreen extends AbstractContainerScreen<PostalAtlasMenu> 
                 dimensionName(snapshot.dimension()),
                 Component.translatable("gui.everechoes.atlas.rev", snapshot.revision()),
                 districtLabel(snapshot),
-                Component.translatable("gui.everechoes.atlas.chunk", menu.pos().getX() >> 4, menu.pos().getZ() >> 4),
+                chunkLabel(),
                 Component.translatable("gui.everechoes.atlas.count", proposed.size(), snapshot.maxChunks())
         };
         AtlasLayout.Rect[] areas = {layout.title, layout.dimension, layout.revision, layout.district, layout.chunk, layout.count};
@@ -477,10 +516,10 @@ public class PostalAtlasScreen extends AbstractContainerScreen<PostalAtlasMenu> 
         return Component.translatable(
                 "gui.everechoes.atlas.hover.cell",
                 dimensionName(snapshot.dimension()),
-                chunkX,
-                chunkZ,
-                relX,
-                relZ
+                String.valueOf(chunkX),
+                String.valueOf(chunkZ),
+                signed(relX),
+                signed(relZ)
         ).append("\n").append(cellStateLabel(snapshot, packed));
     }
 
