@@ -14,6 +14,8 @@ public record PostalAtlasRequestPayload(
         Action action,
         int originX,
         int originZ,
+        int width,
+        int height,
         int expectedRevision,
         @Nullable ResourceLocation dimension,
         Set<Long> packedChunks
@@ -29,12 +31,12 @@ public record PostalAtlasRequestPayload(
         SUBMIT
     }
 
-    public static PostalAtlasRequestPayload pan(int originX, int originZ) {
-        return new PostalAtlasRequestPayload(Action.PAN, originX, originZ, 0, null, Set.of());
+    public static PostalAtlasRequestPayload pan(int originX, int originZ, int width, int height) {
+        return new PostalAtlasRequestPayload(Action.PAN, originX, originZ, width, height, 0, null, Set.of());
     }
 
     public static PostalAtlasRequestPayload submit(int expectedRevision, ResourceLocation dimension, Set<Long> packedChunks) {
-        return new PostalAtlasRequestPayload(Action.SUBMIT, 0, 0, expectedRevision, dimension, Set.copyOf(packedChunks));
+        return new PostalAtlasRequestPayload(Action.SUBMIT, 0, 0, 0, 0, expectedRevision, dimension, Set.copyOf(packedChunks));
     }
 
     @Override
@@ -48,6 +50,8 @@ public record PostalAtlasRequestPayload(
             case PAN -> {
                 buffer.writeInt(payload.originX);
                 buffer.writeInt(payload.originZ);
+                buffer.writeVarInt(payload.width);
+                buffer.writeVarInt(payload.height);
             }
             case SUBMIT -> {
                 buffer.writeInt(payload.expectedRevision);
@@ -60,7 +64,7 @@ public record PostalAtlasRequestPayload(
     private static PostalAtlasRequestPayload read(RegistryFriendlyByteBuf buffer) {
         Action action = buffer.readEnum(Action.class);
         return switch (action) {
-            case PAN -> pan(buffer.readInt(), buffer.readInt());
+            case PAN -> pan(buffer.readInt(), buffer.readInt(), buffer.readVarInt(), buffer.readVarInt());
             case SUBMIT -> submit(
                     buffer.readInt(),
                     buffer.readResourceLocation(),

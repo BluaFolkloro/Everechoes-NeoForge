@@ -122,8 +122,8 @@ public record PostalAtlasSyncPayload(
         int height = buffer.readVarInt();
         if (width < 1
                 || height < 1
-                || width > PostalAtlasLimits.WINDOW_SIZE
-                || height > PostalAtlasLimits.WINDOW_SIZE
+                || width > PostalAtlasLimits.MAX_WINDOW_SIDE
+                || height > PostalAtlasLimits.MAX_WINDOW_SIDE
                 || width * height > PostalAtlasLimits.MAX_WINDOW_CELLS) {
             throw new DecoderException("atlas window " + width + "x" + height + " exceeds limits");
         }

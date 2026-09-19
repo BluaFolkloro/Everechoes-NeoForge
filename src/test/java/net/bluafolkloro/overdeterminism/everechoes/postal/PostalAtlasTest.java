@@ -21,9 +21,10 @@ class PostalAtlasTest {
 
     @Test
     void atlasLimitsAndSchemaMatchContract() {
-        assertEquals(21, PostalAtlasLimits.WINDOW_SIZE);
-        assertEquals(441, PostalAtlasLimits.MAX_WINDOW_CELLS);
-        assertEquals(PostalAtlasLimits.WINDOW_SIZE * PostalAtlasLimits.WINDOW_SIZE, PostalAtlasLimits.MAX_WINDOW_CELLS);
+        assertEquals(25, PostalAtlasLimits.DEFAULT_WINDOW_WIDTH);
+        assertEquals(19, PostalAtlasLimits.DEFAULT_WINDOW_HEIGHT);
+        assertEquals(475, PostalAtlasLimits.MAX_WINDOW_CELLS);
+        assertEquals(PostalAtlasLimits.DEFAULT_WINDOW_WIDTH * PostalAtlasLimits.DEFAULT_WINDOW_HEIGHT, PostalAtlasLimits.MAX_WINDOW_CELLS);
         assertEquals(DistrictCoverage.MAX_CHUNKS, PostalAtlasLimits.MAX_SUBMIT_CHUNKS);
         assertEquals(-1875000, PostalAtlasLimits.MIN_CHUNK);
         assertEquals(1874999, PostalAtlasLimits.MAX_CHUNK);
@@ -383,13 +384,13 @@ class PostalAtlasTest {
         UUID hub = register(network, 0, 0);
         PostalDistrict district = network.createDistrict(hub, PostalActionContext.empty()).orElseThrow();
         PostalChunk inside = new PostalChunk(OVERWORLD, 0, 0);
-        PostalChunk justOutside = new PostalChunk(OVERWORLD, PostalAtlasLimits.WINDOW_SIZE, 0);
+        PostalChunk justOutside = new PostalChunk(OVERWORLD, PostalAtlasLimits.DEFAULT_WINDOW_WIDTH, 0);
         PostalChunk far = new PostalChunk(OVERWORLD, 100, 0);
         mapLine(network, district.districtId(), 0, 100);
 
         PostalAtlasSnapshot window = atlas(network, district.districtId(), 0, 0, false);
-        assertEquals(PostalAtlasLimits.WINDOW_SIZE, window.width());
-        assertEquals(PostalAtlasLimits.WINDOW_SIZE, window.height());
+        assertEquals(PostalAtlasLimits.DEFAULT_WINDOW_WIDTH, window.width());
+        assertEquals(PostalAtlasLimits.DEFAULT_WINDOW_HEIGHT, window.height());
         assertTrue(window.ownedPacked().contains(inside.packed()));
         assertFalse(window.ownedPacked().contains(justOutside.packed()));
         assertFalse(window.ownedPacked().contains(far.packed()));
@@ -399,25 +400,25 @@ class PostalAtlasTest {
     }
 
     @Test
-    void invalidAtlasWindowSizesAreEmptyAndTwentyOneIsAccepted() {
+    void invalidAtlasWindowSizesAreEmptyAndDefaultRectangleIsAccepted() {
         PostalNetwork network = new PostalNetwork();
         UUID hub = register(network, 0, 0);
         PostalDistrict district = network.createDistrict(hub, PostalActionContext.empty()).orElseThrow();
         UUID districtId = district.districtId();
 
-        assertTrue(network.atlasWindow(districtId, OVERWORLD, 0, 0, 0, PostalAtlasLimits.WINDOW_SIZE, false).isEmpty());
-        assertTrue(network.atlasWindow(districtId, OVERWORLD, 0, 0, PostalAtlasLimits.WINDOW_SIZE, 0, false).isEmpty());
-        assertTrue(network.atlasWindow(districtId, OVERWORLD, 0, 0, 22, PostalAtlasLimits.WINDOW_SIZE, false).isEmpty());
-        assertTrue(network.atlasWindow(districtId, OVERWORLD, 0, 0, PostalAtlasLimits.WINDOW_SIZE, 22, false).isEmpty());
+        assertTrue(network.atlasWindow(districtId, OVERWORLD, 0, 0, 0, PostalAtlasLimits.DEFAULT_WINDOW_HEIGHT, false).isEmpty());
+        assertTrue(network.atlasWindow(districtId, OVERWORLD, 0, 0, PostalAtlasLimits.DEFAULT_WINDOW_WIDTH, 0, false).isEmpty());
+        assertTrue(network.atlasWindow(districtId, OVERWORLD, 0, 0, PostalAtlasLimits.MAX_WINDOW_SIDE + 1, 1, false).isEmpty());
+        assertTrue(network.atlasWindow(districtId, OVERWORLD, 0, 0, 1, PostalAtlasLimits.MAX_WINDOW_SIDE + 1, false).isEmpty());
         assertTrue(network.atlasWindow(districtId, OVERWORLD, 0, 0, 1_000_000, 1_000_000, false).isEmpty());
-        assertTrue(network.atlasWindow(UUID.randomUUID(), OVERWORLD, 0, 0, PostalAtlasLimits.WINDOW_SIZE, PostalAtlasLimits.WINDOW_SIZE, false).isEmpty());
+        assertTrue(network.atlasWindow(UUID.randomUUID(), OVERWORLD, 0, 0, PostalAtlasLimits.DEFAULT_WINDOW_WIDTH, PostalAtlasLimits.DEFAULT_WINDOW_HEIGHT, false).isEmpty());
         assertTrue(network.atlasWindow(
                 districtId,
                 OVERWORLD,
                 0,
                 0,
-                PostalAtlasLimits.WINDOW_SIZE,
-                PostalAtlasLimits.WINDOW_SIZE,
+                PostalAtlasLimits.DEFAULT_WINDOW_WIDTH,
+                PostalAtlasLimits.DEFAULT_WINDOW_HEIGHT,
                 false
         ).isPresent());
     }
@@ -503,8 +504,8 @@ class PostalAtlasTest {
                 OVERWORLD,
                 originX,
                 originZ,
-                PostalAtlasLimits.WINDOW_SIZE,
-                PostalAtlasLimits.WINDOW_SIZE,
+                PostalAtlasLimits.DEFAULT_WINDOW_WIDTH,
+                PostalAtlasLimits.DEFAULT_WINDOW_HEIGHT,
                 includeSavedCoverage
         ).orElseThrow();
     }

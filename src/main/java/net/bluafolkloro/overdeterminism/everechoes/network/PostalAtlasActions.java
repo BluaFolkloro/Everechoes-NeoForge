@@ -95,8 +95,8 @@ public final class PostalAtlasActions {
                 dimension,
                 payload.originX(),
                 payload.originZ(),
-                PostalAtlasLimits.WINDOW_SIZE,
-                PostalAtlasLimits.WINDOW_SIZE,
+                payload.width(),
+                payload.height(),
                 false
         ).ifPresent(snapshot -> {
             menu.replaceWindow(snapshot);
@@ -161,8 +161,8 @@ public final class PostalAtlasActions {
                 dimension,
                 current.originX(),
                 current.originZ(),
-                PostalAtlasLimits.WINDOW_SIZE,
-                PostalAtlasLimits.WINDOW_SIZE,
+                current.width(),
+                current.height(),
                 true
         ).orElse(null);
         Set<Long> saved = new LinkedHashSet<>();

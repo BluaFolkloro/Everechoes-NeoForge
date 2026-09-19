@@ -1,6 +1,7 @@
 package net.bluafolkloro.overdeterminism.everechoes.screen;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.Tooltip;
@@ -84,7 +85,7 @@ final class AtlasSpriteButton extends AbstractButton {
                 tex("compass_" + dir + "_hover"),
                 tex("compass_" + dir + "_pressed"),
                 tex("compass_" + dir + "_disabled"),
-                14,
+                56,
                 0,
                 false,
                 onPress
@@ -103,7 +104,7 @@ final class AtlasSpriteButton extends AbstractButton {
         AtlasSpriteButton button = new AtlasSpriteButton(
                 x, y, AtlasLayout.COMPASS_BTN, AtlasLayout.COMPASS_BTN, Component.empty(),
                 texture, texture, texture, texture,
-                14,
+                56,
                 0,
                 false,
                 onPress
@@ -130,13 +131,21 @@ final class AtlasSpriteButton extends AbstractButton {
             AtlasNine.blit(graphics, texture, getX(), getY(), getWidth(), getHeight(), textureSize);
         }
         if (drawLabel) {
-            int color = active ? 0xFFF5E6C8 : 0xFF8A8490;
+            int color = active ? 0xFFF5E6C8 : 0xFFC3A69A;
             if ("btn_secondary".equals(faceName())) {
-                color = active ? 0xFF2A1C10 : 0xFF8A8490;
+                color = active ? 0xFF2A1C10 : 0xFF76654E;
             } else if ("btn_ghost".equals(faceName())) {
-                color = active ? 0xFF2A1C10 : 0xFF8A8490;
+                color = active ? 0xFF2A1C10 : 0xFF76654E;
             }
-            renderScrollingString(graphics, Minecraft.getInstance().font, 2, color | Mth.ceil(alpha * 255.0F) << 24);
+            Font font = Minecraft.getInstance().font;
+            int textX = getX() + (getWidth() - font.width(getMessage())) / 2;
+            int textY = getY() + (getHeight() - font.lineHeight) / 2;
+            if (isHovered() && mouseDown()) {
+                textY++;
+            }
+            graphics.enableScissor(getX() + 2, getY() + 1, getRight() - 2, getBottom() - 1);
+            graphics.drawString(font, getMessage(), textX, textY, color | Mth.ceil(alpha * 255.0F) << 24, false);
+            graphics.disableScissor();
         }
     }
 

@@ -62,15 +62,15 @@ public class PostalAtlasItem extends Item {
 
         PostalNetwork network = PostalNetwork.get(serverLevel);
         PostalChunk chunk = PostalChunk.at(serverLevel.dimension().location(), pos);
-        int originX = chunk.x() - PostalAtlasLimits.WINDOW_SIZE / 2;
-        int originZ = chunk.z() - PostalAtlasLimits.WINDOW_SIZE / 2;
+        int originX = chunk.x() - PostalAtlasLimits.DEFAULT_WINDOW_WIDTH / 2;
+        int originZ = chunk.z() - PostalAtlasLimits.DEFAULT_WINDOW_HEIGHT / 2;
         PostalAtlasSnapshot snapshot = network.atlasWindow(
                 districtId,
                 serverLevel.dimension().location(),
                 originX,
                 originZ,
-                PostalAtlasLimits.WINDOW_SIZE,
-                PostalAtlasLimits.WINDOW_SIZE,
+                PostalAtlasLimits.DEFAULT_WINDOW_WIDTH,
+                PostalAtlasLimits.DEFAULT_WINDOW_HEIGHT,
                 true
         ).orElse(null);
         if (snapshot == null) {

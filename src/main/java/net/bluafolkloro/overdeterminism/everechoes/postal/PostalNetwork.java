@@ -184,8 +184,8 @@ public class PostalNetwork extends SavedData {
         }
         if (width < 1
                 || height < 1
-                || width > PostalAtlasLimits.WINDOW_SIZE
-                || height > PostalAtlasLimits.WINDOW_SIZE
+                || width > PostalAtlasLimits.MAX_WINDOW_SIDE
+                || height > PostalAtlasLimits.MAX_WINDOW_SIDE
                 || width * height > PostalAtlasLimits.MAX_WINDOW_CELLS) {
             return Optional.empty();
         }
