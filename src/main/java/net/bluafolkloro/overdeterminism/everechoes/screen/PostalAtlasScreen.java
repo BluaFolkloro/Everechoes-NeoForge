@@ -172,9 +172,9 @@ public class PostalAtlasScreen extends AbstractContainerScreen<PostalAtlasMenu> 
                 4
         );
         blitBrassCorners(graphics);
-        AtlasNine.blit(graphics, ENVELOPE, leftPos + layout.icon.x(), topPos + layout.icon.y(), 18, 18, 64);
+        AtlasNine.blit(graphics, ENVELOPE, leftPos + layout.icon.x(), topPos + layout.icon.y(), 18, 18, 18);
         AtlasNine.blit(graphics, POSTMARK, leftPos + layout.stamp.x(), topPos + layout.stamp.y(), 40, 16, 160, 64);
-        AtlasNine.blit(graphics, QUILL, leftPos + layout.quill.x(), topPos + layout.quill.y(), 16, 16, 64);
+        AtlasNine.blit(graphics, QUILL, leftPos + layout.quill.x(), topPos + layout.quill.y(), 16, 16, 16);
         hairline(graphics, layout.map);
         hairline(graphics, layout.sidebar);
         hairline(graphics, inset(layout.sidebar, 3));
