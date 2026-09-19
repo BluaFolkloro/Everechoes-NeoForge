@@ -13,6 +13,7 @@ final class AtlasLayout {
     static final int PAPER_IN = 5;
     static final int PAD_H = 6;
     static final int PAD_V = 4;
+    static final int HEADER_FIRST_ROW_EXTRA = 8;
     static final int BUTTON_H = 16;
     static final int COMPASS_BTN = 14;
     static final int CELL_MIN = 6;
@@ -137,7 +138,8 @@ final class AtlasLayout {
         int lineH = Math.max(8, lineHeight);
         boolean compact = screenW < 480 || screenH < 270;
         int headerRow = lineH + PAD_V * 2;
-        int headerH = headerRow * 2 + 1;
+        int firstHeaderRow = headerRow + HEADER_FIRST_ROW_EXTRA;
+        int headerH = firstHeaderRow + headerRow + 1;
         int footerH = BUTTON_H + 8;
         int rowH = lineH + (compact ? 1 : LEGEND_ROW_GAP);
         int compassBox = COMPASS_BTN * 3 + 4;
@@ -191,12 +193,12 @@ final class AtlasLayout {
         int c0 = leftPairW / 2;
         int c1 = leftPairW - c0;
         int r1 = header.y;
-        int r2 = header.y + headerRow + 1;
-        Rect icon = new Rect(header.x + PAD_H, r1 + (headerRow - 18) / 2, 18, 18);
-        Rect title = new Rect(icon.right() + 4, r1, Math.max(8, c0 - (icon.right() + 4 - header.x) - PAD_H), headerRow);
-        Rect dimension = new Rect(header.x + c0 + PAD_H, r1, c1 - PAD_H * 2, headerRow);
-        Rect stamp = new Rect(header.right() - PAD_H - 40, r1 + (headerRow - 16) / 2, 40, 16);
-        Rect revision = new Rect(header.x + leftPairW + PAD_H, r1, Math.max(8, stamp.x - 6 - (header.x + leftPairW + PAD_H)), headerRow);
+        int r2 = header.y + firstHeaderRow + 1;
+        Rect icon = new Rect(header.x + PAD_H, r1 + (firstHeaderRow - 24) / 2, 24, 24);
+        Rect title = new Rect(header.x + PAD_H, r1, c0 - PAD_H * 2, firstHeaderRow);
+        Rect dimension = new Rect(header.x + c0 + PAD_H, r1, c1 - PAD_H * 2, firstHeaderRow);
+        Rect stamp = new Rect(header.right() - PAD_H - 40, r1 + (firstHeaderRow - 16) / 2, 40, 16);
+        Rect revision = new Rect(header.x + leftPairW + PAD_H, r1, Math.max(8, stamp.x - 6 - (header.x + leftPairW + PAD_H)), firstHeaderRow);
         Rect district = new Rect(header.x + PAD_H, r2, c0 - PAD_H * 2, headerRow);
         Rect chunk = new Rect(header.x + c0 + PAD_H, r2, c1 - PAD_H * 2, headerRow);
         Rect count = new Rect(header.x + leftPairW + PAD_H, r2, header.w - leftPairW - PAD_H * 2, headerRow);
@@ -225,7 +227,7 @@ final class AtlasLayout {
         Rect close = new Rect(footer.right() - closeW - 4, by, closeW, BUTTON_H);
         Rect undo = new Rect(close.x - 4 - undoW, by, undoW, BUTTON_H);
         Rect apply = new Rect(undo.x - 4 - applyW, by, applyW, BUTTON_H);
-        Rect quill = new Rect(footer.x + PAD_H, footer.y + (footer.h - 16) / 2, 16, 16);
+        Rect quill = new Rect(footer.x + PAD_H, footer.y + (footer.h - 22) / 2, 22, 22);
         Rect summary = new Rect(quill.right() + 4, footer.y, Math.max(8, apply.x - 8 - (quill.right() + 4)), footer.h);
 
         return new AtlasLayout(

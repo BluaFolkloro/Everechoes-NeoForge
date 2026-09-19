@@ -41,8 +41,6 @@ public class PostalAtlasScreen extends AbstractContainerScreen<PostalAtlasMenu> 
     private static final int INK_LABEL = 0x3F2A14;
     private static final int EMPTY = 0xFFE3D5A3;
     private static final int SAVED = 0xFFC4A35A;
-    private static final int ADD = 0xFFE8D48A;
-    private static final int REMOVE = 0xFFA06058;
     private static final int GRID = 0xFFD6C797;
     private static final int INDEX = 0xFFAA945B;
     private static final int HOVER = 0xFF5A3A20;
@@ -172,9 +170,7 @@ public class PostalAtlasScreen extends AbstractContainerScreen<PostalAtlasMenu> 
                 4
         );
         blitBrassCorners(graphics);
-        AtlasNine.blit(graphics, ENVELOPE, leftPos + layout.icon.x(), topPos + layout.icon.y(), 18, 18, 18);
         AtlasNine.blit(graphics, POSTMARK, leftPos + layout.stamp.x(), topPos + layout.stamp.y(), 40, 16, 160, 64);
-        AtlasNine.blit(graphics, QUILL, leftPos + layout.quill.x(), topPos + layout.quill.y(), 16, 16, 16);
         hairline(graphics, layout.map);
         hairline(graphics, layout.sidebar);
         hairline(graphics, inset(layout.sidebar, 3));
@@ -188,6 +184,9 @@ public class PostalAtlasScreen extends AbstractContainerScreen<PostalAtlasMenu> 
         renderGrid(graphics, mouseX, mouseY);
         renderLegend(graphics);
         renderAllText(graphics);
+        // High-resolution stationery emblems sit on the final decorative layer.
+        AtlasNine.blit(graphics, ENVELOPE, leftPos + layout.icon.x(), topPos + layout.icon.y(), 24, 24, 128);
+        AtlasNine.blit(graphics, QUILL, leftPos + layout.quill.x(), topPos + layout.quill.y(), 22, 22, 96);
     }
 
     @Override
@@ -310,13 +309,15 @@ public class PostalAtlasScreen extends AbstractContainerScreen<PostalAtlasMenu> 
                 int y = gridY + cz * cell;
                 boolean inProposed = proposed.contains(packed);
                 boolean inSaved = saved.contains(packed);
+                // Overlap is contextual information, so it stays beneath edit intent.
+                // Addition/removal markers must remain the dominant state when combined.
+                if (snapshot.foreignPacked().contains(packed)) {
+                    AtlasNine.blit(graphics, CELL_FOREIGN, x, y, cell, cell, 32);
+                }
                 if (inProposed && !inSaved) {
                     AtlasNine.blit(graphics, CELL_ADD, x, y, cell, cell, 32);
                 } else if (!inProposed && inSaved) {
                     AtlasNine.blit(graphics, CELL_REMOVE, x, y, cell, cell, 32);
-                }
-                if (snapshot.foreignPacked().contains(packed)) {
-                    AtlasNine.blit(graphics, CELL_FOREIGN, x, y, cell, cell, 32);
                 }
                 if (packed == hoverPacked) {
                     graphics.fill(x, y, x + cell, y + 1, HOVER);
@@ -337,18 +338,10 @@ public class PostalAtlasScreen extends AbstractContainerScreen<PostalAtlasMenu> 
     }
 
     private int cellColor(Set<Long> saved, long packed) {
-        boolean inProposed = proposed.contains(packed);
-        boolean inSaved = saved.contains(packed);
-        if (inProposed && !inSaved) {
-            return ADD;
-        }
-        if (!inProposed && inSaved) {
-            return REMOVE;
-        }
-        if (inProposed || inSaved) {
-            return SAVED;
-        }
-        return EMPTY;
+        // Edit intent is communicated solely by the transparent overlay sprites.
+        // Keeping the base tied to saved coverage prevents state colours from
+        // obscuring hub/collection markers beneath add/remove/overlap symbols.
+        return saved.contains(packed) ? SAVED : EMPTY;
     }
 
     private void renderLegend(GuiGraphics graphics) {
@@ -364,7 +357,7 @@ public class PostalAtlasScreen extends AbstractContainerScreen<PostalAtlasMenu> 
                 "gui.everechoes.atlas.legend.collection",
                 "gui.everechoes.atlas.legend.here"
         };
-        int[] fills = {SAVED, ADD, REMOVE, SAVED, SAVED, SAVED, SAVED};
+        int[] fills = {SAVED, EMPTY, SAVED, SAVED, SAVED, SAVED, EMPTY};
         ResourceLocation[] overlays = {null, CELL_ADD, CELL_REMOVE, CELL_FOREIGN, ICON_HUB, ICON_COLLECTION, CELL_HERE};
         int colW = layout.legendTwoCol ? layout.legend.w() / 2 : layout.legend.w();
         for (int i = 0; i < keys.length; i++) {

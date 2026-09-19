@@ -43,6 +43,12 @@ class AtlasLayoutTest {
             assertTrue(layout.header.containsRect(layout.district), tag + " district");
             assertTrue(layout.header.containsRect(layout.chunk), tag + " chunk");
             assertTrue(layout.header.containsRect(layout.count), tag + " count");
+            assertTrue(
+                    layout.title.h() - layout.district.h() == AtlasLayout.HEADER_FIRST_ROW_EXTRA,
+                    tag + " first header row breathing room"
+            );
+            assertTrue(layout.title.x() == layout.district.x(), tag + " title/district left axis");
+            assertTrue(layout.title.w() == layout.district.w(), tag + " title/district center axis");
             assertTrue(layout.sidebar.containsRect(layout.compass), tag + " compass");
             assertTrue(layout.sidebar.containsRect(layout.legend), tag + " legend");
             assertTrue(layout.sidebar.containsRect(layout.status), tag + " status");
