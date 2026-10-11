@@ -1,5 +1,6 @@
 {
   "block.everechoes.post_box": "Postbox",
+  "block.everechoes.mail_box": "Mailbox",
   "block.everechoes.post_box.district": "Postbox · %s",
   "gui.everechoes.letter.address.mailbox_path": "EV12 7QF",
   "gui.everechoes.post_box.config": "District Network",

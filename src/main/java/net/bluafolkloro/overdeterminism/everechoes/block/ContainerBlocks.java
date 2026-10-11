@@ -24,6 +24,13 @@ public class ContainerBlocks {
                     .noOcclusion()
             ));
 
+    public static final DeferredBlock<MailBoxBlock> MAIL_BOX =
+            registerBlock("mail_box", () -> new MailBoxBlock(BlockBehaviour.Properties.of()
+                    .strength(2.0f)
+                    .sound(SoundType.METAL)
+                    .noOcclusion()
+            ));
+
     private static <T extends Block> DeferredBlock<T> registerBlock(String name, Supplier<T> block) {
         DeferredBlock<T> toReturn = BLOCKS.register(name, block);
         registerBlockItem(name, toReturn);

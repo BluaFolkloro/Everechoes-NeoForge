@@ -1,5 +1,6 @@
 {
   "block.everechoes.post_box": "邮筒",
+  "block.everechoes.mail_box": "邮箱",
   "block.everechoes.post_box.district": "邮筒 · %s",
   "gui.everechoes.letter.address.mailbox_path": "EV12 7QF",
   "gui.everechoes.post_box.config": "邮区入网",

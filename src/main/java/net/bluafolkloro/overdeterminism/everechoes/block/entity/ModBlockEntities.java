@@ -20,6 +20,13 @@ public class ModBlockEntities {
                             .build(null)
             );
 
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<MailBoxBlockEntity>> MAIL_BOX =
+            BLOCK_ENTITIES.register("mail_box",
+                    () -> BlockEntityType.Builder
+                            .of(MailBoxBlockEntity::new, ContainerBlocks.MAIL_BOX.get())
+                            .build(null)
+            );
+
     public static void register(IEventBus eventBus) {
         BLOCK_ENTITIES.register(eventBus);
     }
