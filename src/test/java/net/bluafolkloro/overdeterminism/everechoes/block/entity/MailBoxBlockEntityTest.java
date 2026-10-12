@@ -78,6 +78,8 @@ class MailBoxBlockEntityTest {
         String onLoad = methodBody(source, "void onLoad()");
         assertTrue(onLoad.contains("ServerLevel"), "onLoad does not mention ServerLevel");
         assertTrue(onLoad.contains("registerEndpoint"), "onLoad does not register the endpoint");
+        assertTrue(onLoad.contains("registered.mailboxId()"), "onLoad does not adopt a replacement identity");
+        assertTrue(onLoad.contains("setChanged()"), "onLoad does not persist a replacement identity");
 
         String save = methodBody(source, "void saveAdditional(");
         assertFalse(save.contains("mailboxId()"), "saveAdditional still force-creates via mailboxId()");

@@ -77,7 +77,7 @@
   - 所有邮区均可申请指定网关邮区作为代理，不依赖飞地判断。
   - 代理不改变邮区归属、地址或邮域派生范围，并必须防止循环路由。
 - [x] 让 `mail_box` 创建具体邮编端点（API / 持久化 / 破坏→OFFLINE）
-  - 已完成：`registerEndpoint` / `bindEndpoint` / `markEndpointOffline`；SavedData 附加 `mailboxes` 列表（`schemaVersion` 仍为 5）；方块加载登记、拆除标离线；已绑定投递码在 OFFLINE 时继续占用。
+  - 已完成：`registerEndpoint` / `bindEndpoint` / `markEndpointOffline`；SavedData v6 附加 `mailboxes` 列表并迁移 v5；复制方块实体会获得新 UUID，不会劫持原邮箱；方块加载登记、拆除标离线；已绑定投递码在 OFFLINE 时继续占用。
   - 尚未：申领 GUI、钥匙、签收；未绑定不可投递。
 - [ ] 将邮编申领权与邮箱方块绑定关系分离
   - 玩家可以保留喜欢的邮编，但未绑定邮箱的邮编不是有效投递端点。

@@ -526,10 +526,10 @@ class PostalNetworkTest {
     }
 
     /**
-     * 执行 {@code registerEndpointKeepsMailboxIdAndRevivesOfflineAtSamePos} 对应的业务操作。
+     * 执行 {@code registerEndpointRevivesSamePositionAndRekeysDuplicatePosition} 对应的业务操作。
      */
     @Test
-    void registerEndpointKeepsMailboxIdAndRevivesOfflineAtSamePos() {
+    void registerEndpointRevivesSamePositionAndRekeysDuplicatePosition() {
         PostalNetwork network = new PostalNetwork();
         UUID mailboxId = UUID.fromString("11111111-2222-3333-4444-555555555555");
         BlockPos origin = new BlockPos(0, 64, 0);
@@ -565,22 +565,26 @@ class PostalNetworkTest {
         assertTrue(revived.isBound());
         assertTrue(network.isDirty());
 
-        MailBoxEndpoint moved = network.registerEndpoint(mailboxId, NETHER, new BlockPos(32, 70, 16));
-        assertEquals(mailboxId, moved.mailboxId());
-        assertEquals(NETHER, moved.dimension());
-        assertEquals(new BlockPos(32, 70, 16), moved.position());
-        assertEquals(district.districtId(), moved.districtId());
-        assertEquals("0AA", moved.deliveryCode());
-        assertEquals(MailBoxEndpointState.ONLINE, moved.state());
+        MailBoxEndpoint duplicate = network.registerEndpoint(mailboxId, NETHER, new BlockPos(32, 70, 16));
+        assertNotEquals(mailboxId, duplicate.mailboxId());
+        assertEquals(NETHER, duplicate.dimension());
+        assertEquals(new BlockPos(32, 70, 16), duplicate.position());
+        assertFalse(duplicate.isBound());
+        assertEquals(MailBoxEndpointState.ONLINE, duplicate.state());
+
+        MailBoxEndpoint original = network.mailbox(mailboxId).orElseThrow();
+        assertEquals(OVERWORLD, original.dimension());
+        assertEquals(origin, original.position());
+        assertEquals(district.districtId(), original.districtId());
+        assertEquals("0AA", original.deliveryCode());
 
         network.markEndpointOffline(mailboxId);
-        MailBoxEndpoint relocatedOffline = network.registerEndpoint(mailboxId, OVERWORLD, new BlockPos(48, 64, 0));
-        assertEquals(mailboxId, relocatedOffline.mailboxId());
-        assertEquals(OVERWORLD, relocatedOffline.dimension());
-        assertEquals(new BlockPos(48, 64, 0), relocatedOffline.position());
-        assertEquals(MailBoxEndpointState.OFFLINE, relocatedOffline.state());
-        assertEquals(district.districtId(), relocatedOffline.districtId());
-        assertEquals("0AA", relocatedOffline.deliveryCode());
+        MailBoxEndpoint secondDuplicate = network.registerEndpoint(mailboxId, OVERWORLD, new BlockPos(48, 64, 0));
+        assertNotEquals(mailboxId, secondDuplicate.mailboxId());
+        assertNotEquals(duplicate.mailboxId(), secondDuplicate.mailboxId());
+        assertEquals(MailBoxEndpointState.ONLINE, secondDuplicate.state());
+        assertFalse(secondDuplicate.isBound());
+        assertEquals(MailBoxEndpointState.OFFLINE, network.mailbox(mailboxId).orElseThrow().state());
     }
 
     /**
@@ -751,6 +755,34 @@ class PostalNetworkTest {
     }
 
     /**
+     * 已解析地址必须按 UUID 路由，显示邮编发生变化也不能重定向到另一个信箱。
+     */
+    @Test
+    void resolvedAddressUsesUuidIdentityAndValidatesHierarchy() {
+        PostalNetwork network = new PostalNetwork();
+        UUID hub = register(network, 0, 0);
+        PostalDistrict district = network.createDistrict(hub, PostalActionContext.empty()).orElseThrow();
+        PostalDomain domain = network.establishAndJoin(
+                district.districtId(), "ev", PostalActionContext.empty(), 0L).orElseThrow();
+        UUID firstId = registerMailbox(network, 0, 0);
+        UUID secondId = registerMailbox(network, 8, 0);
+        network.bindEndpoint(firstId, district.districtId(), PostalActionContext.empty()).orElseThrow();
+        network.bindEndpoint(secondId, district.districtId(), PostalActionContext.empty()).orElseThrow();
+
+        MailBoxAddress staleDisplay = MailBoxAddress.display("EV", "1", "0AA")
+                .resolved(domain.domainId(), district.districtId(), secondId);
+        assertSame(staleDisplay, network.resolveAddress(staleDisplay));
+        assertTrue(network.canDeliverTo(staleDisplay));
+
+        MailBoxAddress wrongDistrict = MailBoxAddress.display("EV", "1", "0AB")
+                .resolved(domain.domainId(), UUID.randomUUID(), secondId);
+        assertFalse(network.canDeliverTo(wrongDistrict));
+        MailBoxAddress wrongDomain = MailBoxAddress.display("EV", "1", "0AB")
+                .resolved(UUID.randomUUID(), district.districtId(), secondId);
+        assertFalse(network.canDeliverTo(wrongDomain));
+    }
+
+    /**
      * 执行 {@code resolveAddressFillsMailboxIdForOnlineOrOffline} 对应的业务操作。
      */
     @Test
@@ -853,7 +885,7 @@ class PostalNetworkTest {
      */
     @Test
     void saveAndLoadPreservesMailboxesAndSkipsHalfBound() {
-        assertEquals(5, PostalNetwork.SCHEMA_VERSION);
+        assertEquals(6, PostalNetwork.SCHEMA_VERSION);
 
         PostalNetwork original = new PostalNetwork();
         UUID hub = register(original, 0, 0);
@@ -868,7 +900,7 @@ class PostalNetworkTest {
 
         CompoundTag tag = original.save(new CompoundTag(), null);
         assertEquals(PostalNetwork.SCHEMA_VERSION, tag.getInt("schemaVersion"));
-        assertEquals(5, tag.getInt("schemaVersion"));
+        assertEquals(6, tag.getInt("schemaVersion"));
         PostalNetwork loaded = PostalNetwork.load(tag, null);
         MailBoxEndpoint loadedOnline = loaded.mailbox(onlineBound).orElseThrow();
         assertEquals(MailBoxEndpointState.ONLINE, loadedOnline.state());
@@ -934,6 +966,62 @@ class PostalNetworkTest {
         assertFalse(rebound.isBound());
         assertEquals(MailBoxEndpointState.ONLINE, rebound.state());
         assertEquals(new BlockPos(3, 64, 3), rebound.position());
+    }
+
+    /**
+     * 版本 5 可迁移到版本 6，并保留开发版曾写入的信箱列表。
+     */
+    @Test
+    void schemaFiveMigratesToSixAndPreservesMailboxes() {
+        PostalNetwork original = new PostalNetwork();
+        UUID hub = register(original, 0, 0);
+        PostalDistrict district = original.createDistrict(hub, PostalActionContext.empty()).orElseThrow();
+        original.establishAndJoin(district.districtId(), "ev", PostalActionContext.empty(), 0L).orElseThrow();
+        UUID mailboxId = registerMailbox(original, 0, 0);
+        original.bindEndpoint(mailboxId, district.districtId(), PostalActionContext.empty()).orElseThrow();
+        CompoundTag versionFive = original.save(new CompoundTag(), null);
+        versionFive.putInt("schemaVersion", 5);
+
+        PostalNetwork migrated = PostalNetwork.load(versionFive, null);
+        assertTrue(migrated.isDirty());
+        assertEquals("0AA", migrated.mailbox(mailboxId).orElseThrow().deliveryCode());
+        CompoundTag upgraded = migrated.save(new CompoundTag(), null);
+        assertEquals(6, upgraded.getInt("schemaVersion"));
+    }
+
+    /**
+     * 损坏存档中的悬空邮区引用和重复投递码不会形成歧义路由。
+     */
+    @Test
+    void loadRepairsDanglingReferencesAndDuplicateDeliveryCodes() {
+        PostalNetwork original = new PostalNetwork();
+        UUID hub = register(original, 0, 0);
+        PostalDistrict district = original.createDistrict(hub, PostalActionContext.empty()).orElseThrow();
+        original.establishAndJoin(district.districtId(), "ev", PostalActionContext.empty(), 0L).orElseThrow();
+        UUID retainedId = new UUID(0L, 1L);
+        original.registerEndpoint(retainedId, OVERWORLD, new BlockPos(0, 64, 0));
+        original.bindEndpoint(retainedId, district.districtId(), PostalActionContext.empty()).orElseThrow();
+        CompoundTag malformed = original.save(new CompoundTag(), null);
+        ListTag mailboxes = malformed.getList("mailboxes", Tag.TAG_COMPOUND);
+
+        UUID duplicateId = new UUID(0L, 2L);
+        CompoundTag duplicate = mailboxes.getCompound(0).copy();
+        duplicate.putUUID("mailboxId", duplicateId);
+        duplicate.putInt("x", 1);
+        mailboxes.add(duplicate);
+
+        UUID danglingId = new UUID(0L, 3L);
+        CompoundTag dangling = mailboxes.getCompound(0).copy();
+        dangling.putUUID("mailboxId", danglingId);
+        dangling.putUUID("districtId", UUID.randomUUID());
+        mailboxes.add(dangling);
+
+        PostalNetwork loaded = PostalNetwork.load(malformed, null);
+        assertEquals("0AA", loaded.mailbox(retainedId).orElseThrow().deliveryCode());
+        assertFalse(loaded.mailbox(duplicateId).orElseThrow().isBound());
+        assertFalse(loaded.mailbox(danglingId).orElseThrow().isBound());
+        assertEquals(retainedId, loaded.resolveAddress(MailBoxAddress.display("EV", "1", "0AA"))
+                .mailboxId().orElseThrow());
     }
 
     /**

@@ -30,7 +30,11 @@ public class PostalNetwork extends SavedData {
     /**
      * 定义 {@code SCHEMA_VERSION} 常量。
      */
-    public static final int SCHEMA_VERSION = 5;
+    public static final int SCHEMA_VERSION = 6;
+    /**
+     * 首个可迁移的旧存档版本；版本 5 没有稳定的信箱表约束。
+     */
+    private static final int MIGRATABLE_SCHEMA_VERSION = 5;
     /**
      * 定义 {@code DATA_NAME} 常量。
      */
@@ -526,6 +530,10 @@ public class PostalNetwork extends SavedData {
      * 获取或解析 {@code resolveAddress} 对应的业务操作。
      */
     public MailBoxAddress resolveAddress(MailBoxAddress display) {
+        // 已写入信件的 UUID 是路由身份；显示邮编只是快照，绝不能把它重新指向其他信箱。
+        if (display.mailboxId().isPresent()) {
+            return display;
+        }
         PostalDomain domain = findLiveDomainByCode(display.domainCode()).orElse(null);
         if (domain == null) {
             return display;
@@ -569,7 +577,8 @@ public class PostalNetwork extends SavedData {
     }
 
     /**
-     * 按 mailboxId 注册或刷新信箱端点。身份不变；同坐标离线则恢复在线并保留绑定。
+     * 按 mailboxId 注册或刷新信箱端点。同坐标离线则恢复在线并保留绑定；
+     * 若同一身份出现在另一位置，则把新位置视为副本并签发新身份，原信箱不迁移。
      * 不支持的存档架构下返回临时在线未绑定端点且不写入。
      */
     public MailBoxEndpoint registerEndpoint(UUID mailboxId, ResourceLocation dimension, BlockPos position) {
@@ -602,10 +611,21 @@ public class PostalNetwork extends SavedData {
             }
             return existing;
         }
-        MailBoxEndpoint moved = existing.withPosition(dimension, position);
-        mailboxes.put(mailboxId, moved);
+        UUID registeredId;
+        do {
+            registeredId = UUID.randomUUID();
+        } while (mailboxes.containsKey(registeredId));
+        MailBoxEndpoint duplicate = new MailBoxEndpoint(
+                registeredId,
+                null,
+                null,
+                dimension,
+                position,
+                MailBoxEndpointState.ONLINE
+        );
+        mailboxes.put(registeredId, duplicate);
         setDirty();
-        return moved;
+        return duplicate;
     }
 
     /**
@@ -681,10 +701,28 @@ public class PostalNetwork extends SavedData {
     }
 
     /**
-     * 先解析显示地址，再按解析出的信箱身份判断可否投递。
+     * 已解析地址严格按 UUID 身份投递；纯显示地址只在此刻解析一次。
      */
     public boolean canDeliverTo(MailBoxAddress address) {
-        return resolveAddress(address).mailboxId().filter(this::canDeliverTo).isPresent();
+        MailBoxAddress resolved = address.mailboxId().isPresent() ? address : resolveAddress(address);
+        if (resolved.mailboxId().isEmpty()) {
+            return false;
+        }
+        MailBoxEndpoint endpoint = mailboxes.get(resolved.mailboxId().get());
+        if (endpoint == null || !canDeliverTo(endpoint.mailboxId())) {
+            return false;
+        }
+        if (resolved.districtId().isPresent()
+                && !resolved.districtId().get().equals(endpoint.districtId())) {
+            return false;
+        }
+        if (resolved.domainId().isPresent()) {
+            DomainMembership membership = memberships.get(endpoint.districtId());
+            if (membership == null || !resolved.domainId().get().equals(membership.domainId())) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -1137,7 +1175,8 @@ public class PostalNetwork extends SavedData {
      */
     public static PostalNetwork load(CompoundTag tag, HolderLookup.Provider registries) {
         PostalNetwork network = new PostalNetwork();
-        if (tag.getInt("schemaVersion") != SCHEMA_VERSION) {
+        int schemaVersion = tag.getInt("schemaVersion");
+        if (schemaVersion != SCHEMA_VERSION && schemaVersion != MIGRATABLE_SCHEMA_VERSION) {
             network.preservedUnsupportedData = tag.copy();
             return network;
         }
@@ -1145,8 +1184,11 @@ public class PostalNetwork extends SavedData {
         readDistricts(network, tag);
         readMemberships(network, tag);
         readNodes(network, tag);
-        readMailboxes(network, tag);
         readCoverages(network, tag);
+        readMailboxes(network, tag);
+        if (schemaVersion == MIGRATABLE_SCHEMA_VERSION) {
+            network.setDirty();
+        }
         return network;
     }
 
@@ -1614,6 +1656,7 @@ public class PostalNetwork extends SavedData {
             return;
         }
         ListTag list = tag.getList("mailboxes", Tag.TAG_COMPOUND);
+        List<MailBoxEndpoint> candidates = new ArrayList<>();
         for (int index = 0; index < list.size(); index++) {
             CompoundTag mailboxTag = list.getCompound(index);
             if (!mailboxTag.hasUUID("mailboxId")) {
@@ -1638,7 +1681,7 @@ public class PostalNetwork extends SavedData {
             if (state == null || dimension == null) {
                 continue;
             }
-            network.mailboxes.put(mailboxTag.getUUID("mailboxId"), new MailBoxEndpoint(
+            candidates.add(new MailBoxEndpoint(
                     mailboxTag.getUUID("mailboxId"),
                     districtId,
                     deliveryCode,
@@ -1647,6 +1690,48 @@ public class PostalNetwork extends SavedData {
                     state
             ));
         }
+
+        // 与 NBT 条目顺序无关：同一损坏存档始终由较小 UUID 保留冲突投递码。
+        candidates.sort((left, right) -> left.mailboxId().compareTo(right.mailboxId()));
+        Set<String> occupiedDeliveryCodes = new LinkedHashSet<>();
+        for (MailBoxEndpoint candidate : candidates) {
+            if (network.mailboxes.containsKey(candidate.mailboxId())) {
+                continue;
+            }
+            MailBoxEndpoint repaired = validateLoadedMailbox(network, candidate, occupiedDeliveryCodes);
+            if (repaired != null) {
+                network.mailboxes.put(repaired.mailboxId(), repaired);
+            }
+        }
+    }
+
+    /**
+     * 校验加载出的信箱引用与投递码唯一性。在线坏绑定降级为未绑定，离线坏绑定直接丢弃。
+     */
+    @Nullable
+    private static MailBoxEndpoint validateLoadedMailbox(
+            PostalNetwork network,
+            MailBoxEndpoint candidate,
+            Set<String> occupiedDeliveryCodes
+    ) {
+        if (!candidate.isBound()) {
+            return candidate.state() == MailBoxEndpointState.ONLINE ? candidate : null;
+        }
+        UUID districtId = candidate.districtId();
+        DomainMembership membership = network.memberships.get(districtId);
+        DistrictCoverage coverage = network.coverages.get(districtId);
+        boolean validReference = network.districts.containsKey(districtId)
+                && membership != null
+                && membership.isDeliveryEndpoint();
+        boolean validOnlinePosition = candidate.state() != MailBoxEndpointState.ONLINE
+                || coverage != null && coverage.contains(PostalChunk.at(candidate.dimension(), candidate.position()));
+        String deliveryKey = districtId + ":" + candidate.deliveryCode();
+        boolean uniqueCode = !occupiedDeliveryCodes.contains(deliveryKey);
+        if (validReference && validOnlinePosition && uniqueCode) {
+            occupiedDeliveryCodes.add(deliveryKey);
+            return candidate;
+        }
+        return candidate.state() == MailBoxEndpointState.ONLINE ? candidate.withoutBind() : null;
     }
 
     /**

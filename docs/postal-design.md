@@ -99,7 +99,7 @@ DRAFT -> SEALED -> OPENED
 
 ## 邮区辖区与邮域范围
 
-地图空间属于邮区，而不是直接属于邮域。每个 `PostalDistrict` 通过独立的 `DistrictCoverage` 保存自己的辖区。辖区是坐标元数据，不表示对应区块已经生成，也不应因此被加载。`postal_atlas` 是查看和提交辖区变更的界面，不是辖区所有权或管理权凭证，也不永久保存 `districtId`。手持图册对已加入邮区的邮筒使用，打开该邮筒所属邮区；HUB 与 COLLECTION 均可作为入口，但不能根据所在区块猜测目标邮区。`PostalNetwork.atlasWindow` 提供有上限的只读横向窗口（默认 25×19，`PostalAtlasLimits.MAX_WINDOW_CELLS`），只读取辖区和节点坐标，不加载世界区块。重叠写入 `ownedPacked` 与 `foreignPacked`，不是拒绝原因。提交走现有 `validateCoverageReplacement` / `replaceDistrictCoverage`，并带 `expectedRevision`。合法坐标由 `Level.MAX_LEVEL_SIZE` 换算的静态区块范围约束，不采用动态世界边界。`schemaVersion` 仍为 5。
+地图空间属于邮区，而不是直接属于邮域。每个 `PostalDistrict` 通过独立的 `DistrictCoverage` 保存自己的辖区。辖区是坐标元数据，不表示对应区块已经生成，也不应因此被加载。`postal_atlas` 是查看和提交辖区变更的界面，不是辖区所有权或管理权凭证，也不永久保存 `districtId`。手持图册对已加入邮区的邮筒使用，打开该邮筒所属邮区；HUB 与 COLLECTION 均可作为入口，但不能根据所在区块猜测目标邮区。`PostalNetwork.atlasWindow` 提供有上限的只读横向窗口（默认 25×19，`PostalAtlasLimits.MAX_WINDOW_CELLS`），只读取辖区和节点坐标，不加载世界区块。重叠写入 `ownedPacked` 与 `foreignPacked`，不是拒绝原因。提交走现有 `validateCoverageReplacement` / `replaceDistrictCoverage`，并带 `expectedRevision`。合法坐标由 `Level.MAX_LEVEL_SIZE` 换算的静态区块范围约束，不采用动态世界边界。当前 `schemaVersion` 为 6，版本 5 可迁移。
 
 邮区辖区遵循以下不变量：
 
@@ -123,9 +123,9 @@ DRAFT -> SEALED -> OPENED
 
 未来的代理中转是邮区之间的路由协议，不改变邮区归属或邮域范围。任何邮区都可以申请代理，不以飞地检测作为前提；实际实现应指定具体网关邮区、方向、优先级和协议状态，并防止循环路由。
 
-当前 `MailBoxAddress` 用 UUID 字段保存内部身份，并另存英式显示代码快照。旧 `AAAXX-YYY` 格式不会被猜测转换：它无法无损映射到新的内码结构，静默兼容会使不同旧地址合并。旧地址因此按无法解析处理，开发版存档按下述策略重新入网。
+当前 `MailBoxAddress` 用 UUID 字段保存内部身份，并另存英式显示代码快照。投递时已有 UUID 的地址严格按 UUID 路由，并校验邮域、邮区身份一致性；只有尚未解析的玩家输入才按显示邮编查找一次。旧 `AAAXX-YYY` 格式不会被猜测转换：它无法无损映射到新的内码结构，静默兼容会使不同旧地址合并。旧地址因此按无法解析处理，开发版存档按下述策略重新入网。
 
-开发版存档策略：`PostalNetwork` 只读写当前 `schemaVersion` 的模型。遇到无法识别的旧版或未来版本时，保留原始 NBT 并禁止通过配置界面修改该网络，不再自动改写为空数据；正式发布后仍须为每个受支持版本提供明确迁移器。旧邮筒库存保留。不扫描、不强制加载未加载区块。
+开发版存档策略：`PostalNetwork` 写入当前 `schemaVersion`，并显式迁移版本 5 到版本 6。遇到其他无法识别的旧版或未来版本时，保留原始 NBT 并禁止通过配置界面修改该网络，不再自动改写为空数据；正式发布后仍须为每个受支持版本提供明确迁移器。旧邮筒库存保留。不扫描、不强制加载未加载区块。
 
 ## 发信邮筒职责
 

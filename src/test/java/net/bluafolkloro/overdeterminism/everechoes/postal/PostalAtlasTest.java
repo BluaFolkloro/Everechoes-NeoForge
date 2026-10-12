@@ -45,7 +45,7 @@ class PostalAtlasTest {
         assertTrue(PostalAtlasLimits.isLegalChunk(PostalAtlasLimits.MIN_CHUNK, PostalAtlasLimits.MAX_CHUNK));
         assertFalse(PostalAtlasLimits.isLegalChunk(PostalAtlasLimits.MIN_CHUNK - 1, 0));
         assertFalse(PostalAtlasLimits.isLegalChunk(PostalAtlasLimits.MAX_CHUNK + 1, 0));
-        assertEquals(5, PostalNetwork.SCHEMA_VERSION);
+        assertEquals(6, PostalNetwork.SCHEMA_VERSION);
     }
 
     /**
@@ -384,7 +384,7 @@ class PostalAtlasTest {
 
         CompoundTag tag = original.save(new CompoundTag(), null);
         assertEquals(PostalNetwork.SCHEMA_VERSION, tag.getInt("schemaVersion"));
-        assertEquals(5, tag.getInt("schemaVersion"));
+        assertEquals(6, tag.getInt("schemaVersion"));
         assertFalse(tag.contains("exploredChunks"));
         ListTag coverages = tag.getList("coverages", Tag.TAG_COMPOUND);
         for (int index = 0; index < coverages.size(); index++) {

@@ -1,5 +1,6 @@
 package net.bluafolkloro.overdeterminism.everechoes.block.entity;
 
+import net.bluafolkloro.overdeterminism.everechoes.postal.MailBoxEndpoint;
 import net.bluafolkloro.overdeterminism.everechoes.postal.PostalNetwork;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -72,8 +73,12 @@ public class MailBoxBlockEntity extends BlockEntity {
         if (level instanceof ServerLevel serverLevel) {
             ensureMailboxIdOnServer();
             if (mailboxId != null) {
-                PostalNetwork.get(serverLevel).registerEndpoint(
+                MailBoxEndpoint registered = PostalNetwork.get(serverLevel).registerEndpoint(
                         mailboxId, serverLevel.dimension().location(), getBlockPos());
+                if (!registered.mailboxId().equals(mailboxId)) {
+                    mailboxId = registered.mailboxId();
+                    setChanged();
+                }
             }
         }
     }

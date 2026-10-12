@@ -68,13 +68,6 @@ public record MailBoxEndpoint(
     }
 
     /**
-     * 仅改坐标，保留绑定与在线状态。
-     */
-    public MailBoxEndpoint withPosition(ResourceLocation dimension, BlockPos position) {
-        return new MailBoxEndpoint(mailboxId, districtId, deliveryCode, dimension, position, state);
-    }
-
-    /**
      * 绑定到投递区并设为在线。
      */
     public MailBoxEndpoint withBind(UUID districtId, String deliveryCode) {
