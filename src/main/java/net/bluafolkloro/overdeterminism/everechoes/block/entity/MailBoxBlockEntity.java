@@ -1,5 +1,6 @@
 package net.bluafolkloro.overdeterminism.everechoes.block.entity;
 
+import net.bluafolkloro.overdeterminism.everechoes.postal.PostalNetwork;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -63,13 +64,17 @@ public class MailBoxBlockEntity extends BlockEntity {
     }
 
     /**
-     * 处理 {@code onLoad} 对应的业务操作。
+     * 服务端加载时确保 mailboxId，并向邮政网络注册端点；不绑定投递区。
      */
     @Override
     public void onLoad() {
         super.onLoad();
-        if (level instanceof ServerLevel) {
+        if (level instanceof ServerLevel serverLevel) {
             ensureMailboxIdOnServer();
+            if (mailboxId != null) {
+                PostalNetwork.get(serverLevel).registerEndpoint(
+                        mailboxId, serverLevel.dimension().location(), getBlockPos());
+            }
         }
     }
 

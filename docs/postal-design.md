@@ -13,7 +13,7 @@
 当前命名边界：
 
 - `post_box`：发信端，负责玩家投递或提交待投递信件。
-- `mail_box`：收信端。方块、四种可见安装样式模型和 `mailboxId` 骨架已存在；邮编申领、钥匙和签收尚未实现。
+- `mail_box`：收信端。方块已向 `PostalNetwork` 登记 `MailBoxEndpoint`；申领 GUI、钥匙和签收尚未实现。未绑定不可投递。破坏 → OFFLINE，已绑定码保留。
 
 地址基类：
 
@@ -30,7 +30,7 @@ public sealed interface Address permits MailBoxAddress, PlayerAddress {
 PostalDomain
 └─ PostalDistrict
    ├─ PostBoxNode（HUB 或 COLLECTION）
-   └─ MailBoxEndpoint（尚未实现）
+   └─ MailBoxEndpoint（在线/离线端点；绑定需显式 districtId）
 ```
 
 - `MailBoxAddress` 同时保存内部 UUID（`domainId` / `districtId` / `mailboxId`）和显示快照（`domainCode` / `districtCode` / `deliveryCode`）。
@@ -95,7 +95,7 @@ DRAFT -> SEALED -> OPENED
 - 状态：`PENDING` → `ACTIVE` → `LEAVING` → `DETACHED`。
 - 加入和退出针对邮区，不针对玩家。
 - 当前默认策略是开放加入；退出不能被永久禁止。
-- 清算接口已预留。`mail_box` 方块已可放置，但尚未登记到 `PostalNetwork`，因此不伪造自动投递队列。
+- 清算接口已预留。`mail_box` 登记为 `PostalNetwork` 端点；未绑定不是投递端。重叠区块绑定必须由调用方传入 `districtId`，不从 `districtsAt` 猜测。
 
 ## 邮区辖区与邮域范围
 
@@ -152,10 +152,10 @@ DRAFT -> SEALED -> OPENED
 
 ## 待明确问题
 
-- 收信邮箱 `postalCode` 如何申领，以及与 `mail_box` 方块如何解绑。
+- 收信邮箱 `postalCode` 如何申领，以及与 `mail_box` 方块如何解绑（无破坏的解绑 API 尚未提供）。
 - 一个玩家是否可以拥有多个收信邮箱地址。
 - 钥匙复制、重新配锁和旧钥匙失效的规则。
-- 邮箱被破坏后，邮区/邮编是否保留。
+- 邮箱被破坏后：已绑定端点转为 OFFLINE，区内投递码继续占用；未绑定记录删除。最后一只邮筒拆除时，在线邮箱解绑、离线记录删除。
 - 当面签收的交互方式。
 - 地图册提交辖区变更时采用何种审批策略，以及服务器是否调整单邮区区块上限。当前 MVP 沿用 `InteractionPolicy` 与硬上限 `DistrictCoverage.MAX_CHUNKS`。
 - 邮区代理中转协议的确认、撤销、优先级和最大跳数。

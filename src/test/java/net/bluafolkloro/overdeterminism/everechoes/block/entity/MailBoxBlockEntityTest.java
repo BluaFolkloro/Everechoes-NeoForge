@@ -64,7 +64,7 @@ class MailBoxBlockEntityTest {
     void javaSourceAssignsMailboxIdOnServerWithoutGetterMint() {
         String source = readEntitySource();
         assertFalse(source.contains("MenuProvider"), "MailBoxBlockEntity implements MenuProvider");
-        assertFalse(source.contains("PostalNetwork"), "MailBoxBlockEntity imports PostalNetwork");
+        assertFalse(source.contains("bindEndpoint"), "MailBoxBlockEntity claims a postal code");
 
         String getter = methodBody(source, "UUID mailboxId()");
         assertFalse(getter.contains("randomUUID"), "mailboxId() still mints a UUID");
@@ -74,8 +74,10 @@ class MailBoxBlockEntityTest {
         assertEquals(1, count(source, "UUID.randomUUID()"), "UUID.randomUUID() should only mint on the server assign path");
 
         assertTrue(source.contains("void onLoad()"), "onLoad is missing");
+        assertTrue(source.contains("registerEndpoint"), "onLoad does not call registerEndpoint");
         String onLoad = methodBody(source, "void onLoad()");
         assertTrue(onLoad.contains("ServerLevel"), "onLoad does not mention ServerLevel");
+        assertTrue(onLoad.contains("registerEndpoint"), "onLoad does not register the endpoint");
 
         String save = methodBody(source, "void saveAdditional(");
         assertFalse(save.contains("mailboxId()"), "saveAdditional still force-creates via mailboxId()");

@@ -2,8 +2,10 @@ package net.bluafolkloro.overdeterminism.everechoes.block;
 
 import com.mojang.serialization.MapCodec;
 import net.bluafolkloro.overdeterminism.everechoes.block.entity.MailBoxBlockEntity;
+import net.bluafolkloro.overdeterminism.everechoes.postal.PostalNetwork;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
@@ -39,6 +41,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * 封装方块行为、形态与交互规则。
@@ -331,6 +334,25 @@ public class MailBoxBlock extends BaseEntityBlock {
             level.removeBlock(lowerPos, false);
         }
         return super.playerWillDestroy(level, pos, state, player);
+    }
+
+    /**
+     * 下半格被替换或拆除时，在方块实体卸下前将端点标为离线。
+     */
+    @Override
+    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+        // BE 只存在于 LOWER；POST 上半拆除已由 playerWillDestroy 先拆 LOWER。
+        if (!state.is(newState.getBlock()) && state.getValue(HALF) == DoubleBlockHalf.LOWER) {
+            BlockEntity be = level.getBlockEntity(pos);
+            if (be instanceof MailBoxBlockEntity mailBox && level instanceof ServerLevel serverLevel) {
+                UUID id = mailBox.mailboxId();
+                if (id != null) {
+                    PostalNetwork.get(serverLevel).markEndpointOffline(id);
+                }
+            }
+        }
+
+        super.onRemove(state, level, pos, newState, movedByPiston);
     }
 
     /**

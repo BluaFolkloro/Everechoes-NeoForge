@@ -53,6 +53,10 @@ public class PostalNetwork extends SavedData {
      */
     private final Map<UUID, PostBoxNode> nodes = new LinkedHashMap<>();
     /**
+     * 信箱端点，键为 mailboxId。
+     */
+    private final Map<UUID, MailBoxEndpoint> mailboxes = new LinkedHashMap<>();
+    /**
      * 保存 {@code coverages} 对应的状态或依赖。
      */
     private final Map<UUID, DistrictCoverage> coverages = new LinkedHashMap<>();
@@ -163,6 +167,13 @@ public class PostalNetwork extends SavedData {
      */
     public Optional<PostBoxNode> node(UUID nodeId) {
         return Optional.ofNullable(nodes.get(nodeId));
+    }
+
+    /**
+     * 按信箱身份查询端点；未知则空。
+     */
+    public Optional<MailBoxEndpoint> mailbox(UUID mailboxId) {
+        return Optional.ofNullable(mailboxes.get(mailboxId));
     }
 
     /**
@@ -425,6 +436,19 @@ public class PostalNetwork extends SavedData {
     }
 
     /**
+     * 该投递区已绑定的信箱快照（在线与离线），无则空列表。
+     */
+    public List<MailBoxEndpoint> mailboxesOf(UUID districtId) {
+        List<MailBoxEndpoint> result = new ArrayList<>();
+        for (MailBoxEndpoint endpoint : mailboxes.values()) {
+            if (districtId.equals(endpoint.districtId())) {
+                result.add(endpoint);
+            }
+        }
+        return Collections.unmodifiableList(result);
+    }
+
+    /**
      * 执行 {@code hubOf} 对应的业务操作。
      */
     public Optional<PostBoxNode> hubOf(UUID districtId) {
@@ -507,7 +531,8 @@ public class PostalNetwork extends SavedData {
             return display;
         }
         PostalDistrict district = findDistrictByCode(domain.domainId(), display.districtCode()).orElse(null);
-        return display.resolved(domain.domainId(), district == null ? null : district.districtId(), null);
+        UUID mailboxId = district == null ? null : mailboxIdForDelivery(district.districtId(), display.deliveryCode());
+        return display.resolved(domain.domainId(), district == null ? null : district.districtId(), mailboxId);
     }
 
     /**
@@ -541,6 +566,125 @@ public class PostalNetwork extends SavedData {
         nodes.put(registeredId, node);
         setDirty();
         return node;
+    }
+
+    /**
+     * 按 mailboxId 注册或刷新信箱端点。身份不变；同坐标离线则恢复在线并保留绑定。
+     * 不支持的存档架构下返回临时在线未绑定端点且不写入。
+     */
+    public MailBoxEndpoint registerEndpoint(UUID mailboxId, ResourceLocation dimension, BlockPos position) {
+        Objects.requireNonNull(mailboxId, "mailboxId");
+        Objects.requireNonNull(dimension, "dimension");
+        Objects.requireNonNull(position, "position");
+        if (preservedUnsupportedData != null) {
+            return new MailBoxEndpoint(mailboxId, null, null, dimension, position, MailBoxEndpointState.ONLINE);
+        }
+        MailBoxEndpoint existing = mailboxes.get(mailboxId);
+        if (existing == null) {
+            MailBoxEndpoint created = new MailBoxEndpoint(
+                    mailboxId,
+                    null,
+                    null,
+                    dimension,
+                    position,
+                    MailBoxEndpointState.ONLINE
+            );
+            mailboxes.put(mailboxId, created);
+            setDirty();
+            return created;
+        }
+        if (existing.dimension().equals(dimension) && existing.position().equals(position)) {
+            if (existing.state() == MailBoxEndpointState.OFFLINE) {
+                MailBoxEndpoint revived = existing.withState(MailBoxEndpointState.ONLINE);
+                mailboxes.put(mailboxId, revived);
+                setDirty();
+                return revived;
+            }
+            return existing;
+        }
+        MailBoxEndpoint moved = existing.withPosition(dimension, position);
+        mailboxes.put(mailboxId, moved);
+        setDirty();
+        return moved;
+    }
+
+    /**
+     * 将在线未绑定信箱绑定到指定投递区并分配区内唯一投递码；同区已绑定则原样返回。
+     * 不从覆盖区推断投递区。
+     */
+    public Optional<MailBoxEndpoint> bindEndpoint(UUID mailboxId, UUID districtId, PostalActionContext context) {
+        Objects.requireNonNull(mailboxId, "mailboxId");
+        Objects.requireNonNull(districtId, "districtId");
+        Objects.requireNonNull(context, "context");
+        if (!interactionPolicy.canSubmit(context).allowed()) {
+            return Optional.empty();
+        }
+        MailBoxEndpoint mailbox = mailboxes.get(mailboxId);
+        if (mailbox == null || mailbox.state() == MailBoxEndpointState.OFFLINE) {
+            return Optional.empty();
+        }
+        if (mailbox.isBound()) {
+            if (districtId.equals(mailbox.districtId())) {
+                return Optional.of(mailbox);
+            }
+            return Optional.empty();
+        }
+        if (!districts.containsKey(districtId)) {
+            return Optional.empty();
+        }
+        if (!covers(districtId, mailbox.dimension(), mailbox.position())) {
+            return Optional.empty();
+        }
+        DomainMembership membership = memberships.get(districtId);
+        if (membership == null || !membership.isDeliveryEndpoint()) {
+            return Optional.empty();
+        }
+        Optional<String> deliveryCode = DeliveryCodeAllocator.allocate(usedDeliveryCodes(districtId));
+        if (deliveryCode.isEmpty()) {
+            return Optional.empty();
+        }
+        MailBoxEndpoint bound = mailbox.withBind(districtId, deliveryCode.get());
+        mailboxes.put(mailboxId, bound);
+        setDirty();
+        return Optional.of(bound);
+    }
+
+    /**
+     * 标记信箱离线：已绑定则保留投递码占用；未绑定则删除记录。
+     */
+    public void markEndpointOffline(UUID mailboxId) {
+        MailBoxEndpoint mailbox = mailboxes.get(mailboxId);
+        if (mailbox == null) {
+            return;
+        }
+        if (mailbox.isBound()) {
+            if (mailbox.state() == MailBoxEndpointState.OFFLINE) {
+                return;
+            }
+            mailboxes.put(mailboxId, mailbox.withState(MailBoxEndpointState.OFFLINE));
+            setDirty();
+            return;
+        }
+        mailboxes.remove(mailboxId);
+        setDirty();
+    }
+
+    /**
+     * 在线且已绑定、且投递区处于可投递状态时才可投递。
+     */
+    public boolean canDeliverTo(UUID mailboxId) {
+        MailBoxEndpoint endpoint = mailboxes.get(mailboxId);
+        return endpoint != null
+                && endpoint.state() == MailBoxEndpointState.ONLINE
+                && endpoint.isBound()
+                && isActiveDeliveryDistrict(endpoint.districtId());
+    }
+
+    /**
+     * 先解析显示地址，再按解析出的信箱身份判断可否投递。
+     */
+    public boolean canDeliverTo(MailBoxAddress address) {
+        return resolveAddress(address).mailboxId().filter(this::canDeliverTo).isPresent();
     }
 
     /**
@@ -685,6 +829,13 @@ public class PostalNetwork extends SavedData {
                 .map(node -> PostalChunk.at(node.dimension(), node.position()))
                 .anyMatch(chunk -> !proposed.contains(chunk));
         if (excludesNode) {
+            return PolicyDecision.deny("message.everechoes.coverage.excludes_node");
+        }
+        boolean excludesMailbox = mailboxesOf(districtId).stream()
+                .filter(endpoint -> endpoint.state() == MailBoxEndpointState.ONLINE && endpoint.isBound())
+                .map(endpoint -> PostalChunk.at(endpoint.dimension(), endpoint.position()))
+                .anyMatch(chunk -> !proposed.contains(chunk));
+        if (excludesMailbox) {
             return PolicyDecision.deny("message.everechoes.coverage.excludes_node");
         }
         return PolicyDecision.allow();
@@ -994,6 +1145,7 @@ public class PostalNetwork extends SavedData {
         readDistricts(network, tag);
         readMemberships(network, tag);
         readNodes(network, tag);
+        readMailboxes(network, tag);
         readCoverages(network, tag);
         return network;
     }
@@ -1011,6 +1163,7 @@ public class PostalNetwork extends SavedData {
         writeDistricts(tag);
         writeMemberships(tag);
         writeNodes(tag);
+        writeMailboxes(tag);
         writeCoverages(tag);
         return tag;
     }
@@ -1041,6 +1194,7 @@ public class PostalNetwork extends SavedData {
         districts.remove(districtId);
         DistrictCoverage coverage = coverages.remove(districtId);
         unindexCoverage(coverage);
+        unbindMailboxesOfRemovedDistrict(districtId);
     }
 
     /**
@@ -1123,6 +1277,60 @@ public class PostalNetwork extends SavedData {
                         && membership.isDeliveryEndpoint()
                         && isServedDistrict(membership.districtId()));
         domains.put(domainId, domain.withLifecycle(hasActive ? DomainLifecycle.ACTIVE : DomainLifecycle.DORMANT));
+    }
+
+    /**
+     * 该投递区已占用的投递码（在线与离线绑定均计入）。
+     */
+    private Set<String> usedDeliveryCodes(UUID districtId) {
+        Set<String> used = new LinkedHashSet<>();
+        for (MailBoxEndpoint endpoint : mailboxes.values()) {
+            if (districtId.equals(endpoint.districtId()) && endpoint.deliveryCode() != null) {
+                used.add(endpoint.deliveryCode());
+            }
+        }
+        return used;
+    }
+
+    /**
+     * 按规范化投递码查找区内信箱，在线与离线均可命中。
+     */
+    @Nullable
+    private UUID mailboxIdForDelivery(UUID districtId, String deliveryCode) {
+        Optional<String> canonical = PostalCodes.canonicalDelivery(deliveryCode);
+        if (canonical.isEmpty()) {
+            return null;
+        }
+        String code = canonical.get();
+        for (MailBoxEndpoint endpoint : mailboxes.values()) {
+            if (districtId.equals(endpoint.districtId()) && code.equals(endpoint.deliveryCode())) {
+                return endpoint.mailboxId();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 投递区清空后：在线信箱解绑，离线信箱删除。
+     */
+    private void unbindMailboxesOfRemovedDistrict(UUID districtId) {
+        List<UUID> mailboxIds = new ArrayList<>();
+        for (MailBoxEndpoint endpoint : mailboxes.values()) {
+            if (districtId.equals(endpoint.districtId())) {
+                mailboxIds.add(endpoint.mailboxId());
+            }
+        }
+        for (UUID mailboxId : mailboxIds) {
+            MailBoxEndpoint endpoint = mailboxes.get(mailboxId);
+            if (endpoint == null) {
+                continue;
+            }
+            if (endpoint.state() == MailBoxEndpointState.ONLINE) {
+                mailboxes.put(mailboxId, endpoint.withoutBind());
+            } else {
+                mailboxes.remove(mailboxId);
+            }
+        }
     }
 
     /**
@@ -1227,6 +1435,30 @@ public class PostalNetwork extends SavedData {
             list.add(nodeTag);
         }
         tag.put("nodes", list);
+    }
+
+    /**
+     * 写出信箱端点列表；绑定字段仅在完整绑定时写入。
+     */
+    private void writeMailboxes(CompoundTag tag) {
+        ListTag list = new ListTag();
+        for (MailBoxEndpoint mailbox : mailboxes.values()) {
+            CompoundTag mailboxTag = new CompoundTag();
+            mailboxTag.putUUID("mailboxId", mailbox.mailboxId());
+            if (mailbox.districtId() != null) {
+                mailboxTag.putUUID("districtId", mailbox.districtId());
+            }
+            if (mailbox.deliveryCode() != null) {
+                mailboxTag.putString("deliveryCode", mailbox.deliveryCode());
+            }
+            mailboxTag.putString("dimension", mailbox.dimension().toString());
+            mailboxTag.putInt("x", mailbox.position().getX());
+            mailboxTag.putInt("y", mailbox.position().getY());
+            mailboxTag.putInt("z", mailbox.position().getZ());
+            mailboxTag.putString("state", mailbox.state().name());
+            list.add(mailboxTag);
+        }
+        tag.put("mailboxes", list);
     }
 
     /**
@@ -1369,6 +1601,49 @@ public class PostalNetwork extends SavedData {
                     role,
                     dimension,
                     new BlockPos(nodeTag.getInt("x"), nodeTag.getInt("y"), nodeTag.getInt("z")),
+                    state
+            ));
+        }
+    }
+
+    /**
+     * 读取信箱端点；缺表为空，半绑定跳过，非法投递码按未绑定加载。
+     */
+    private static void readMailboxes(PostalNetwork network, CompoundTag tag) {
+        if (!tag.contains("mailboxes")) {
+            return;
+        }
+        ListTag list = tag.getList("mailboxes", Tag.TAG_COMPOUND);
+        for (int index = 0; index < list.size(); index++) {
+            CompoundTag mailboxTag = list.getCompound(index);
+            if (!mailboxTag.hasUUID("mailboxId")) {
+                continue;
+            }
+            boolean hasDistrict = mailboxTag.hasUUID("districtId");
+            boolean hasCode = mailboxTag.contains("deliveryCode") && !mailboxTag.getString("deliveryCode").isBlank();
+            if (hasDistrict != hasCode) {
+                continue;
+            }
+            UUID districtId = null;
+            String deliveryCode = null;
+            if (hasDistrict) {
+                Optional<String> canonical = PostalCodes.canonicalDelivery(mailboxTag.getString("deliveryCode"));
+                if (canonical.isPresent()) {
+                    districtId = mailboxTag.getUUID("districtId");
+                    deliveryCode = canonical.get();
+                }
+            }
+            MailBoxEndpointState state = enumValue(MailBoxEndpointState.class, mailboxTag.getString("state"));
+            ResourceLocation dimension = ResourceLocation.tryParse(mailboxTag.getString("dimension"));
+            if (state == null || dimension == null) {
+                continue;
+            }
+            network.mailboxes.put(mailboxTag.getUUID("mailboxId"), new MailBoxEndpoint(
+                    mailboxTag.getUUID("mailboxId"),
+                    districtId,
+                    deliveryCode,
+                    dimension,
+                    new BlockPos(mailboxTag.getInt("x"), mailboxTag.getInt("y"), mailboxTag.getInt("z")),
                     state
             ));
         }

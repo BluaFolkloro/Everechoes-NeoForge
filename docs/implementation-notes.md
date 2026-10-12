@@ -41,8 +41,10 @@
 - `DESK` 额外允许放在栅栏、墙和竖直末地烛顶部，放好后即使移除支撑也不会消失。
 - 悬挂式无需潜行，要求上方保持竖向/横向铁链、`HANGING_CHAINED` 复合邮箱或横向末地烛；横向支点使用 `HANGING_RAISED` 内部状态，将模型上移以接触支点。邮箱的水平朝向由玩家放置方向决定，与横向末地烛或铁链的轴向正交/平行均合法。玩家可对抬高悬挂邮箱的水平侧面使用一条锁链，将其转换为 `HANGING_CHAINED`：邮箱与横链通过 multipart 同格渲染，下方邮箱无需潜行即可把该状态视为横链支点；拆除复合方块时额外返还锁链。
 - `getCollisionShape` 与 `getShape` 分离。遮挡/视觉形状为空。
-- `MailBoxBlockEntity` 只持久化 `mailboxId` UUID。不是 `MenuProvider`，不接入 `PostalNetwork`。
-- `mailboxId` 由服务端在首次 load/save 时分配；客户端不铸造；未来客户端读取来自菜单或数据包。
+- `MailBoxBlockEntity` 持久化 `mailboxId`。服务端 `onLoad` 调用 `PostalNetwork.registerEndpoint`；不是 `MenuProvider`，BE 内不调用 `bindEndpoint`。
+- `MailBoxBlock.onRemove`（LOWER）调用 `markEndpointOffline`。已绑定端点转为 OFFLINE 并保留投递码；未绑定记录删除。
+- `mailboxId` 由服务端在首次 load/save 时分配；客户端不铸造。未来客户端读取来自菜单或数据包。
+- 绑定必须显式传入 `districtId`，不从 `districtsAt` 猜测。区内投递码由 `DeliveryCodeAllocator` 按 `PostalCodes.deliveryAt` 分配，容量 4000。
 - 仅 `LOWER` 状态掉落 `everechoes:mail_box`，避免双格立柱重复掉落。
 
 ## 发信邮筒容器和 GUI
@@ -59,7 +61,7 @@
 - `PostalAtlasLimits`：默认窗口为 `25×19`，单边上限 `25`，`MAX_WINDOW_CELLS=475`，`MAX_SUBMIT_CHUNKS=DistrictCoverage.MAX_CHUNKS`（4096）。合法区块坐标为 `MIN_CHUNK..MAX_CHUNK`（由 `Level.MAX_LEVEL_SIZE` 换算，避免 chunk×16 溢出）；不使用动态世界边界。
 - `PostalNetwork.atlasWindow` 返回 `PostalAtlasSnapshot`（无探索集合）；非法窗口或未知邮区为 `Optional.empty()`。`includeSavedCoverage=false` 时 `savedCoveragePacked` 为空，但 `savedCoverageSize` 仍是完整辖区大小。`nodePacked` 含本邮区全部节点区块；`hubPacked` / `collectionPacked` 按窗口裁剪。打开、平移、提交不调用 `getChunk`、不生成区块。
 - `postal_atlas` 物品对已加入邮区的邮筒 `useOn` 打开 `PostalAtlasMenu`。C2S `postal_atlas_request`（PAN/SUBMIT）不信任客户端 `districtId`；PAN 携带受服务器上限校验的窗口宽高，提交集合在解码时若 `count` 超过上限会抛 `DecoderException`。S2C `postal_atlas_sync` 推送窗口或提交结果。屏幕绘制 25×19 横向坐标网格，格子只表示邮政状态；地图与右侧邮政工具面板使用独立响应式布局。
-- `PostalNetwork` 使用 `schemaVersion`。遇到无法识别的版本时保留原始 NBT，并以只读降级状态运行，避免自动保存把旧网络覆盖为空；正式兼容仍需为已发布版本编写明确迁移器。旧邮筒库存继续保留。
+- `PostalNetwork` 使用 `schemaVersion`。当前仍为 **5**；附加 `mailboxes` 列表，缺表视为空。半绑定（district XOR code）跳过；双字段但非法投递码按未绑定加载。遇到无法识别的版本时保留原始 NBT，并以只读降级状态运行，避免自动保存把旧网络覆盖为空；正式兼容仍需为已发布版本编写明确迁移器。旧邮筒库存继续保留。
 - 潜行右键打开入网界面，提交建立/加入/退出请求。
 - 仅 `ACTIVE` 邮区接收新邮件；标题显示当前 `domainCode` 与邮区号。
 - GUI 暂用原版漏斗背景；正式美化需先预览再改。

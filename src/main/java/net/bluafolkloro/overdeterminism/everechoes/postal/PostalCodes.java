@@ -147,6 +147,31 @@ public final class PostalCodes {
     }
 
     /**
+     * 按序号给出区内投递码：数字 0-9，后接 {@link #INWARD_LETTERS} 的两个字母。
+     * 序号 0 为 {@code 0AA}，20 为 {@code 0BA}，400 为 {@code 1AA}；越界则空。
+     */
+    public static Optional<String> deliveryAt(int index) {
+        int radix = INWARD_LETTERS.length();
+        int capacity = deliveryCapacity();
+        if (index < 0 || index >= capacity) {
+            return Optional.empty();
+        }
+        int digit = index / (radix * radix);
+        int remainder = index % (radix * radix);
+        int first = remainder / radix;
+        int second = remainder % radix;
+        return Optional.of("" + digit + INWARD_LETTERS.charAt(first) + INWARD_LETTERS.charAt(second));
+    }
+
+    /**
+     * 区内可分配投递码容量：10 × 20 × 20 = 4000。
+     */
+    public static int deliveryCapacity() {
+        int radix = INWARD_LETTERS.length();
+        return 10 * radix * radix;
+    }
+
+    /**
      * 执行 {@code codes} 对应的业务操作。
      */
     private static Optional<ParsedPostalCode> codes(String domain, String district, String delivery) {

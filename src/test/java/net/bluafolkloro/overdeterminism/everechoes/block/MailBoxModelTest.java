@@ -270,9 +270,13 @@ class MailBoxModelTest {
         assertTrue(block.contains("style == MailBoxStyle.DESK"), "support-independent DESK branch missing");
         assertTrue(block.contains("Blocks.CHAIN"), "chain support missing");
 
+        assertTrue(block.contains("onRemove"), "MailBoxBlock does not override onRemove");
+        assertTrue(block.contains("markEndpointOffline"), "MailBoxBlock does not mark the endpoint offline");
+
         String entity = read(javaSrc("block/entity/MailBoxBlockEntity.java"));
         assertFalse(entity.contains("MenuProvider"), "MailBoxBlockEntity implements MenuProvider");
-        assertFalse(entity.contains("PostalNetwork"), "MailBoxBlockEntity imports PostalNetwork");
+        assertTrue(entity.contains("registerEndpoint"), "MailBoxBlockEntity does not register the endpoint");
+        assertFalse(entity.contains("bindEndpoint"), "MailBoxBlockEntity claims a postal code");
         assertTrue(entity.contains("\"mailboxId\""), "MailBoxBlockEntity does not persist mailboxId");
         assertTrue(
                 entity.contains("putUUID(\"mailboxId\"") || entity.contains("putUUID(MAILBOX_ID_TAG"),
