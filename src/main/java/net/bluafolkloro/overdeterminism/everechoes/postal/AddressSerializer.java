@@ -12,20 +12,41 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * 封装数据的序列化与反序列化。
+ */
 public final class AddressSerializer {
+    /**
+     * 定义 {@code MAILBOX_TYPE} 常量。
+     */
     private static final String MAILBOX_TYPE = "mailbox";
+    /**
+     * 定义 {@code PLAYER_TYPE} 常量。
+     */
     private static final String PLAYER_TYPE = "player";
 
+    /**
+     * 定义 {@code CODEC} 常量。
+     */
     public static final Codec<Address> CODEC = SerializedAddress.CODEC.comapFlatMap(
             AddressSerializer::decode,
             AddressSerializer::encode
     );
 
+    /**
+     * 定义 {@code STREAM_CODEC} 常量。
+     */
     public static final StreamCodec<RegistryFriendlyByteBuf, Address> STREAM_CODEC = ByteBufCodecs.fromCodecWithRegistries(CODEC);
 
+    /**
+     * 创建并初始化当前对象。
+     */
     private AddressSerializer() {
     }
 
+    /**
+     * 读取并恢复 {@code decode} 对应的业务操作。
+     */
     private static DataResult<Address> decode(SerializedAddress serialized) {
         try {
             return switch (serialized.type()) {
@@ -40,6 +61,9 @@ public final class AddressSerializer {
         }
     }
 
+    /**
+     * 读取并恢复 {@code decodeMailbox} 对应的业务操作。
+     */
     private static DataResult<Address> decodeMailbox(SerializedAddress serialized) {
         Optional<MailBoxAddress> fromCodes = codes(serialized)
                 .map(parsed -> new MailBoxAddress(
@@ -61,6 +85,9 @@ public final class AddressSerializer {
                 .orElseGet(() -> DataResult.error(() -> "Mailbox address is missing display codes"));
     }
 
+    /**
+     * 执行 {@code codes} 对应的业务操作。
+     */
     private static Optional<PostalCodes.ParsedPostalCode> codes(SerializedAddress serialized) {
         if (serialized.domainCode().isEmpty() || serialized.districtCode().isEmpty() || serialized.deliveryCode().isEmpty()) {
             return Optional.empty();
@@ -72,6 +99,9 @@ public final class AddressSerializer {
         ));
     }
 
+    /**
+     * 保存或编码 {@code encode} 对应的业务操作。
+     */
     private static SerializedAddress encode(Address address) {
         Objects.requireNonNull(address, "address cannot be null");
         if (address instanceof MailBoxAddress mailBoxAddress) {
@@ -109,21 +139,63 @@ public final class AddressSerializer {
         throw new IllegalArgumentException("Unsupported address type: " + address.getClass().getName());
     }
 
+    /**
+     * 封装邮政地址值对象。
+     */
     private record SerializedAddress(
+            /**
+             * 保存 {@code type} 对应的状态或依赖。
+             */
             String type,
+            /**
+             * 保存 {@code domainUuid} 对应的状态或依赖。
+             */
             Optional<UUID> domainUuid,
+            /**
+             * 保存 {@code districtUuid} 对应的状态或依赖。
+             */
             Optional<UUID> districtUuid,
+            /**
+             * 保存 {@code mailboxUuid} 对应的状态或依赖。
+             */
             Optional<UUID> mailboxUuid,
+            /**
+             * 保存 {@code domainCode} 对应的状态或依赖。
+             */
             Optional<String> domainCode,
+            /**
+             * 保存 {@code districtCode} 对应的状态或依赖。
+             */
             Optional<String> districtCode,
+            /**
+             * 保存 {@code deliveryCode} 对应的状态或依赖。
+             */
             Optional<String> deliveryCode,
+            /**
+             * 保存 {@code postalCode} 对应的状态或依赖。
+             */
             Optional<String> postalCode,
+            /**
+             * 保存 {@code legacyDomainId} 对应的状态或依赖。
+             */
             Optional<String> legacyDomainId,
+            /**
+             * 保存 {@code legacyDistrictId} 对应的状态或依赖。
+             */
             Optional<String> legacyDistrictId,
+            /**
+             * 保存 {@code legacyDeliveryId} 对应的状态或依赖。
+             */
             Optional<String> legacyDeliveryId,
+            /**
+             * 保存 {@code playerId} 对应的状态或依赖。
+             */
             Optional<UUID> playerId
     ) {
-        private static final Codec<SerializedAddress> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+        /**
+         * 定义 {@code CODEC} 常量。
+         */
+        private static final Codec<SerializedAddress> CODEC = RecordCodecBuilder.create(/** 保存 {@code instance} 对应的状态或依赖。 */ instance -> instance.group(
                 Codec.STRING.fieldOf("type").forGetter(SerializedAddress::type),
                 UUIDUtil.STRING_CODEC.optionalFieldOf("domainUuid").forGetter(SerializedAddress::domainUuid),
                 UUIDUtil.STRING_CODEC.optionalFieldOf("districtUuid").forGetter(SerializedAddress::districtUuid),

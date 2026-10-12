@@ -23,14 +23,26 @@ import java.util.UUID;
 //
 // The STREAM_CODEC is intended for DataComponentType.Builder#networkSynchronized.
 // 网络 STREAM_CODEC 供 DataComponentType.Builder#networkSynchronized 使用，负责同步服务端和客户端的信件组件值。
+/**
+ * 封装数据的序列化与反序列化。
+ */
 public final class LetterDataSerializer {
+    /**
+     * 定义 {@code STATE_CODEC} 常量。
+     */
     private static final Codec<LetterState> STATE_CODEC = Codec.STRING.comapFlatMap(
             LetterDataSerializer::decodeState,
+            /**
+             * 保存 {@code state} 对应的状态或依赖。
+             */
             state -> state.name().toLowerCase(Locale.ROOT)
     );
 
     // Converts between the mutable LetterData object and an immutable serialized record.
     // 在可变的 LetterData 对象与不可变的序列化记录之间转换。
+    /**
+     * 定义 {@code CODEC} 常量。
+     */
     public static final Codec<LetterData> CODEC = SerializedLetterData.CODEC.comapFlatMap(
             LetterDataSerializer::decode,
             LetterDataSerializer::encode
@@ -38,11 +50,20 @@ public final class LetterDataSerializer {
 
     // Uses the same persistent structure for network synchronization through Minecraft's registry-aware wrapper.
     // 通过 Minecraft 带注册表上下文的包装器，让网络同步复用同一套持久化结构。
+    /**
+     * 定义 {@code STREAM_CODEC} 常量。
+     */
     public static final StreamCodec<RegistryFriendlyByteBuf, LetterData> STREAM_CODEC = ByteBufCodecs.fromCodecWithRegistries(CODEC);
 
+    /**
+     * 创建并初始化当前对象。
+     */
     private LetterDataSerializer() {
     }
 
+    /**
+     * 读取并恢复 {@code decodeState} 对应的业务操作。
+     */
     private static DataResult<LetterState> decodeState(String value) {
         try {
             return DataResult.success(LetterState.valueOf(value.toUpperCase(Locale.ROOT)));
@@ -53,6 +74,9 @@ public final class LetterDataSerializer {
 
     // Reconstructs LetterData through its validation-aware factory.
     // 通过带校验的工厂方法重建 LetterData。
+    /**
+     * 读取并恢复 {@code decode} 对应的业务操作。
+     */
     private static DataResult<LetterData> decode(SerializedLetterData serializedLetterData) {
         return LetterData.tryReconstruct(
                 serializedLetterData.letterId(),
@@ -69,6 +93,9 @@ public final class LetterDataSerializer {
 
     // Writes the LetterData fields into the flat serialized record.
     // 把 LetterData 字段写入扁平的序列化记录。
+    /**
+     * 保存或编码 {@code encode} 对应的业务操作。
+     */
     private static SerializedLetterData encode(LetterData letterData) {
         Objects.requireNonNull(letterData, "letterData cannot be null");
         return new SerializedLetterData(
@@ -85,17 +112,47 @@ public final class LetterDataSerializer {
 
     // Flat serialized shape shared by persistent and network codecs.
     // 持久化和网络编码共用的扁平序列化结构。
+    /**
+     * 封装不可变业务数据。
+     */
     private record SerializedLetterData(
+            /**
+             * 保存 {@code letterId} 对应的状态或依赖。
+             */
             UUID letterId,
+            /**
+             * 保存 {@code state} 对应的状态或依赖。
+             */
             LetterState state,
+            /**
+             * 保存 {@code returnAddress} 对应的状态或依赖。
+             */
             Address returnAddress,
+            /**
+             * 保存 {@code recipientAddress} 对应的状态或依赖。
+             */
             Optional<Address> recipientAddress,
+            /**
+             * 保存 {@code title} 对应的状态或依赖。
+             */
             String title,
+            /**
+             * 保存 {@code body} 对应的状态或依赖。
+             */
             String body,
+            /**
+             * 保存 {@code signatureSender} 对应的状态或依赖。
+             */
             Optional<String> signatureSender,
+            /**
+             * 保存 {@code letterRecipient} 对应的状态或依赖。
+             */
             Optional<String> letterRecipient
     ) {
-        private static final Codec<SerializedLetterData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+        /**
+         * 定义 {@code CODEC} 常量。
+         */
+        private static final Codec<SerializedLetterData> CODEC = RecordCodecBuilder.create(/** 保存 {@code instance} 对应的状态或依赖。 */ instance -> instance.group(
                 UUIDUtil.STRING_CODEC.fieldOf("letterId").forGetter(SerializedLetterData::letterId),
                 STATE_CODEC.fieldOf("state").forGetter(SerializedLetterData::state),
                 AddressSerializer.CODEC.fieldOf("returnAddress").forGetter(SerializedLetterData::returnAddress),

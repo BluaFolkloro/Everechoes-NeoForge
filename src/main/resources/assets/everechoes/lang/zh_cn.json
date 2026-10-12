@@ -22,6 +22,7 @@
   "message.everechoes.post_box.domain_exists": "这个邮域代码已经在使用",
   "message.everechoes.post_box.unknown_domain": "找不到这个邮域",
   "message.everechoes.post_box.join_denied": "当前规则不允许加入该邮域",
+  "message.everechoes.postal.unsupported_schema": "邮政存档版本不受支持；为保护数据，当前世界已停止邮政配置写入",
   "message.everechoes.post_box.leave_invalid": "当前不能退出",
   "message.everechoes.post_box.leaving": "邮区已进入退出清算",
   "message.everechoes.post_box.left": "邮区已退出邮域",

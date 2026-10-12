@@ -37,18 +37,42 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 import javax.annotation.Nullable;
 
+/**
+ * 封装方块行为、形态与交互规则。
+ */
 public class PostBoxBlock extends BaseEntityBlock {
+    /**
+     * 定义 {@code CODEC} 常量。
+     */
     public static final MapCodec<PostBoxBlock> CODEC = simpleCodec(PostBoxBlock::new);
+    /**
+     * 定义 {@code FACING} 常量。
+     */
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+    /**
+     * 定义 {@code HALF} 常量。
+     */
     public static final EnumProperty<DoubleBlockHalf> HALF = BlockStateProperties.DOUBLE_BLOCK_HALF;
+    /**
+     * 定义 {@code LOWER_SHAPE} 常量。
+     */
     private static final VoxelShape LOWER_SHAPE = Block.box(2, 0, 2, 14, 16, 14);
+    /**
+     * 定义 {@code UPPER_SHAPE} 常量。
+     */
     private static final VoxelShape UPPER_SHAPE = Block.box(2, 0, 2, 14, 10, 14);
 
+    /**
+     * 执行 {@code codec} 对应的业务操作。
+     */
     @Override
     public MapCodec<? extends PostBoxBlock> codec() {
         return CODEC;
     }
 
+    /**
+     * 创建 {@code newBlockEntity} 对应的业务操作。
+     */
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         // Only the lower half owns the postbox inventory.
@@ -59,6 +83,9 @@ public class PostBoxBlock extends BaseEntityBlock {
         return new PostBoxBlockEntity(pos, state);
     }
 
+    /**
+     * 创建并初始化当前对象。
+     */
     public PostBoxBlock(Properties properties) {
         super(properties);
         this.registerDefaultState(
@@ -69,6 +96,9 @@ public class PostBoxBlock extends BaseEntityBlock {
         );
     }
 
+    /**
+     * 执行 {@code useWithoutItem} 对应的业务操作。
+     */
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         if (level.isClientSide) {
@@ -89,6 +119,9 @@ public class PostBoxBlock extends BaseEntityBlock {
         return InteractionResult.CONSUME;
     }
 
+    /**
+     * 打开 {@code openConfig} 对应的业务操作。
+     */
     public static void openConfig(ServerPlayer player, ServerLevel level, BlockPos pos, PostBoxBlockEntity postBox) {
         PostalNetwork network = PostalNetwork.get(level);
         postBox.syncFromNetwork(level);
@@ -106,11 +139,17 @@ public class PostBoxBlock extends BaseEntityBlock {
         );
     }
 
+    /**
+     * 创建 {@code createBlockStateDefinition} 对应的业务操作。
+     */
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(HALF, FACING);
     }
 
+    /**
+     * 获取或解析 {@code getStateForPlacement} 对应的业务操作。
+     */
     @Nullable
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
@@ -125,11 +164,17 @@ public class PostBoxBlock extends BaseEntityBlock {
         }
     }
 
+    /**
+     * 设置或写入 {@code setPlacedBy} 对应的业务操作。
+     */
     @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
         level.setBlock(pos.above(), state.setValue(HALF, DoubleBlockHalf.UPPER), 3);
     }
 
+    /**
+     * 判断 {@code canSurvive} 对应的业务操作。
+     */
     @Override
     protected boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
         if (state.getValue(HALF) == DoubleBlockHalf.LOWER) {
@@ -141,6 +186,9 @@ public class PostBoxBlock extends BaseEntityBlock {
         }
     }
 
+    /**
+     * 更新 {@code updateShape} 对应的业务操作。
+     */
     @Override
     protected BlockState updateShape(BlockState state, Direction facing, BlockState facingState, LevelAccessor level, BlockPos currentPos, BlockPos facingPos) {
         DoubleBlockHalf half = state.getValue(HALF);
@@ -160,6 +208,9 @@ public class PostBoxBlock extends BaseEntityBlock {
         return super.updateShape(state, facing, facingState, level, currentPos, facingPos);
     }
 
+    /**
+     * 执行 {@code playerWillDestroy} 对应的业务操作。
+     */
     @Override
     public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         DoubleBlockHalf half = state.getValue(HALF);
@@ -181,6 +232,9 @@ public class PostBoxBlock extends BaseEntityBlock {
         return super.playerWillDestroy(level, pos, state, player);
     }
 
+    /**
+     * 处理 {@code onRemove} 对应的业务操作。
+     */
     @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         // Contents are stored only on the lower half, so drop them from there once.
@@ -198,11 +252,17 @@ public class PostBoxBlock extends BaseEntityBlock {
         super.onRemove(state, level, pos, newState, movedByPiston);
     }
 
+    /**
+     * 获取或解析 {@code getShape} 对应的业务操作。
+     */
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
         return state.getValue(HALF) == DoubleBlockHalf.LOWER ? LOWER_SHAPE : UPPER_SHAPE;
     }
 
+    /**
+     * 获取或解析 {@code getRenderShape} 对应的业务操作。
+     */
     @Override
     public RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;

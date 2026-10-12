@@ -16,7 +16,13 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * 封装相关行为的自动化回归测试。
+ */
 class MailBoxBlockEntityTest {
+    /**
+     * 获取或解析 {@code readMailboxIdRoundTripsExistingTagAndReturnsNullWhenMissing} 对应的业务操作。
+     */
     @Test
     void readMailboxIdRoundTripsExistingTagAndReturnsNullWhenMissing() {
         assertEquals("mailboxId", MailBoxBlockEntity.MAILBOX_ID_TAG);
@@ -37,6 +43,9 @@ class MailBoxBlockEntityTest {
         assertFalse(otherKey.hasUUID(MailBoxBlockEntity.MAILBOX_ID_TAG));
     }
 
+    /**
+     * 执行 {@code assignMailboxIdOnServerKeepsExistingAndMintsOnlyOnServer} 对应的业务操作。
+     */
     @Test
     void assignMailboxIdOnServerKeepsExistingAndMintsOnlyOnServer() {
         UUID existing = UUID.fromString("11111111-2222-3333-4444-555555555555");
@@ -48,6 +57,9 @@ class MailBoxBlockEntityTest {
         assertNotNull(MailBoxBlockEntity.assignMailboxIdOnServer(null, true));
     }
 
+    /**
+     * 执行 {@code javaSourceAssignsMailboxIdOnServerWithoutGetterMint} 对应的业务操作。
+     */
     @Test
     void javaSourceAssignsMailboxIdOnServerWithoutGetterMint() {
         String source = readEntitySource();
@@ -83,6 +95,9 @@ class MailBoxBlockEntityTest {
         assertTrue(changedAt >= 0, "assign path does not call setChanged()");
     }
 
+    /**
+     * 执行 {@code methodBody} 对应的业务操作。
+     */
     private static String methodBody(String source, String signature) {
         int start = source.indexOf(signature);
         assertTrue(start >= 0, "missing " + signature);
@@ -103,6 +118,9 @@ class MailBoxBlockEntityTest {
         throw new AssertionError("unclosed method " + signature);
     }
 
+    /**
+     * 执行 {@code count} 对应的业务操作。
+     */
     private static int count(String haystack, String needle) {
         int total = 0;
         int from = 0;
@@ -116,6 +134,9 @@ class MailBoxBlockEntityTest {
         }
     }
 
+    /**
+     * 获取或解析 {@code readEntitySource} 对应的业务操作。
+     */
     private static String readEntitySource() {
         Path path = repoRoot()
                 .resolve("src/main/java/net/bluafolkloro/overdeterminism/everechoes/block/entity/MailBoxBlockEntity.java");
@@ -127,6 +148,9 @@ class MailBoxBlockEntityTest {
         }
     }
 
+    /**
+     * 执行 {@code repoRoot} 对应的业务操作。
+     */
     private static Path repoRoot() {
         Path dir = Path.of("").toAbsolutePath();
         for (int i = 0; i < 6 && dir != null; i++) {

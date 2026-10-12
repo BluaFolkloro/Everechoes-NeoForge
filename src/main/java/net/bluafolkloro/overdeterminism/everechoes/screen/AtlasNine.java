@@ -5,11 +5,20 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
+/**
+ * 封装该模块的相关职责。
+ */
 @OnlyIn(Dist.CLIENT)
 final class AtlasNine {
+    /**
+     * 创建并初始化当前对象。
+     */
     private AtlasNine() {
     }
 
+    /**
+     * 绘制 {@code blit} 对应的业务操作。
+     */
     static void blit(
             GuiGraphics graphics,
             ResourceLocation texture,
@@ -22,6 +31,9 @@ final class AtlasNine {
         blit(graphics, texture, x, y, width, height, textureSize, textureSize);
     }
 
+    /**
+     * 绘制 {@code blit} 对应的业务操作。
+     */
     static void blit(
             GuiGraphics graphics,
             ResourceLocation texture,
@@ -35,6 +47,9 @@ final class AtlasNine {
         graphics.blit(texture, x, y, width, height, 0.0F, 0.0F, textureWidth, textureHeight, textureWidth, textureHeight);
     }
 
+    /**
+     * 执行 {@code nine} 对应的业务操作。
+     */
     static void nine(
             GuiGraphics graphics,
             ResourceLocation texture,
@@ -65,6 +80,9 @@ final class AtlasNine {
         }
     }
 
+    /**
+     * 执行 {@code patch} 对应的业务操作。
+     */
     private static void patch(
             GuiGraphics graphics,
             ResourceLocation texture,

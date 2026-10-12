@@ -26,11 +26,20 @@ import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * 封装物品行为与玩家交互。
+ */
 public class PostalAtlasItem extends Item {
+    /**
+     * 创建并初始化当前对象。
+     */
     public PostalAtlasItem(Properties properties) {
         super(properties);
     }
 
+    /**
+     * 执行 {@code useOn} 对应的业务操作。
+     */
     @Override
     public InteractionResult useOn(UseOnContext context) {
         Level level = context.getLevel();
@@ -96,6 +105,9 @@ public class PostalAtlasItem extends Item {
         return InteractionResult.CONSUME;
     }
 
+    /**
+     * 执行 {@code appendHoverText} 对应的业务操作。
+     */
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         tooltipComponents.add(Component.translatable("item.everechoes.postal_atlas.tooltip").withStyle(ChatFormatting.GRAY));

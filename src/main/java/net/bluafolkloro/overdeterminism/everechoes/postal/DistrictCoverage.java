@@ -8,9 +8,18 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
-public record DistrictCoverage(UUID districtId, Set<PostalChunk> chunks, int revision) {
+/**
+ * 封装不可变业务数据。
+ */
+public record DistrictCoverage(/** 保存 {@code districtId} 对应的状态或依赖。 */ UUID districtId, /** 保存 {@code chunks} 对应的状态或依赖。 */ Set<PostalChunk> chunks, /** 保存 {@code revision} 对应的状态或依赖。 */ int revision) {
+    /**
+     * 定义 {@code MAX_CHUNKS} 常量。
+     */
     public static final int MAX_CHUNKS = 4096;
 
+    /**
+     * 创建并初始化当前对象。
+     */
     public DistrictCoverage {
         Objects.requireNonNull(districtId, "districtId");
         chunks = Set.copyOf(chunks);
@@ -22,18 +31,30 @@ public record DistrictCoverage(UUID districtId, Set<PostalChunk> chunks, int rev
         }
     }
 
+    /**
+     * 执行 {@code dimension} 对应的业务操作。
+     */
     public ResourceLocation dimension() {
         return chunks.iterator().next().dimension();
     }
 
+    /**
+     * 判断 {@code contains} 对应的业务操作。
+     */
     public boolean contains(PostalChunk chunk) {
         return chunks.contains(chunk);
     }
 
+    /**
+     * 执行 {@code withChunks} 对应的业务操作。
+     */
     public DistrictCoverage withChunks(Set<PostalChunk> chunks) {
         return new DistrictCoverage(districtId, chunks, revision + 1);
     }
 
+    /**
+     * 判断 {@code isValidShape} 对应的业务操作。
+     */
     public static boolean isValidShape(Set<PostalChunk> chunks) {
         if (chunks == null || chunks.isEmpty() || chunks.size() > MAX_CHUNKS) {
             return false;
@@ -59,6 +80,9 @@ public record DistrictCoverage(UUID districtId, Set<PostalChunk> chunks, int rev
         return visited.size() == chunks.size();
     }
 
+    /**
+     * 添加或加入 {@code addIfPresent} 对应的业务操作。
+     */
     private static void addIfPresent(
             Set<PostalChunk> chunks,
             Set<PostalChunk> visited,

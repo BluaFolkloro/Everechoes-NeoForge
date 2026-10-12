@@ -10,12 +10,18 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 
+/**
+ * 封装该模块的相关职责。
+ */
 @EventBusSubscriber(
         modid = Everechoes.MODID,
         value = Dist.CLIENT
 )
 public class EverechoesClient {
 
+    /**
+     * 注册 {@code registerScreens} 对应的业务操作。
+     */
     @SubscribeEvent
     public static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(ModMenuTypes.POST_BOX_MENU.get(), PostBoxScreen::new);

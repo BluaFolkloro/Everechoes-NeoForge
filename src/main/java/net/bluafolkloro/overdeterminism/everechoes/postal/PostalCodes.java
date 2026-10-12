@@ -7,21 +7,51 @@ import java.util.regex.Pattern;
 
 // Provisional UK-style outward/inward codes. Not a final address identity.
 // 暂定英式外码/内码。不是最终的内部地址身份。
+/**
+ * 封装该模块的相关职责。
+ */
 public final class PostalCodes {
+    /**
+     * 定义 {@code DOMAIN_MAX} 常量。
+     */
     public static final int DOMAIN_MAX = 2;
+    /**
+     * 定义 {@code DISTRICT_MAX} 常量。
+     */
     public static final int DISTRICT_MAX = 99;
+    /**
+     * 定义 {@code INWARD_LETTERS} 常量。
+     */
     public static final String INWARD_LETTERS = "ABDEFGHJLNPQRSTUWXYZ";
 
+    /**
+     * 定义 {@code UK_COMPACT} 常量。
+     */
     private static final Pattern UK_COMPACT = Pattern.compile(
             "^([A-Za-z]{1,2})([1-9][0-9]?[A-Za-z]?)([0-9])([A-Za-z]{2})$"
     );
+    /**
+     * 定义 {@code DOMAIN} 常量。
+     */
     private static final Pattern DOMAIN = Pattern.compile("^[A-Za-z]{1,2}$");
+    /**
+     * 定义 {@code DISTRICT} 常量。
+     */
     private static final Pattern DISTRICT = Pattern.compile("^[1-9][0-9]?[A-Za-z]?$");
+    /**
+     * 定义 {@code AUTO_DISTRICT} 常量。
+     */
     private static final Pattern AUTO_DISTRICT = Pattern.compile("^[1-9][0-9]?$");
 
+    /**
+     * 创建并初始化当前对象。
+     */
     private PostalCodes() {
     }
 
+    /**
+     * 判断 {@code canonicalDomain} 对应的业务操作。
+     */
     public static Optional<String> canonicalDomain(String raw) {
         if (raw == null || !DOMAIN.matcher(raw.strip()).matches()) {
             return Optional.empty();
@@ -29,6 +59,9 @@ public final class PostalCodes {
         return Optional.of(raw.strip().toUpperCase(Locale.ROOT));
     }
 
+    /**
+     * 判断 {@code canonicalDistrict} 对应的业务操作。
+     */
     public static Optional<String> canonicalDistrict(String raw) {
         if (raw == null || !DISTRICT.matcher(raw.strip()).matches()) {
             return Optional.empty();
@@ -44,6 +77,9 @@ public final class PostalCodes {
         return Optional.of(text);
     }
 
+    /**
+     * 判断 {@code canonicalDelivery} 对应的业务操作。
+     */
     public static Optional<String> canonicalDelivery(String raw) {
         if (raw == null) {
             return Optional.empty();
@@ -58,6 +94,9 @@ public final class PostalCodes {
         return Optional.of(text);
     }
 
+    /**
+     * 执行 {@code parse} 对应的业务操作。
+     */
     public static Optional<ParsedPostalCode> parse(String raw) {
         if (raw == null || raw.isBlank()) {
             return Optional.empty();
@@ -72,6 +111,9 @@ public final class PostalCodes {
         return Optional.empty();
     }
 
+    /**
+     * 执行 {@code parseAddress} 对应的业务操作。
+     */
     public static Optional<MailBoxAddress> parseAddress(String raw) {
         return parse(raw).map(parsed -> MailBoxAddress.display(
                 parsed.domainCode(),
@@ -80,14 +122,23 @@ public final class PostalCodes {
         ));
     }
 
+    /**
+     * 格式化 {@code format} 对应的业务操作。
+     */
     public static String format(String domainCode, String districtCode, String deliveryCode) {
         return domainCode + districtCode + " " + deliveryCode;
     }
 
+    /**
+     * 格式化 {@code formatOutward} 对应的业务操作。
+     */
     public static String formatOutward(String domainCode, String districtCode) {
         return domainCode + districtCode;
     }
 
+    /**
+     * 执行 {@code nextNumericDistrict} 对应的业务操作。
+     */
     public static String nextNumericDistrict(int nextDistrict) {
         if (nextDistrict < 1 || nextDistrict > DISTRICT_MAX) {
             throw new IllegalArgumentException("district allocator exhausted");
@@ -95,6 +146,9 @@ public final class PostalCodes {
         return Integer.toString(nextDistrict);
     }
 
+    /**
+     * 执行 {@code codes} 对应的业务操作。
+     */
     private static Optional<ParsedPostalCode> codes(String domain, String district, String delivery) {
         Optional<String> domainCode = canonicalDomain(domain);
         Optional<String> districtCode = canonicalDistrict(district);
@@ -105,6 +159,9 @@ public final class PostalCodes {
         return Optional.of(new ParsedPostalCode(domainCode.get(), districtCode.get(), deliveryCode.get()));
     }
 
-    public record ParsedPostalCode(String domainCode, String districtCode, String deliveryCode) {
+    /**
+     * 封装不可变业务数据。
+     */
+    public record ParsedPostalCode(/** 保存 {@code domainCode} 对应的状态或依赖。 */ String domainCode, /** 保存 {@code districtCode} 对应的状态或依赖。 */ String districtCode, /** 保存 {@code deliveryCode} 对应的状态或依赖。 */ String deliveryCode) {
     }
 }

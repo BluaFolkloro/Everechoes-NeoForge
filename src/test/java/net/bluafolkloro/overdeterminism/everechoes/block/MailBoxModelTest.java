@@ -19,9 +19,21 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * 封装相关行为的自动化回归测试。
+ */
 class MailBoxModelTest {
+    /**
+     * 定义 {@code EPSILON} 常量。
+     */
     private static final double EPSILON = 0.05;
+    /**
+     * 定义 {@code TEXTURE} 常量。
+     */
     private static final String TEXTURE = "everechoes:block/mail_box";
+    /**
+     * 定义 {@code BLOCK_MODELS} 常量。
+     */
     private static final String[] BLOCK_MODELS = {
             "mail_box.json",
             "mail_box_desk.json",
@@ -32,6 +44,9 @@ class MailBoxModelTest {
 
     // MailBoxBlock static VoxelShape init calls Block.box; do not class-load it in JUnit.
 
+    /**
+     * 执行 {@code blockModelsUseUnifiedMailBoxTexture} 对应的业务操作。
+     */
     @Test
     void blockModelsUseUnifiedMailBoxTexture() {
         for (String fileName : BLOCK_MODELS) {
@@ -51,6 +66,9 @@ class MailBoxModelTest {
         assertTrue(Files.isRegularFile(png), png.toString());
     }
 
+    /**
+     * 执行 {@code postModelUsesOriginalDoubleBlockHeight} 对应的业务操作。
+     */
     @Test
     void postModelUsesOriginalDoubleBlockHeight() {
         JsonObject model = json(read(assets("models/block/mail_box.json")));
@@ -68,6 +86,9 @@ class MailBoxModelTest {
         assertTrue(peak <= 32.0 + EPSILON, "mail_box.json rotated peak " + peak);
     }
 
+    /**
+     * 执行 {@code blockModelRotationsUseVanillaLegalAngles} 对应的业务操作。
+     */
     @Test
     void blockModelRotationsUseVanillaLegalAngles() {
         Set<Double> allowed = Set.of(-45.0, -22.5, 0.0, 22.5, 45.0);
@@ -87,6 +108,9 @@ class MailBoxModelTest {
         }
     }
 
+    /**
+     * 执行 {@code deskAndWallModelsDoNotKeepThePostPillar} 对应的业务操作。
+     */
     @Test
     void deskAndWallModelsDoNotKeepThePostPillar() {
         JsonObject post = json(read(assets("models/block/mail_box.json")));
@@ -99,6 +123,9 @@ class MailBoxModelTest {
         assertFalse(hasPillar(wall), "wall model still has the post pillar");
     }
 
+    /**
+     * 执行 {@code blockstateComposesSixStylesWithAnInternalHorizontalChain} 对应的业务操作。
+     */
     @Test
     void blockstateComposesSixStylesWithAnInternalHorizontalChain() {
         String raw = read(assets("blockstates/mail_box.json"));
@@ -158,6 +185,9 @@ class MailBoxModelTest {
         assertEquals("cutout", chainModel.get("render_type").getAsString());
     }
 
+    /**
+     * 执行 {@code lootTableDropsOnlyFromLowerHalf} 对应的业务操作。
+     */
     @Test
     void lootTableDropsOnlyFromLowerHalf() {
         String raw = read(data("loot_table/blocks/mail_box.json"));
@@ -176,6 +206,9 @@ class MailBoxModelTest {
         assertTrue(drops, "mail_box loot does not drop everechoes:mail_box");
     }
 
+    /**
+     * 执行 {@code langNamesMailbox} 对应的业务操作。
+     */
     @Test
     void langNamesMailbox() {
         JsonObject zh = json(read(assets("lang/zh_cn.json")));
@@ -184,12 +217,18 @@ class MailBoxModelTest {
         assertEquals("Mailbox", en.get("block.everechoes.mail_box").getAsString());
     }
 
+    /**
+     * 执行 {@code itemModelParentsThePostBlockModel} 对应的业务操作。
+     */
     @Test
     void itemModelParentsThePostBlockModel() {
         JsonObject item = json(read(assets("models/item/mail_box.json")));
         assertEquals("everechoes:block/mail_box", item.get("parent").getAsString());
     }
 
+    /**
+     * 执行 {@code javaSourcesUseDoublePostAndSpecialSupportsWithoutPostalNetwork} 对应的业务操作。
+     */
     @Test
     void javaSourcesUseDoublePostAndSpecialSupportsWithoutPostalNetwork() {
         String block = read(javaSrc("block/MailBoxBlock.java"));
@@ -247,6 +286,9 @@ class MailBoxModelTest {
         assertTrue(blockEntities.contains("\"mail_box\""), "ModBlockEntities does not register mail_box");
     }
 
+    /**
+     * 执行 {@code mailBoxStyleSerializedNamesCoverSixInternalInstallations} 对应的业务操作。
+     */
     @Test
     void mailBoxStyleSerializedNamesCoverSixInternalInstallations() {
         assertEquals("post", MailBoxStyle.POST.getSerializedName());
@@ -258,6 +300,9 @@ class MailBoxModelTest {
         assertEquals(6, MailBoxStyle.values().length);
     }
 
+    /**
+     * 判断 {@code hasPillar} 对应的业务操作。
+     */
     private static boolean hasPillar(JsonObject model) {
         for (JsonElement elementEl : model.getAsJsonArray("elements")) {
             JsonObject element = elementEl.getAsJsonObject();
@@ -269,6 +314,9 @@ class MailBoxModelTest {
         return false;
     }
 
+    /**
+     * 判断 {@code hasOriginalPostBody} 对应的业务操作。
+     */
     private static boolean hasOriginalPostBody(JsonObject model) {
         for (JsonElement elementEl : model.getAsJsonArray("elements")) {
             JsonObject element = elementEl.getAsJsonObject();
@@ -280,6 +328,9 @@ class MailBoxModelTest {
         return false;
     }
 
+    /**
+     * 执行 {@code approxVec} 对应的业务操作。
+     */
     private static boolean approxVec(JsonArray vec, double x, double y, double z) {
         return Math.abs(vec.get(0).getAsDouble() - x) <= EPSILON
                 && Math.abs(vec.get(1).getAsDouble() - y) <= EPSILON
@@ -287,6 +338,9 @@ class MailBoxModelTest {
     }
 
     // Vanilla FaceBakery: translate by -origin, JOML rotate around axis, translate back.
+    /**
+     * 执行 {@code rotatedMaxY} 对应的业务操作。
+     */
     private static double rotatedMaxY(JsonObject element) {
         JsonArray from = element.getAsJsonArray("from");
         JsonArray to = element.getAsJsonArray("to");
@@ -323,6 +377,9 @@ class MailBoxModelTest {
         return peak;
     }
 
+    /**
+     * 执行 {@code rotateCornerY} 对应的业务操作。
+     */
     private static double rotateCornerY(
             double x,
             double y,
@@ -346,6 +403,9 @@ class MailBoxModelTest {
         };
     }
 
+    /**
+     * 执行 {@code parseVariantKey} 对应的业务操作。
+     */
     private static Map<String, String> parseVariantKey(String key) {
         Map<String, String> props = new HashMap<>();
         for (String part : key.split(",")) {
@@ -356,10 +416,16 @@ class MailBoxModelTest {
         return props;
     }
 
+    /**
+     * 执行 {@code json} 对应的业务操作。
+     */
     private static JsonObject json(String raw) {
         return JsonParser.parseString(raw).getAsJsonObject();
     }
 
+    /**
+     * 获取或解析 {@code read} 对应的业务操作。
+     */
     private static String read(Path path) {
         try {
             assertTrue(Files.isRegularFile(path), "missing " + path);
@@ -369,20 +435,32 @@ class MailBoxModelTest {
         }
     }
 
+    /**
+     * 执行 {@code assets} 对应的业务操作。
+     */
     private static Path assets(String relative) {
         return repoRoot().resolve("src/main/resources/assets/everechoes").resolve(relative);
     }
 
+    /**
+     * 执行 {@code data} 对应的业务操作。
+     */
     private static Path data(String relative) {
         return repoRoot().resolve("src/main/resources/data/everechoes").resolve(relative);
     }
 
+    /**
+     * 执行 {@code javaSrc} 对应的业务操作。
+     */
     private static Path javaSrc(String relative) {
         return repoRoot()
                 .resolve("src/main/java/net/bluafolkloro/overdeterminism/everechoes")
                 .resolve(relative);
     }
 
+    /**
+     * 执行 {@code repoRoot} 对应的业务操作。
+     */
     private static Path repoRoot() {
         Path dir = Path.of("").toAbsolutePath();
         for (int i = 0; i < 6 && dir != null; i++) {

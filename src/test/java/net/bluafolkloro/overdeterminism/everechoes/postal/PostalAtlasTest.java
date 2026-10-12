@@ -15,10 +15,22 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * 封装相关行为的自动化回归测试。
+ */
 class PostalAtlasTest {
+    /**
+     * 定义 {@code OVERWORLD} 常量。
+     */
     private static final ResourceLocation OVERWORLD = ResourceLocation.fromNamespaceAndPath("minecraft", "overworld");
+    /**
+     * 定义 {@code NETHER} 常量。
+     */
     private static final ResourceLocation NETHER = ResourceLocation.fromNamespaceAndPath("minecraft", "the_nether");
 
+    /**
+     * 执行 {@code atlasLimitsAndSchemaMatchContract} 对应的业务操作。
+     */
     @Test
     void atlasLimitsAndSchemaMatchContract() {
         assertEquals(25, PostalAtlasLimits.DEFAULT_WINDOW_WIDTH);
@@ -36,6 +48,9 @@ class PostalAtlasTest {
         assertEquals(5, PostalNetwork.SCHEMA_VERSION);
     }
 
+    /**
+     * 执行 {@code expandAndShrinkCoverageIncrementsRevisionAndOwnedPackedFollows} 对应的业务操作。
+     */
     @Test
     void expandAndShrinkCoverageIncrementsRevisionAndOwnedPackedFollows() {
         PostalNetwork network = new PostalNetwork();
@@ -68,6 +83,9 @@ class PostalAtlasTest {
         assertFalse(shrunkWindow.ownedPacked().contains(chunk2.packed()));
     }
 
+    /**
+     * 执行 {@code neverVisitedLegalChunksCanBeAddedWhenConnected} 对应的业务操作。
+     */
     @Test
     void neverVisitedLegalChunksCanBeAddedWhenConnected() {
         PostalNetwork network = new PostalNetwork();
@@ -89,6 +107,9 @@ class PostalAtlasTest {
         assertEquals(101, network.coverage(district.districtId()).orElseThrow().chunks().size());
     }
 
+    /**
+     * 执行 {@code legalOverlapIsAllowedAndAppearsInOwnedAndForeignPacked} 对应的业务操作。
+     */
     @Test
     void legalOverlapIsAllowedAndAppearsInOwnedAndForeignPacked() {
         PostalNetwork network = new PostalNetwork();
@@ -128,6 +149,9 @@ class PostalAtlasTest {
         assertFalse(secondWindow.foreignPacked().contains(chunk3.packed()));
     }
 
+    /**
+     * 执行 {@code coverageReplacementRejectsDisconnectedEmptyExcludesNodeAndTooLarge} 对应的业务操作。
+     */
     @Test
     void coverageReplacementRejectsDisconnectedEmptyExcludesNodeAndTooLarge() {
         PostalNetwork network = new PostalNetwork();
@@ -166,6 +190,9 @@ class PostalAtlasTest {
         );
     }
 
+    /**
+     * 执行 {@code outOfBoundsChunksAreRejectedAndInclusiveBoundsAreLegal} 对应的业务操作。
+     */
     @Test
     void outOfBoundsChunksAreRejectedAndInclusiveBoundsAreLegal() {
         PostalNetwork network = new PostalNetwork();
@@ -226,6 +253,9 @@ class PostalAtlasTest {
         ).allowed());
     }
 
+    /**
+     * 执行 {@code netherProposedCoverageAgainstOverworldDistrictIsMultipleDimensions} 对应的业务操作。
+     */
     @Test
     void netherProposedCoverageAgainstOverworldDistrictIsMultipleDimensions() {
         PostalNetwork network = new PostalNetwork();
@@ -253,6 +283,9 @@ class PostalAtlasTest {
         );
     }
 
+    /**
+     * 执行 {@code staleExpectedRevisionIsRejected} 对应的业务操作。
+     */
     @Test
     void staleExpectedRevisionIsRejected() {
         PostalNetwork network = new PostalNetwork();
@@ -286,6 +319,9 @@ class PostalAtlasTest {
         assertEquals(Set.of(chunk0, chunk1), network.coverage(district.districtId()).orElseThrow().chunks());
     }
 
+    /**
+     * 执行 {@code forgedOrMissingDistrictIdDoesNotChangeOtherDistrict} 对应的业务操作。
+     */
     @Test
     void forgedOrMissingDistrictIdDoesNotChangeOtherDistrict() {
         PostalNetwork network = new PostalNetwork();
@@ -329,6 +365,9 @@ class PostalAtlasTest {
         assertEquals(2, network.districtsAt(chunk3).size());
     }
 
+    /**
+     * 保存或编码 {@code saveAndReloadKeepsCoverageAndIgnoresLegacyExploredChunks} 对应的业务操作。
+     */
     @Test
     void saveAndReloadKeepsCoverageAndIgnoresLegacyExploredChunks() {
         PostalNetwork original = new PostalNetwork();
@@ -378,6 +417,9 @@ class PostalAtlasTest {
         assertFalse(resaved.contains("exploredChunks"));
     }
 
+    /**
+     * 执行 {@code atlasWindowClipsOwnedPackedAndDoesNotRequireServerLevel} 对应的业务操作。
+     */
     @Test
     void atlasWindowClipsOwnedPackedAndDoesNotRequireServerLevel() {
         PostalNetwork network = new PostalNetwork();
@@ -399,6 +441,9 @@ class PostalAtlasTest {
         assertTrue(window.savedCoveragePacked().isEmpty());
     }
 
+    /**
+     * 执行 {@code invalidAtlasWindowSizesAreEmptyAndDefaultRectangleIsAccepted} 对应的业务操作。
+     */
     @Test
     void invalidAtlasWindowSizesAreEmptyAndDefaultRectangleIsAccepted() {
         PostalNetwork network = new PostalNetwork();
@@ -423,6 +468,9 @@ class PostalAtlasTest {
         ).isPresent());
     }
 
+    /**
+     * 执行 {@code includeSavedCoverageFalseLeavesPackedEmptyButKeepsFullSize} 对应的业务操作。
+     */
     @Test
     void includeSavedCoverageFalseLeavesPackedEmptyButKeepsFullSize() {
         PostalNetwork network = new PostalNetwork();
@@ -444,6 +492,9 @@ class PostalAtlasTest {
         assertFalse(included.ownedPacked().contains(new PostalChunk(OVERWORLD, 25, 0).packed()));
     }
 
+    /**
+     * 执行 {@code denyingInteractionPolicyBlocksCoverageReplacement} 对应的业务操作。
+     */
     @Test
     void denyingInteractionPolicyBlocksCoverageReplacement() {
         PostalNetwork network = new PostalNetwork(
@@ -467,6 +518,9 @@ class PostalAtlasTest {
         ).isEmpty());
     }
 
+    /**
+     * 执行 {@code nodePackedIncludesOutOfWindowCollectionWhileHubPackedIsClipped} 对应的业务操作。
+     */
     @Test
     void nodePackedIncludesOutOfWindowCollectionWhileHubPackedIsClipped() {
         PostalNetwork network = new PostalNetwork();
@@ -492,6 +546,9 @@ class PostalAtlasTest {
         assertTrue(panned.collectionPacked().contains(collectionChunk.packed()));
     }
 
+    /**
+     * 执行 {@code atlas} 对应的业务操作。
+     */
     private static PostalAtlasSnapshot atlas(
             PostalNetwork network,
             UUID districtId,
@@ -510,20 +567,32 @@ class PostalAtlasTest {
         ).orElseThrow();
     }
 
+    /**
+     * 注册 {@code register} 对应的业务操作。
+     */
     private static UUID register(PostalNetwork network, int x, int z) {
         UUID nodeId = UUID.randomUUID();
         network.registerNode(nodeId, OVERWORLD, new BlockPos(x, 64, z));
         return nodeId;
     }
 
+    /**
+     * 注册 {@code registerChunk} 对应的业务操作。
+     */
     private static UUID registerChunk(PostalNetwork network, int chunkX, int chunkZ) {
         return register(network, chunkX * 16, chunkZ * 16);
     }
 
+    /**
+     * 执行 {@code context} 对应的业务操作。
+     */
     private static PostalActionContext context(UUID nodeId, int x, int z) {
         return new PostalActionContext(null, nodeId, UUID.randomUUID(), OVERWORLD, new BlockPos(x, 64, z));
     }
 
+    /**
+     * 执行 {@code mapLine} 对应的业务操作。
+     */
     private static void mapLine(PostalNetwork network, UUID districtId, int firstChunkX, int lastChunkX) {
         Set<PostalChunk> chunks = new LinkedHashSet<>();
         for (int x = firstChunkX; x <= lastChunkX; x++) {
@@ -532,12 +601,21 @@ class PostalAtlasTest {
         network.replaceDistrictCoverage(districtId, chunks, PostalActionContext.empty()).orElseThrow();
     }
 
+    /**
+     * 封装邮政业务的权限与准入策略。
+     */
     private static final class DeniedInteractionPolicy implements InteractionPolicy {
+        /**
+         * 执行 {@code policyId} 对应的业务操作。
+         */
         @Override
         public String policyId() {
             return "denied-interaction-test";
         }
 
+        /**
+         * 判断 {@code canSubmit} 对应的业务操作。
+         */
         @Override
         public PolicyDecision canSubmit(PostalActionContext context) {
             return PolicyDecision.deny("denied");

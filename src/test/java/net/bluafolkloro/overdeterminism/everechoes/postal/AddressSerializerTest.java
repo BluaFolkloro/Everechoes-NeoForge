@@ -9,7 +9,13 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * 封装相关行为的自动化回归测试。
+ */
 class AddressSerializerTest {
+    /**
+     * 执行 {@code mailboxAddressRoundTripsDisplayAndIdentity} 对应的业务操作。
+     */
     @Test
     void mailboxAddressRoundTripsDisplayAndIdentity() {
         UUID domainId = UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
@@ -23,6 +29,9 @@ class AddressSerializerTest {
         assertEquals("EV12 7QF", mailbox.postalCode());
     }
 
+    /**
+     * 执行 {@code mailboxPostalCodeFallbackRejectsLegacyAndParsesUk} 对应的业务操作。
+     */
     @Test
     void mailboxPostalCodeFallbackRejectsLegacyAndParsesUk() {
         JsonObject legacy = new JsonObject();
@@ -36,12 +45,18 @@ class AddressSerializerTest {
         assertEquals("EV12 7QF", ((MailBoxAddress) AddressSerializer.CODEC.parse(JsonOps.INSTANCE, uk).result().orElseThrow()).postalCode());
     }
 
+    /**
+     * 执行 {@code playerAddressRoundTrips} 对应的业务操作。
+     */
     @Test
     void playerAddressRoundTrips() {
         PlayerAddress address = new PlayerAddress(UUID.fromString("12345678-1234-1234-1234-123456789abc"));
         assertEquals(address, roundTrip(address));
     }
 
+    /**
+     * 执行 {@code unknownTypeIsRejected} 对应的业务操作。
+     */
     @Test
     void unknownTypeIsRejected() {
         JsonObject json = new JsonObject();
@@ -49,6 +64,9 @@ class AddressSerializerTest {
         assertTrue(AddressSerializer.CODEC.parse(JsonOps.INSTANCE, json).error().isPresent());
     }
 
+    /**
+     * 执行 {@code mailboxWithoutPartsIsRejected} 对应的业务操作。
+     */
     @Test
     void mailboxWithoutPartsIsRejected() {
         JsonObject json = new JsonObject();
@@ -56,6 +74,9 @@ class AddressSerializerTest {
         assertTrue(AddressSerializer.CODEC.parse(JsonOps.INSTANCE, json).error().isPresent());
     }
 
+    /**
+     * 执行 {@code playerWithoutPlayerIdIsRejected} 对应的业务操作。
+     */
     @Test
     void playerWithoutPlayerIdIsRejected() {
         JsonObject json = new JsonObject();
@@ -63,6 +84,9 @@ class AddressSerializerTest {
         assertTrue(AddressSerializer.CODEC.parse(JsonOps.INSTANCE, json).error().isPresent());
     }
 
+    /**
+     * 执行 {@code roundTrip} 对应的业务操作。
+     */
     private static Address roundTrip(Address address) {
         var encoded = AddressSerializer.CODEC.encodeStart(JsonOps.INSTANCE, address);
         assertTrue(encoded.result().isPresent(), encoded.error().map(Object::toString).orElse("encode failed"));

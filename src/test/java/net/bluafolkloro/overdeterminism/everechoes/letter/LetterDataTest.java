@@ -12,10 +12,22 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * 封装相关行为的自动化回归测试。
+ */
 class LetterDataTest {
+    /**
+     * 定义 {@code RETURN_ADDRESS} 常量。
+     */
     private static final MailBoxAddress RETURN_ADDRESS = MailBoxAddress.display("AB", "1", "1AA");
+    /**
+     * 定义 {@code RECIPIENT_ADDRESS} 常量。
+     */
     private static final MailBoxAddress RECIPIENT_ADDRESS = MailBoxAddress.display("CD", "2", "7QF");
 
+    /**
+     * 执行 {@code draftCanBeEditedThenSealedThenOpened} 对应的业务操作。
+     */
     @Test
     void draftCanBeEditedThenSealedThenOpened() {
         LetterData draft = LetterData.createDraft(RETURN_ADDRESS)
@@ -39,6 +51,9 @@ class LetterDataTest {
         assertEquals(RECIPIENT_ADDRESS, opened.requireRecipientAddress());
     }
 
+    /**
+     * 执行 {@code draftWithoutRecipientCannotBeSealed} 对应的业务操作。
+     */
     @Test
     void draftWithoutRecipientCannotBeSealed() {
         LetterData draft = LetterData.createDraft(RETURN_ADDRESS);
@@ -50,6 +65,9 @@ class LetterDataTest {
         assertThrows(IllegalStateException.class, draft::seal);
     }
 
+    /**
+     * 执行 {@code sealedAndOpenedLettersCannotBeEdited} 对应的业务操作。
+     */
     @Test
     void sealedAndOpenedLettersCannotBeEdited() {
         LetterData sealed = completeDraft().seal();
@@ -67,6 +85,9 @@ class LetterDataTest {
         assertTrue(opened.tryOpen().isEmpty());
     }
 
+    /**
+     * 执行 {@code sealedAndOpenedLettersRequireRecipientAddress} 对应的业务操作。
+     */
     @Test
     void sealedAndOpenedLettersRequireRecipientAddress() {
         UUID letterId = UUID.randomUUID();
@@ -103,6 +124,9 @@ class LetterDataTest {
         ).isEmpty());
     }
 
+    /**
+     * 添加或加入 {@code addressLimitFitsPlayerUuid} 对应的业务操作。
+     */
     @Test
     void addressLimitFitsPlayerUuid() {
         String uuid = UUID.randomUUID().toString();
@@ -110,6 +134,9 @@ class LetterDataTest {
         assertEquals(uuid, LetterLimits.clamp(uuid, LetterLimits.ADDRESS_VALUE));
     }
 
+    /**
+     * 执行 {@code blankOptionalTextIsNormalizedToAbsent} 对应的业务操作。
+     */
     @Test
     void blankOptionalTextIsNormalizedToAbsent() {
         LetterData draft = LetterData.createDraft(RETURN_ADDRESS)
@@ -120,6 +147,9 @@ class LetterDataTest {
         assertTrue(draft.letterRecipient().isEmpty());
     }
 
+    /**
+     * 执行 {@code completeDraft} 对应的业务操作。
+     */
     private static LetterData completeDraft() {
         return LetterData.createDraft(RETURN_ADDRESS).withRecipientAddress(RECIPIENT_ADDRESS);
     }

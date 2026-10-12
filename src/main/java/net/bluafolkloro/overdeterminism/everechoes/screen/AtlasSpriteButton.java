@@ -13,17 +13,47 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import org.lwjgl.glfw.GLFW;
 
+/**
+ * 封装该模块的相关职责。
+ */
 @OnlyIn(Dist.CLIENT)
 final class AtlasSpriteButton extends AbstractButton {
+    /**
+     * 保存 {@code normal} 对应的状态或依赖。
+     */
     private final ResourceLocation normal;
+    /**
+     * 保存 {@code hover} 对应的状态或依赖。
+     */
     private final ResourceLocation hover;
+    /**
+     * 保存 {@code pressed} 对应的状态或依赖。
+     */
     private final ResourceLocation pressed;
+    /**
+     * 保存 {@code disabled} 对应的状态或依赖。
+     */
     private final ResourceLocation disabled;
+    /**
+     * 保存 {@code textureSize} 对应的状态或依赖。
+     */
     private final int textureSize;
+    /**
+     * 保存 {@code sliceCorner} 对应的状态或依赖。
+     */
     private final int sliceCorner;
+    /**
+     * 保存 {@code onPress} 对应的状态或依赖。
+     */
     private final OnPress onPress;
+    /**
+     * 保存 {@code drawLabel} 对应的状态或依赖。
+     */
     private final boolean drawLabel;
 
+    /**
+     * 创建并初始化当前对象。
+     */
     AtlasSpriteButton(
             int x,
             int y,
@@ -50,6 +80,9 @@ final class AtlasSpriteButton extends AbstractButton {
         this.onPress = onPress;
     }
 
+    /**
+     * 执行 {@code nine} 对应的业务操作。
+     */
     static AtlasSpriteButton nine(
             int x,
             int y,
@@ -72,6 +105,9 @@ final class AtlasSpriteButton extends AbstractButton {
         );
     }
 
+    /**
+     * 执行 {@code compass} 对应的业务操作。
+     */
     static AtlasSpriteButton compass(
             int x,
             int y,
@@ -94,6 +130,9 @@ final class AtlasSpriteButton extends AbstractButton {
         return button;
     }
 
+    /**
+     * 执行 {@code icon} 对应的业务操作。
+     */
     static AtlasSpriteButton icon(
             int x,
             int y,
@@ -113,15 +152,24 @@ final class AtlasSpriteButton extends AbstractButton {
         return button;
     }
 
+    /**
+     * 执行 {@code tex} 对应的业务操作。
+     */
     static ResourceLocation tex(String name) {
         return ResourceLocation.fromNamespaceAndPath("everechoes", "textures/gui/atlas/" + name + ".png");
     }
 
+    /**
+     * 处理 {@code onPress} 对应的业务操作。
+     */
     @Override
     public void onPress() {
         onPress.onPress(this);
     }
 
+    /**
+     * 绘制 {@code renderWidget} 对应的业务操作。
+     */
     @Override
     protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         ResourceLocation texture = sprite();
@@ -149,6 +197,9 @@ final class AtlasSpriteButton extends AbstractButton {
         }
     }
 
+    /**
+     * 执行 {@code faceName} 对应的业务操作。
+     */
     private String faceName() {
         String path = normal.getPath();
         int slash = path.lastIndexOf('/');
@@ -157,6 +208,9 @@ final class AtlasSpriteButton extends AbstractButton {
         return file.substring(0, under);
     }
 
+    /**
+     * 执行 {@code sprite} 对应的业务操作。
+     */
     private ResourceLocation sprite() {
         if (!active) {
             return disabled;
@@ -170,17 +224,29 @@ final class AtlasSpriteButton extends AbstractButton {
         return normal;
     }
 
+    /**
+     * 执行 {@code mouseDown} 对应的业务操作。
+     */
     private static boolean mouseDown() {
         return GLFW.glfwGetMouseButton(Minecraft.getInstance().getWindow().getWindow(), GLFW.GLFW_MOUSE_BUTTON_1) == GLFW.GLFW_PRESS;
     }
 
+    /**
+     * 更新 {@code updateWidgetNarration} 对应的业务操作。
+     */
     @Override
     protected void updateWidgetNarration(NarrationElementOutput output) {
         defaultButtonNarrationText(output);
     }
 
+    /**
+     * 封装可替换实现遵循的行为契约。
+     */
     @FunctionalInterface
     interface OnPress {
+        /**
+         * 处理 {@code onPress} 对应的业务操作。
+         */
         void onPress(AtlasSpriteButton button);
     }
 }

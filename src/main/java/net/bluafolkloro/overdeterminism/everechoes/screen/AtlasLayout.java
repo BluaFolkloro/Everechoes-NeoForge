@@ -6,68 +6,248 @@ package net.bluafolkloro.overdeterminism.everechoes.screen;
  * leather + map + gap + sidebar — never inflated independently.
  */
 final class AtlasLayout {
+    /**
+     * 定义 {@code GRID_COLS} 常量。
+     */
     static final int GRID_COLS = 25;
+    /**
+     * 定义 {@code GRID_ROWS} 常量。
+     */
     static final int GRID_ROWS = 19;
+    /**
+     * 定义 {@code LEATHER} 常量。
+     */
     static final int LEATHER = 8;
+    /**
+     * 定义 {@code SPINE} 常量。
+     */
     static final int SPINE = 4;
+    /**
+     * 定义 {@code PAPER_IN} 常量。
+     */
     static final int PAPER_IN = 5;
+    /**
+     * 定义 {@code PAD_H} 常量。
+     */
     static final int PAD_H = 6;
+    /**
+     * 定义 {@code PAD_V} 常量。
+     */
     static final int PAD_V = 4;
+    /**
+     * 定义 {@code HEADER_FIRST_ROW_EXTRA} 常量。
+     */
     static final int HEADER_FIRST_ROW_EXTRA = 8;
+    /**
+     * 定义 {@code BUTTON_H} 常量。
+     */
     static final int BUTTON_H = 16;
+    /**
+     * 定义 {@code COMPASS_BTN} 常量。
+     */
     static final int COMPASS_BTN = 14;
+    /**
+     * 定义 {@code CELL_MIN} 常量。
+     */
     static final int CELL_MIN = 6;
+    /**
+     * 定义 {@code CELL_MAX} 常量。
+     */
     static final int CELL_MAX = 24;
+    /**
+     * 定义 {@code LEGEND_ROWS} 常量。
+     */
     static final int LEGEND_ROWS = 7;
+    /**
+     * 定义 {@code LEGEND_ROW_GAP} 常量。
+     */
     static final int LEGEND_ROW_GAP = 4;
 
+    /**
+     * 保存 {@code imageW} 对应的状态或依赖。
+     */
     final int imageW;
+    /**
+     * 保存 {@code imageH} 对应的状态或依赖。
+     */
     final int imageH;
+    /**
+     * 保存 {@code cell} 对应的状态或依赖。
+     */
     final int cell;
+    /**
+     * 保存 {@code lineH} 对应的状态或依赖。
+     */
     final int lineH;
+    /**
+     * 保存 {@code col0} 对应的状态或依赖。
+     */
     final int col0;
+    /**
+     * 保存 {@code col1} 对应的状态或依赖。
+     */
     final int col1;
+    /**
+     * 保存 {@code legendTwoCol} 对应的状态或依赖。
+     */
     final boolean legendTwoCol;
+    /**
+     * 保存 {@code compact} 对应的状态或依赖。
+     */
     final boolean compact;
+    /**
+     * 保存 {@code window} 对应的状态或依赖。
+     */
     final Rect window;
+    /**
+     * 保存 {@code header} 对应的状态或依赖。
+     */
     final Rect header;
+    /**
+     * 保存 {@code icon} 对应的状态或依赖。
+     */
     final Rect icon;
+    /**
+     * 保存 {@code title} 对应的状态或依赖。
+     */
     final Rect title;
+    /**
+     * 保存 {@code dimension} 对应的状态或依赖。
+     */
     final Rect dimension;
+    /**
+     * 保存 {@code revision} 对应的状态或依赖。
+     */
     final Rect revision;
+    /**
+     * 保存 {@code stamp} 对应的状态或依赖。
+     */
     final Rect stamp;
+    /**
+     * 保存 {@code district} 对应的状态或依赖。
+     */
     final Rect district;
+    /**
+     * 保存 {@code chunk} 对应的状态或依赖。
+     */
     final Rect chunk;
+    /**
+     * 保存 {@code count} 对应的状态或依赖。
+     */
     final Rect count;
+    /**
+     * 保存 {@code map} 对应的状态或依赖。
+     */
     final Rect map;
+    /**
+     * 保存 {@code grid} 对应的状态或依赖。
+     */
     final Rect grid;
+    /**
+     * 保存 {@code sidebar} 对应的状态或依赖。
+     */
     final Rect sidebar;
+    /**
+     * 保存 {@code navTitle} 对应的状态或依赖。
+     */
     final Rect navTitle;
+    /**
+     * 保存 {@code compass} 对应的状态或依赖。
+     */
     final Rect compass;
+    /**
+     * 保存 {@code legendTitle} 对应的状态或依赖。
+     */
     final Rect legendTitle;
+    /**
+     * 保存 {@code legend} 对应的状态或依赖。
+     */
     final Rect legend;
+    /**
+     * 保存 {@code statusTitle} 对应的状态或依赖。
+     */
     final Rect statusTitle;
+    /**
+     * 保存 {@code status} 对应的状态或依赖。
+     */
     final Rect status;
+    /**
+     * 保存 {@code footer} 对应的状态或依赖。
+     */
     final Rect footer;
+    /**
+     * 保存 {@code quill} 对应的状态或依赖。
+     */
     final Rect quill;
+    /**
+     * 保存 {@code summary} 对应的状态或依赖。
+     */
     final Rect summary;
+    /**
+     * 保存 {@code apply} 对应的状态或依赖。
+     */
     final Rect apply;
+    /**
+     * 保存 {@code undo} 对应的状态或依赖。
+     */
     final Rect undo;
+    /**
+     * 保存 {@code close} 对应的状态或依赖。
+     */
     final Rect close;
 
+    /**
+     * 封装不可变业务数据。
+     */
     record TextNeed(
+            /**
+             * 保存 {@code chunk} 对应的状态或依赖。
+             */
             int chunk,
+            /**
+             * 保存 {@code count} 对应的状态或依赖。
+             */
             int count,
+            /**
+             * 保存 {@code status} 对应的状态或依赖。
+             */
             int status,
+            /**
+             * 保存 {@code summary} 对应的状态或依赖。
+             */
             int summary,
+            /**
+             * 保存 {@code apply} 对应的状态或依赖。
+             */
             int apply,
+            /**
+             * 保存 {@code undo} 对应的状态或依赖。
+             */
             int undo,
+            /**
+             * 保存 {@code close} 对应的状态或依赖。
+             */
             int close,
+            /**
+             * 保存 {@code legendItem} 对应的状态或依赖。
+             */
             int legendItem,
+            /**
+             * 保存 {@code title} 对应的状态或依赖。
+             */
             int title,
+            /**
+             * 保存 {@code rev} 对应的状态或依赖。
+             */
             int rev,
+            /**
+             * 保存 {@code dim} 对应的状态或依赖。
+             */
             int dim
     ) {
+        /**
+         * 执行 {@code estimate} 对应的业务操作。
+         */
         static TextNeed estimate(int lineH) {
             int cjk = Math.max(7, lineH - 1);
             int ascii = 6;
@@ -87,6 +267,9 @@ final class AtlasLayout {
         }
     }
 
+    /**
+     * 创建并初始化当前对象。
+     */
     private AtlasLayout(
             int imageW, int imageH, int cell, int lineH, int col0, int col1,
             boolean legendTwoCol, boolean compact,
@@ -130,10 +313,16 @@ final class AtlasLayout {
         this.close = close;
     }
 
+    /**
+     * 执行 {@code compute} 对应的业务操作。
+     */
     static AtlasLayout compute(int screenW, int screenH, int lineHeight) {
         return compute(screenW, screenH, lineHeight, TextNeed.estimate(lineHeight));
     }
 
+    /**
+     * 执行 {@code compute} 对应的业务操作。
+     */
     static AtlasLayout compute(int screenW, int screenH, int lineHeight, TextNeed need) {
         int lineH = Math.max(8, lineHeight);
         boolean compact = screenW < 480 || screenH < 270;
@@ -240,27 +429,48 @@ final class AtlasLayout {
         );
     }
 
-    record Rect(int x, int y, int w, int h) {
+    /**
+     * 封装不可变业务数据。
+     */
+    record Rect(/** 保存 {@code x} 对应的状态或依赖。 */ int x, /** 保存 {@code y} 对应的状态或依赖。 */ int y, /** 保存 {@code w} 对应的状态或依赖。 */ int w, /** 保存 {@code h} 对应的状态或依赖。 */ int h) {
+        /**
+         * 执行 {@code right} 对应的业务操作。
+         */
         int right() {
             return x + w;
         }
 
+        /**
+         * 执行 {@code bottom} 对应的业务操作。
+         */
         int bottom() {
             return y + h;
         }
 
+        /**
+         * 执行 {@code textY} 对应的业务操作。
+         */
         int textY(int lineHeight) {
             return y + (h - lineHeight) / 2;
         }
 
+        /**
+         * 判断 {@code contains} 对应的业务操作。
+         */
         boolean contains(int px, int py) {
             return px >= x && py >= y && px < x + w && py < y + h;
         }
 
+        /**
+         * 执行 {@code overlaps} 对应的业务操作。
+         */
         boolean overlaps(Rect other) {
             return x < other.right() && other.x < right() && y < other.bottom() && other.y < bottom();
         }
 
+        /**
+         * 判断 {@code containsRect} 对应的业务操作。
+         */
         boolean containsRect(Rect other) {
             return other.x >= x && other.y >= y && other.right() <= right() && other.bottom() <= bottom();
         }

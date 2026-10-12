@@ -6,7 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * 封装相关行为的自动化回归测试。
+ */
 class MailBoxAddressTest {
+    /**
+     * 执行 {@code parseCanonicalizesUkStyleAndSpacing} 对应的业务操作。
+     */
     @Test
     void parseCanonicalizesUkStyleAndSpacing() {
         MailBoxAddress address = MailBoxAddress.parse(" ev12-7qf ").orElseThrow();
@@ -17,6 +23,9 @@ class MailBoxAddressTest {
         assertTrue(address.domainId().isEmpty());
     }
 
+    /**
+     * 执行 {@code parseAcceptsAllOutwardShapes} 对应的业务操作。
+     */
     @Test
     void parseAcceptsAllOutwardShapes() {
         assertEquals("A1 1AA", MailBoxAddress.parse("a1 1aa").orElseThrow().postalCode());
@@ -27,6 +36,9 @@ class MailBoxAddressTest {
         assertEquals("AA1A 1AA", MailBoxAddress.parse("AA1A 1AA").orElseThrow().postalCode());
     }
 
+    /**
+     * 执行 {@code parseRejectsInvalidInwardLetters} 对应的业务操作。
+     */
     @Test
     void parseRejectsInvalidInwardLetters() {
         assertTrue(MailBoxAddress.parse("EV12 7CI").isEmpty());
@@ -36,6 +48,9 @@ class MailBoxAddressTest {
         assertTrue(MailBoxAddress.parse("ABC1-001").isEmpty());
     }
 
+    /**
+     * 执行 {@code constructorRejectsInvalidParts} 对应的业务操作。
+     */
     @Test
     void constructorRejectsInvalidParts() {
         assertThrows(IllegalArgumentException.class, () -> MailBoxAddress.display("ABC", "1", "1AA"));

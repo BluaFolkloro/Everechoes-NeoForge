@@ -20,18 +20,33 @@ import net.minecraft.world.level.Level;
 
 import java.util.List;
 
+/**
+ * 封装物品行为与玩家交互。
+ */
 public class LetterItem extends Item {
+    /**
+     * 保存 {@code expectedState} 对应的状态或依赖。
+     */
     private final LetterState expectedState;
 
+    /**
+     * 创建并初始化当前对象。
+     */
     public LetterItem(Properties properties, LetterState expectedState) {
         super(properties);
         this.expectedState = expectedState;
     }
 
+    /**
+     * 执行 {@code expectedState} 对应的业务操作。
+     */
     public LetterState expectedState() {
         return expectedState;
     }
 
+    /**
+     * 执行 {@code use} 对应的业务操作。
+     */
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
@@ -56,6 +71,9 @@ public class LetterItem extends Item {
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
     }
 
+    /**
+     * 获取或解析 {@code getName} 对应的业务操作。
+     */
     @Override
     public Component getName(ItemStack stack) {
         LetterData data = LetterContents.get(stack);
@@ -66,6 +84,9 @@ public class LetterItem extends Item {
         return super.getName(stack);
     }
 
+    /**
+     * 执行 {@code appendHoverText} 对应的业务操作。
+     */
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         LetterData data = LetterContents.get(stack);
@@ -106,12 +127,18 @@ public class LetterItem extends Item {
         }
     }
 
+    /**
+     * 判断 {@code isFoil} 对应的业务操作。
+     */
     @Override
     public boolean isFoil(ItemStack stack) {
         LetterData data = LetterContents.get(stack);
         return (data != null && data.isSealed()) || super.isFoil(stack);
     }
 
+    /**
+     * 执行 {@code stateKey} 对应的业务操作。
+     */
     private static String stateKey(LetterState state) {
         return switch (state) {
             case DRAFT -> "item.everechoes.letter.state.draft";
@@ -120,6 +147,9 @@ public class LetterItem extends Item {
         };
     }
 
+    /**
+     * 执行 {@code screenTitleKey} 对应的业务操作。
+     */
     private static String screenTitleKey(LetterState state) {
         return switch (state) {
             case DRAFT -> "gui.everechoes.letter.screen.edit";

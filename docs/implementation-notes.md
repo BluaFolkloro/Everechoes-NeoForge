@@ -59,7 +59,7 @@
 - `PostalAtlasLimits`：默认窗口为 `25×19`，单边上限 `25`，`MAX_WINDOW_CELLS=475`，`MAX_SUBMIT_CHUNKS=DistrictCoverage.MAX_CHUNKS`（4096）。合法区块坐标为 `MIN_CHUNK..MAX_CHUNK`（由 `Level.MAX_LEVEL_SIZE` 换算，避免 chunk×16 溢出）；不使用动态世界边界。
 - `PostalNetwork.atlasWindow` 返回 `PostalAtlasSnapshot`（无探索集合）；非法窗口或未知邮区为 `Optional.empty()`。`includeSavedCoverage=false` 时 `savedCoveragePacked` 为空，但 `savedCoverageSize` 仍是完整辖区大小。`nodePacked` 含本邮区全部节点区块；`hubPacked` / `collectionPacked` 按窗口裁剪。打开、平移、提交不调用 `getChunk`、不生成区块。
 - `postal_atlas` 物品对已加入邮区的邮筒 `useOn` 打开 `PostalAtlasMenu`。C2S `postal_atlas_request`（PAN/SUBMIT）不信任客户端 `districtId`；PAN 携带受服务器上限校验的窗口宽高，提交集合在解码时若 `count` 超过上限会抛 `DecoderException`。S2C `postal_atlas_sync` 推送窗口或提交结果。屏幕绘制 25×19 横向坐标网格，格子只表示邮政状态；地图与右侧邮政工具面板使用独立响应式布局。
-- `PostalNetwork` 使用 `schemaVersion`。旧版邮域表读取后丢弃，只写新格式。旧邮筒库存保留，绑定不恢复。
+- `PostalNetwork` 使用 `schemaVersion`。遇到无法识别的版本时保留原始 NBT，并以只读降级状态运行，避免自动保存把旧网络覆盖为空；正式兼容仍需为已发布版本编写明确迁移器。旧邮筒库存继续保留。
 - 潜行右键打开入网界面，提交建立/加入/退出请求。
 - 仅 `ACTIVE` 邮区接收新邮件；标题显示当前 `domainCode` 与邮区号。
 - GUI 暂用原版漏斗背景；正式美化需先预览再改。

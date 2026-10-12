@@ -18,10 +18,19 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * 封装玩家操作的服务端处理流程。
+ */
 public final class LetterActions {
+    /**
+     * 创建并初始化当前对象。
+     */
     private LetterActions() {
     }
 
+    /**
+     * 处理 {@code handle} 对应的业务操作。
+     */
     public static void handle(LetterActionPayload payload, IPayloadContext context) {
         if (!(context.player() instanceof ServerPlayer player)) {
             return;
@@ -30,6 +39,9 @@ public final class LetterActions {
         apply(player, payload);
     }
 
+    /**
+     * 应用 {@code apply} 对应的业务操作。
+     */
     private static void apply(ServerPlayer player, LetterActionPayload payload) {
         ItemStack stack = player.getItemInHand(payload.hand());
         if (!(stack.getItem() instanceof LetterItem)) {
@@ -55,6 +67,9 @@ public final class LetterActions {
         }
     }
 
+    /**
+     * 保存或编码 {@code save} 对应的业务操作。
+     */
     private static void save(ServerPlayer player, LetterActionPayload payload, LetterData data) {
         DraftEdit edit = applyDraftEdits(player, payload, data);
         if (edit == null) {
@@ -67,6 +82,9 @@ public final class LetterActions {
         }
     }
 
+    /**
+     * 执行 {@code seal} 对应的业务操作。
+     */
     private static void seal(ServerPlayer player, LetterActionPayload payload, LetterData data) {
         DraftEdit edit = applyDraftEdits(player, payload, data);
         if (edit == null) {
@@ -92,10 +110,16 @@ public final class LetterActions {
         LetterContents.writeToHand(player, payload.hand(), sealed.get());
     }
 
+    /**
+     * 打开 {@code open} 对应的业务操作。
+     */
     private static void open(ServerPlayer player, InteractionHand hand, LetterData data) {
         data.tryOpen().ifPresent(opened -> LetterContents.writeToHand(player, hand, opened));
     }
 
+    /**
+     * 应用 {@code applyDraftEdits} 对应的业务操作。
+     */
     private static DraftEdit applyDraftEdits(ServerPlayer player, LetterActionPayload payload, LetterData data) {
         if (!data.isDraft()) {
             return null;
@@ -110,6 +134,9 @@ public final class LetterActions {
         return applyRecipient(player, payload, edited);
     }
 
+    /**
+     * 应用 {@code applyRecipient} 对应的业务操作。
+     */
     private static DraftEdit applyRecipient(ServerPlayer player, LetterActionPayload payload, LetterData data) {
         String addressValue = LetterLimits.sanitizeSingleLine(payload.addressValue(), LetterLimits.ADDRESS_VALUE);
         return switch (payload.addressKind()) {
@@ -143,6 +170,9 @@ public final class LetterActions {
         };
     }
 
+    /**
+     * 获取或解析 {@code resolvePlayerAddress} 对应的业务操作。
+     */
     private static Optional<Address> resolvePlayerAddress(MinecraftServer server, String rawName) {
         try {
             return Optional.of(new PlayerAddress(UUID.fromString(rawName)));
@@ -165,6 +195,9 @@ public final class LetterActions {
                 .map(profile -> new PlayerAddress(profile.getId()));
     }
 
-    private record DraftEdit(LetterData data, boolean unknownPlayer) {
+    /**
+     * 封装不可变业务数据。
+     */
+    private record DraftEdit(/** 保存 {@code data} 对应的状态或依赖。 */ LetterData data, /** 保存 {@code unknownPlayer} 对应的状态或依赖。 */ boolean unknownPlayer) {
     }
 }

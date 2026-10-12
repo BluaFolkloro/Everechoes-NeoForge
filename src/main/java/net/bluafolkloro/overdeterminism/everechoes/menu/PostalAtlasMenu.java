@@ -18,15 +18,39 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * 封装服务端容器菜单及数据同步。
+ */
 public class PostalAtlasMenu extends AbstractContainerMenu {
+    /**
+     * 保存 {@code pos} 对应的状态或依赖。
+     */
     private final BlockPos pos;
+    /**
+     * 保存 {@code nodeId} 对应的状态或依赖。
+     */
     private final UUID nodeId;
+    /**
+     * 保存 {@code districtId} 对应的状态或依赖。
+     */
     private final UUID districtId;
+    /**
+     * 保存 {@code snapshot} 对应的状态或依赖。
+     */
     private PostalAtlasSnapshot snapshot;
+    /**
+     * 保存 {@code coverageEpoch} 对应的状态或依赖。
+     */
     private int coverageEpoch;
+    /**
+     * 保存 {@code lastReasonKey} 对应的状态或依赖。
+     */
     @Nullable
     private String lastReasonKey;
 
+    /**
+     * 创建并初始化当前对象。
+     */
     public PostalAtlasMenu(
             int containerId,
             Inventory playerInv,
@@ -42,6 +66,9 @@ public class PostalAtlasMenu extends AbstractContainerMenu {
         this.snapshot = snapshot;
     }
 
+    /**
+     * 创建并初始化当前对象。
+     */
     public PostalAtlasMenu(int containerId, Inventory playerInv, FriendlyByteBuf extraData) {
         this(
                 containerId,
@@ -53,6 +80,9 @@ public class PostalAtlasMenu extends AbstractContainerMenu {
         );
     }
 
+    /**
+     * 保存或编码 {@code writeOpeningData} 对应的业务操作。
+     */
     public static void writeOpeningData(
             FriendlyByteBuf buffer,
             BlockPos pos,
@@ -66,31 +96,52 @@ public class PostalAtlasMenu extends AbstractContainerMenu {
         PostalAtlasSyncPayload.writeSnapshot(buffer, snapshot, true);
     }
 
+    /**
+     * 执行 {@code pos} 对应的业务操作。
+     */
     public BlockPos pos() {
         return pos;
     }
 
+    /**
+     * 执行 {@code nodeId} 对应的业务操作。
+     */
     public UUID nodeId() {
         return nodeId;
     }
 
+    /**
+     * 执行 {@code districtId} 对应的业务操作。
+     */
     public UUID districtId() {
         return districtId;
     }
 
+    /**
+     * 执行 {@code snapshot} 对应的业务操作。
+     */
     public PostalAtlasSnapshot snapshot() {
         return snapshot;
     }
 
+    /**
+     * 执行 {@code coverageEpoch} 对应的业务操作。
+     */
     public int coverageEpoch() {
         return coverageEpoch;
     }
 
+    /**
+     * 执行 {@code lastReasonKey} 对应的业务操作。
+     */
     @Nullable
     public String lastReasonKey() {
         return lastReasonKey;
     }
 
+    /**
+     * 执行 {@code replaceWindow} 对应的业务操作。
+     */
     public void replaceWindow(PostalAtlasSnapshot incoming) {
         if (!districtId.equals(incoming.districtId())) {
             return;
@@ -106,6 +157,9 @@ public class PostalAtlasMenu extends AbstractContainerMenu {
         snapshot = withSaved(incoming, saved, savedSize, incoming.revision());
     }
 
+    /**
+     * 应用 {@code applyResult} 对应的业务操作。
+     */
     public void applyResult(boolean allowed, String reasonKey, int revision, Set<Long> savedCoverage) {
         lastReasonKey = reasonKey == null || reasonKey.isEmpty() ? null : reasonKey;
         if (!allowed) {
@@ -116,11 +170,17 @@ public class PostalAtlasMenu extends AbstractContainerMenu {
         snapshot = withSaved(snapshot, saved, saved.size(), revision);
     }
 
+    /**
+     * 执行 {@code quickMoveStack} 对应的业务操作。
+     */
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
         return ItemStack.EMPTY;
     }
 
+    /**
+     * 执行 {@code stillValid} 对应的业务操作。
+     */
     @Override
     public boolean stillValid(Player player) {
         if (!(player.level().getBlockEntity(pos) instanceof PostBoxBlockEntity postBox) || postBox.isRemoved()) {
@@ -144,6 +204,9 @@ public class PostalAtlasMenu extends AbstractContainerMenu {
         return true;
     }
 
+    /**
+     * 执行 {@code withSaved} 对应的业务操作。
+     */
     private static PostalAtlasSnapshot withSaved(PostalAtlasSnapshot base, Set<Long> saved, int savedSize, int revision) {
         Set<Long> owned = new LinkedHashSet<>();
         int width = base.width();

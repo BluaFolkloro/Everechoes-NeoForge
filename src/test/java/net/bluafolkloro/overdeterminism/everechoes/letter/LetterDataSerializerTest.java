@@ -11,10 +11,22 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * 封装相关行为的自动化回归测试。
+ */
 class LetterDataSerializerTest {
+    /**
+     * 定义 {@code RETURN_ADDRESS} 常量。
+     */
     private static final MailBoxAddress RETURN_ADDRESS = MailBoxAddress.display("AB", "1", "1AA");
+    /**
+     * 定义 {@code PLAYER_ADDRESS} 常量。
+     */
     private static final PlayerAddress PLAYER_ADDRESS = new PlayerAddress(UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"));
 
+    /**
+     * 执行 {@code draftWithoutRecipientRoundTrips} 对应的业务操作。
+     */
     @Test
     void draftWithoutRecipientRoundTrips() {
         LetterData original = LetterData.createDraft(RETURN_ADDRESS)
@@ -24,6 +36,9 @@ class LetterDataSerializerTest {
         assertEquals(original, roundTrip(original));
     }
 
+    /**
+     * 执行 {@code sealedLetterRoundTrips} 对应的业务操作。
+     */
     @Test
     void sealedLetterRoundTrips() {
         LetterData original = LetterData.createDraft(RETURN_ADDRESS)
@@ -37,6 +52,9 @@ class LetterDataSerializerTest {
         assertEquals(original, roundTrip(original));
     }
 
+    /**
+     * 打开 {@code openedLetterRoundTrips} 对应的业务操作。
+     */
     @Test
     void openedLetterRoundTrips() {
         LetterData original = LetterData.createDraft(RETURN_ADDRESS)
@@ -47,6 +65,9 @@ class LetterDataSerializerTest {
         assertEquals(original, roundTrip(original));
     }
 
+    /**
+     * 执行 {@code unknownStateIsRejected} 对应的业务操作。
+     */
     @Test
     void unknownStateIsRejected() {
         JsonObject json = validDraftJson();
@@ -55,6 +76,9 @@ class LetterDataSerializerTest {
         assertTrue(LetterDataSerializer.CODEC.parse(JsonOps.INSTANCE, json).error().isPresent());
     }
 
+    /**
+     * 执行 {@code sealedLetterMissingRecipientIsRejected} 对应的业务操作。
+     */
     @Test
     void sealedLetterMissingRecipientIsRejected() {
         JsonObject json = validDraftJson();
@@ -64,6 +88,9 @@ class LetterDataSerializerTest {
         assertTrue(LetterDataSerializer.CODEC.parse(JsonOps.INSTANCE, json).error().isPresent());
     }
 
+    /**
+     * 执行 {@code nullLetterIdIsRejected} 对应的业务操作。
+     */
     @Test
     void nullLetterIdIsRejected() {
         JsonObject json = validDraftJson();
@@ -72,6 +99,9 @@ class LetterDataSerializerTest {
         assertTrue(LetterDataSerializer.CODEC.parse(JsonOps.INSTANCE, json).error().isPresent());
     }
 
+    /**
+     * 执行 {@code malformedRecipientAddressIsRejected} 对应的业务操作。
+     */
     @Test
     void malformedRecipientAddressIsRejected() {
         JsonObject json = validDraftJson();
@@ -84,6 +114,9 @@ class LetterDataSerializerTest {
         assertTrue(LetterDataSerializer.CODEC.parse(JsonOps.INSTANCE, json).error().isPresent());
     }
 
+    /**
+     * 执行 {@code roundTrip} 对应的业务操作。
+     */
     private static LetterData roundTrip(LetterData original) {
         var encoded = LetterDataSerializer.CODEC.encodeStart(JsonOps.INSTANCE, original);
         assertTrue(encoded.result().isPresent(), encoded.error().map(Object::toString).orElse("encode failed"));
@@ -92,6 +125,9 @@ class LetterDataSerializerTest {
         return decoded.result().orElseThrow();
     }
 
+    /**
+     * 执行 {@code validDraftJson} 对应的业务操作。
+     */
     private static JsonObject validDraftJson() {
         JsonObject returnAddress = new JsonObject();
         returnAddress.addProperty("type", "mailbox");

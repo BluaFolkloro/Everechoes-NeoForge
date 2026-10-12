@@ -10,21 +10,39 @@ import net.minecraft.world.level.block.state.BlockState;
 import javax.annotation.Nullable;
 import java.util.UUID;
 
+/**
+ * 封装方块实体的持久状态与运行逻辑。
+ */
 public class MailBoxBlockEntity extends BlockEntity {
+    /**
+     * 定义 {@code MAILBOX_ID_TAG} 常量。
+     */
     static final String MAILBOX_ID_TAG = "mailboxId";
 
+    /**
+     * 保存 {@code mailboxId} 对应的状态或依赖。
+     */
     @Nullable
     private UUID mailboxId;
 
+    /**
+     * 创建并初始化当前对象。
+     */
     public MailBoxBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MAIL_BOX.get(), pos, state);
     }
 
+    /**
+     * 执行 {@code mailboxId} 对应的业务操作。
+     */
     @Nullable
     public UUID mailboxId() {
         return mailboxId;
     }
 
+    /**
+     * 获取或解析 {@code readMailboxId} 对应的业务操作。
+     */
     @Nullable
     static UUID readMailboxId(CompoundTag tag) {
         return tag.hasUUID(MAILBOX_ID_TAG) ? tag.getUUID(MAILBOX_ID_TAG) : null;
@@ -44,6 +62,9 @@ public class MailBoxBlockEntity extends BlockEntity {
         return serverSide ? UUID.randomUUID() : null;
     }
 
+    /**
+     * 处理 {@code onLoad} 对应的业务操作。
+     */
     @Override
     public void onLoad() {
         super.onLoad();
@@ -52,6 +73,9 @@ public class MailBoxBlockEntity extends BlockEntity {
         }
     }
 
+    /**
+     * 保存或编码 {@code saveAdditional} 对应的业务操作。
+     */
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
@@ -63,12 +87,18 @@ public class MailBoxBlockEntity extends BlockEntity {
         }
     }
 
+    /**
+     * 读取并恢复 {@code loadAdditional} 对应的业务操作。
+     */
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         mailboxId = readMailboxId(tag);
     }
 
+    /**
+     * 执行 {@code ensureMailboxIdOnServer} 对应的业务操作。
+     */
     private void ensureMailboxIdOnServer() {
         UUID assigned = assignMailboxIdOnServer(mailboxId, true);
         if (mailboxId == null && assigned != null) {

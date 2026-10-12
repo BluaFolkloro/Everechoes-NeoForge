@@ -23,29 +23,65 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * 封装服务端容器菜单及数据同步。
+ */
 public class PostBoxConfigMenu extends AbstractContainerMenu {
+    /**
+     * 保存 {@code pos} 对应的状态或依赖。
+     */
     private final BlockPos pos;
+    /**
+     * 保存 {@code districtId} 对应的状态或依赖。
+     */
     @Nullable
     private final UUID districtId;
+    /**
+     * 保存 {@code nodeRole} 对应的状态或依赖。
+     */
     @Nullable
     private final NodeRole nodeRole;
+    /**
+     * 保存 {@code domainCode} 对应的状态或依赖。
+     */
     @Nullable
     private final String domainCode;
+    /**
+     * 保存 {@code districtCode} 对应的状态或依赖。
+     */
     @Nullable
     private final String districtCode;
+    /**
+     * 保存 {@code membershipState} 对应的状态或依赖。
+     */
     @Nullable
     private final MembershipState membershipState;
+    /**
+     * 保存 {@code domainCodes} 对应的状态或依赖。
+     */
     private final List<String> domainCodes;
+    /**
+     * 保存 {@code coveringDistricts} 对应的状态或依赖。
+     */
     private final List<CoveringDistrict> coveringDistricts;
 
+    /**
+     * 创建并初始化当前对象。
+     */
     public PostBoxConfigMenu(int containerId, Inventory playerInv, BlockPos pos, PostBoxBlockEntity postBox) {
         this(containerId, playerInv, snapshot(pos, postBox, playerInv.player.getUUID()));
     }
 
+    /**
+     * 创建并初始化当前对象。
+     */
     public PostBoxConfigMenu(int containerId, Inventory playerInv, FriendlyByteBuf extraData) {
         this(containerId, playerInv, readSnapshot(extraData));
     }
 
+    /**
+     * 创建并初始化当前对象。
+     */
     private PostBoxConfigMenu(int containerId, Inventory playerInv, Snapshot snapshot) {
         super(ModMenuTypes.POST_BOX_CONFIG_MENU.get(), containerId);
         this.pos = snapshot.pos;
@@ -58,6 +94,9 @@ public class PostBoxConfigMenu extends AbstractContainerMenu {
         this.coveringDistricts = snapshot.coveringDistricts;
     }
 
+    /**
+     * 保存或编码 {@code writeOpeningData} 对应的业务操作。
+     */
     public static void writeOpeningData(FriendlyByteBuf buffer, BlockPos pos, PostBoxBlockEntity postBox, PostalNetwork network, UUID actorId) {
         Snapshot snapshot = snapshot(pos, postBox, network, actorId);
         buffer.writeBlockPos(snapshot.pos);
@@ -84,60 +123,99 @@ public class PostBoxConfigMenu extends AbstractContainerMenu {
         }
     }
 
+    /**
+     * 执行 {@code pos} 对应的业务操作。
+     */
     public BlockPos pos() {
         return pos;
     }
 
+    /**
+     * 执行 {@code districtId} 对应的业务操作。
+     */
     @Nullable
     public UUID districtId() {
         return districtId;
     }
 
+    /**
+     * 执行 {@code nodeRole} 对应的业务操作。
+     */
     @Nullable
     public NodeRole nodeRole() {
         return nodeRole;
     }
 
+    /**
+     * 执行 {@code domainCode} 对应的业务操作。
+     */
     @Nullable
     public String domainCode() {
         return domainCode;
     }
 
+    /**
+     * 执行 {@code districtCode} 对应的业务操作。
+     */
     @Nullable
     public String districtCode() {
         return districtCode;
     }
 
+    /**
+     * 执行 {@code membershipState} 对应的业务操作。
+     */
     @Nullable
     public MembershipState membershipState() {
         return membershipState;
     }
 
+    /**
+     * 执行 {@code domainCodes} 对应的业务操作。
+     */
     public List<String> domainCodes() {
         return domainCodes;
     }
 
+    /**
+     * 执行 {@code coveringDistricts} 对应的业务操作。
+     */
     public List<CoveringDistrict> coveringDistricts() {
         return coveringDistricts;
     }
 
+    /**
+     * 添加或加入 {@code joinableDistricts} 对应的业务操作。
+     */
     public List<CoveringDistrict> joinableDistricts() {
         return coveringDistricts.stream().filter(CoveringDistrict::joinable).toList();
     }
 
+    /**
+     * 执行 {@code blockedDistricts} 对应的业务操作。
+     */
     public List<CoveringDistrict> blockedDistricts() {
         return coveringDistricts.stream().filter(district -> !district.joinable()).toList();
     }
 
+    /**
+     * 执行 {@code inDomain} 对应的业务操作。
+     */
     public boolean inDomain() {
         return membershipState == MembershipState.ACTIVE;
     }
 
+    /**
+     * 执行 {@code quickMoveStack} 对应的业务操作。
+     */
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
         return ItemStack.EMPTY;
     }
 
+    /**
+     * 执行 {@code stillValid} 对应的业务操作。
+     */
     @Override
     public boolean stillValid(Player player) {
         if (!(player.level().getBlockEntity(pos) instanceof PostBoxBlockEntity)) {
@@ -149,6 +227,9 @@ public class PostBoxConfigMenu extends AbstractContainerMenu {
         return dx * dx + dy * dy + dz * dz <= 64.0;
     }
 
+    /**
+     * 执行 {@code snapshot} 对应的业务操作。
+     */
     private static Snapshot snapshot(BlockPos pos, PostBoxBlockEntity postBox, UUID actorId) {
         PostalNetwork network = postBox.getLevel() instanceof ServerLevel serverLevel
                 ? PostalNetwork.get(serverLevel)
@@ -156,6 +237,9 @@ public class PostBoxConfigMenu extends AbstractContainerMenu {
         return snapshot(pos, postBox, network, actorId);
     }
 
+    /**
+     * 执行 {@code snapshot} 对应的业务操作。
+     */
     private static Snapshot snapshot(BlockPos pos, PostBoxBlockEntity postBox, PostalNetwork network, UUID actorId) {
         List<CoveringDistrict> covering = new ArrayList<>();
         if (postBox.districtId() == null && postBox.getLevel() != null) {
@@ -199,6 +283,9 @@ public class PostBoxConfigMenu extends AbstractContainerMenu {
         );
     }
 
+    /**
+     * 获取或解析 {@code readSnapshot} 对应的业务操作。
+     */
     private static Snapshot readSnapshot(FriendlyByteBuf extraData) {
         BlockPos pos = extraData.readBlockPos();
         UUID districtId = extraData.readBoolean() ? extraData.readUUID() : null;
@@ -235,29 +322,80 @@ public class PostBoxConfigMenu extends AbstractContainerMenu {
         );
     }
 
+    /**
+     * 执行 {@code emptyToNull} 对应的业务操作。
+     */
     @Nullable
     private static String emptyToNull(String value) {
         return value == null || value.isEmpty() ? null : value;
     }
 
+    /**
+     * 封装不可变业务数据。
+     */
     public record CoveringDistrict(
+            /**
+             * 保存 {@code districtId} 对应的状态或依赖。
+             */
             @Nullable UUID districtId,
+            /**
+             * 保存 {@code label} 对应的状态或依赖。
+             */
             String label,
+            /**
+             * 保存 {@code domainCode} 对应的状态或依赖。
+             */
             @Nullable String domainCode,
+            /**
+             * 保存 {@code districtCode} 对应的状态或依赖。
+             */
             @Nullable String districtCode,
+            /**
+             * 保存 {@code joinable} 对应的状态或依赖。
+             */
             boolean joinable,
+            /**
+             * 保存 {@code reasonKey} 对应的状态或依赖。
+             */
             @Nullable String reasonKey
     ) {
     }
 
+    /**
+     * 封装不可变业务数据。
+     */
     private record Snapshot(
+            /**
+             * 保存 {@code pos} 对应的状态或依赖。
+             */
             BlockPos pos,
+            /**
+             * 保存 {@code districtId} 对应的状态或依赖。
+             */
             @Nullable UUID districtId,
+            /**
+             * 保存 {@code nodeRole} 对应的状态或依赖。
+             */
             @Nullable NodeRole nodeRole,
+            /**
+             * 保存 {@code domainCode} 对应的状态或依赖。
+             */
             @Nullable String domainCode,
+            /**
+             * 保存 {@code districtCode} 对应的状态或依赖。
+             */
             @Nullable String districtCode,
+            /**
+             * 保存 {@code membershipState} 对应的状态或依赖。
+             */
             @Nullable MembershipState membershipState,
+            /**
+             * 保存 {@code domainCodes} 对应的状态或依赖。
+             */
             List<String> domainCodes,
+            /**
+             * 保存 {@code coveringDistricts} 对应的状态或依赖。
+             */
             List<CoveringDistrict> coveringDistricts
     ) {
     }

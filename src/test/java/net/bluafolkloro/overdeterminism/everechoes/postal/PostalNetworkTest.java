@@ -16,9 +16,18 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * 封装相关行为的自动化回归测试。
+ */
 class PostalNetworkTest {
+    /**
+     * 定义 {@code OVERWORLD} 常量。
+     */
     private static final ResourceLocation OVERWORLD = ResourceLocation.fromNamespaceAndPath("minecraft", "overworld");
 
+    /**
+     * 执行 {@code domainHasNoOwnerAndSeparatesInternalIdFromDisplayCode} 对应的业务操作。
+     */
     @Test
     void domainHasNoOwnerAndSeparatesInternalIdFromDisplayCode() {
         PostalNetwork network = new PostalNetwork();
@@ -32,6 +41,9 @@ class PostalNetworkTest {
         assertEquals(DomainLifecycle.DORMANT, first.lifecycle());
     }
 
+    /**
+     * 执行 {@code districtCanContainMultiplePostBoxesWithoutNewNumber} 对应的业务操作。
+     */
     @Test
     void districtCanContainMultiplePostBoxesWithoutNewNumber() {
         PostalNetwork network = new PostalNetwork();
@@ -48,6 +60,9 @@ class PostalNetworkTest {
         assertEquals(2, network.domain(domain.domainId()).orElseThrow().nextDistrict());
     }
 
+    /**
+     * 执行 {@code overlappingDistrictsAreAllReturnedAndDoNotCreateProxyLinks} 对应的业务操作。
+     */
     @Test
     void overlappingDistrictsAreAllReturnedAndDoNotCreateProxyLinks() {
         PostalNetwork network = new PostalNetwork();
@@ -65,8 +80,50 @@ class PostalNetworkTest {
         assertTrue(network.membership(first.districtId()).orElseThrow().domainId().equals(firstDomain.domainId()));
         assertTrue(network.membership(second.districtId()).orElseThrow().domainId().equals(secondDomain.domainId()));
         assertNotEquals(firstDomain.domainId(), secondDomain.domainId());
+
+        List<UUID> ordered = covering.stream().map(PostalDistrict::districtId).toList();
+        assertEquals(ordered.stream().sorted().toList(), ordered);
     }
 
+    /**
+     * 执行 {@code duplicateNodeIdentityMintsANewIdWithoutMovingTheOriginal} 对应的业务操作。
+     */
+    @Test
+    void duplicateNodeIdentityMintsANewIdWithoutMovingTheOriginal() {
+        PostalNetwork network = new PostalNetwork();
+        UUID originalId = UUID.fromString("11111111-2222-3333-4444-555555555555");
+        PostBoxNode original = network.registerNode(originalId, OVERWORLD, new BlockPos(0, 64, 0));
+        network.setDirty(false);
+
+        assertEquals(original, network.registerNode(originalId, OVERWORLD, new BlockPos(0, 64, 0)));
+        assertFalse(network.isDirty());
+
+        PostBoxNode duplicate = network.registerNode(originalId, OVERWORLD, new BlockPos(32, 64, 0));
+        assertNotEquals(originalId, duplicate.nodeId());
+        assertEquals(new BlockPos(0, 64, 0), network.node(originalId).orElseThrow().position());
+        assertEquals(new BlockPos(32, 64, 0), network.node(duplicate.nodeId()).orElseThrow().position());
+        assertTrue(network.isDirty());
+    }
+
+    /**
+     * 执行 {@code configurationPermissionIsExposedForEveryGuiAction} 对应的业务操作。
+     */
+    @Test
+    void configurationPermissionIsExposedForEveryGuiAction() {
+        PostalNetwork denied = new PostalNetwork(
+                OpenDomainPolicies.CREATION,
+                OpenDomainPolicies.MEMBERSHIP,
+                OpenDomainPolicies.EXIT,
+                CoveredNodeAdmissionPolicy.INSTANCE,
+                context -> PolicyDecision.deny("denied")
+        );
+        assertFalse(denied.canConfigure(PostalActionContext.empty()).allowed());
+        assertEquals("denied", denied.canConfigure(PostalActionContext.empty()).reasonKey());
+    }
+
+    /**
+     * 执行 {@code coveragePolicyRejectsOutsideAndImplicitJoins} 对应的业务操作。
+     */
     @Test
     void coveragePolicyRejectsOutsideAndImplicitJoins() {
         PostalNetwork network = new PostalNetwork();
@@ -79,6 +136,9 @@ class PostalNetworkTest {
         assertFalse(CoveredNodeAdmissionPolicy.INSTANCE.canAdmit(network, implicit).allowed());
     }
 
+    /**
+     * 执行 {@code mappedCoverageControlsDiscoveryAndAdmission} 对应的业务操作。
+     */
     @Test
     void mappedCoverageControlsDiscoveryAndAdmission() {
         PostalNetwork network = new PostalNetwork();
@@ -94,6 +154,9 @@ class PostalNetworkTest {
         assertTrue(network.joinDistrictAsCollection(secondCollection, district.districtId(), context(secondCollection, 230, 0)).isPresent());
     }
 
+    /**
+     * 执行 {@code coverageMustBeConnectedAndKeepEveryNode} 对应的业务操作。
+     */
     @Test
     void coverageMustBeConnectedAndKeepEveryNode() {
         PostalNetwork network = new PostalNetwork();
@@ -130,6 +193,9 @@ class PostalNetworkTest {
         assertTrue(network.replaceDistrictCoverage(first.districtId(), Set.of(chunk0), PostalActionContext.empty()).isEmpty());
     }
 
+    /**
+     * 执行 {@code domainCoverageIsDerivedFromActiveServedDistricts} 对应的业务操作。
+     */
     @Test
     void domainCoverageIsDerivedFromActiveServedDistricts() {
         PostalNetwork network = new PostalNetwork();
@@ -145,6 +211,9 @@ class PostalNetworkTest {
         assertEquals(Set.of(new PostalChunk(OVERWORLD, 0, 0)), network.domainCoverage(domain.domainId()));
     }
 
+    /**
+     * 执行 {@code collectionLeavingDoesNotDetachDistrict} 对应的业务操作。
+     */
     @Test
     void collectionLeavingDoesNotDetachDistrict() {
         PostalNetwork network = new PostalNetwork();
@@ -159,6 +228,9 @@ class PostalNetworkTest {
         assertEquals(NodeRole.HUB, network.node(hub).orElseThrow().role());
     }
 
+    /**
+     * 执行 {@code hubRemovalPromotesCollectionAndLastNodeStopsService} 对应的业务操作。
+     */
     @Test
     void hubRemovalPromotesCollectionAndLastNodeStopsService() {
         PostalNetwork network = new PostalNetwork();
@@ -180,6 +252,9 @@ class PostalNetworkTest {
         assertEquals(MembershipState.DETACHED, network.membership(district.districtId()).orElseThrow().state());
     }
 
+    /**
+     * 执行 {@code pendingCanBeApprovedOrRejected} 对应的业务操作。
+     */
     @Test
     void pendingCanBeApprovedOrRejected() {
         PostalNetwork network = new PostalNetwork(
@@ -202,6 +277,9 @@ class PostalNetworkTest {
         assertEquals(MembershipState.DETACHED, network.rejectJoin(district.districtId()).orElseThrow().state());
     }
 
+    /**
+     * 移除或退出 {@code leaveDomainUsesServiceAndOpenPolicyCompletesImmediately} 对应的业务操作。
+     */
     @Test
     void leaveDomainUsesServiceAndOpenPolicyCompletesImmediately() {
         PostalNetwork network = new PostalNetwork();
@@ -213,6 +291,9 @@ class PostalNetworkTest {
         assertEquals(DomainLifecycle.DORMANT, network.domain(domain.domainId()).orElseThrow().lifecycle());
     }
 
+    /**
+     * 执行 {@code establishAndJoinFailureLeavesNoDomain} 对应的业务操作。
+     */
     @Test
     void establishAndJoinFailureLeavesNoDomain() {
         PostalNetwork network = new PostalNetwork(
@@ -226,6 +307,9 @@ class PostalNetworkTest {
         assertTrue(network.liveDomainCodes().isEmpty());
     }
 
+    /**
+     * 执行 {@code retireDomainMakesHistorical} 对应的业务操作。
+     */
     @Test
     void retireDomainMakesHistorical() {
         PostalNetwork network = new PostalNetwork();
@@ -235,6 +319,9 @@ class PostalNetworkTest {
         assertTrue(network.establishDomain("EV").isEmpty());
     }
 
+    /**
+     * 执行 {@code activeDomainCannotRetireUntilEveryDistrictDetaches} 对应的业务操作。
+     */
     @Test
     void activeDomainCannotRetireUntilEveryDistrictDetaches() {
         PostalNetwork network = new PostalNetwork();
@@ -250,6 +337,9 @@ class PostalNetworkTest {
         assertFalse(network.isActiveDeliveryDistrict(district.districtId()));
     }
 
+    /**
+     * 执行 {@code unknownSavedMembershipPolicyFailsClosed} 对应的业务操作。
+     */
     @Test
     void unknownSavedMembershipPolicyFailsClosed() {
         PostalNetwork original = new PostalNetwork();
@@ -263,6 +353,9 @@ class PostalNetworkTest {
         assertTrue(loaded.requestJoin(district.districtId(), domain.domainId(), 0L).isEmpty());
     }
 
+    /**
+     * 保存或编码 {@code saveAndLoadPreservesDistrictNodesAndMembership} 对应的业务操作。
+     */
     @Test
     void saveAndLoadPreservesDistrictNodesAndMembership() {
         PostalNetwork original = new PostalNetwork();
@@ -281,6 +374,9 @@ class PostalNetworkTest {
         assertEquals(List.of(district.districtId()), loaded.districtsAt(new PostalChunk(OVERWORLD, 0, 0)).stream().map(PostalDistrict::districtId).toList());
     }
 
+    /**
+     * 执行 {@code overlappingCoverageSurvivesSaveAndLoad} 对应的业务操作。
+     */
     @Test
     void overlappingCoverageSurvivesSaveAndLoad() {
         PostalNetwork original = new PostalNetwork();
@@ -300,6 +396,9 @@ class PostalNetworkTest {
         assertEquals(2, loaded.districtsAt(shared).size());
     }
 
+    /**
+     * 执行 {@code coverageIndexTracksReplaceDeleteAndRebuild} 对应的业务操作。
+     */
     @Test
     void coverageIndexTracksReplaceDeleteAndRebuild() {
         PostalNetwork network = new PostalNetwork();
@@ -334,16 +433,79 @@ class PostalNetworkTest {
         org.junit.jupiter.api.Assertions.assertThrows(UnsupportedOperationException.class, () -> snapshot.add(second));
     }
 
+    /**
+     * 执行 {@code unsupportedSchemaLoadsReadOnlyAndPreservesRawData} 对应的业务操作。
+     */
     @Test
-    void oldSchemaLoadsAsEmptyNetwork() {
+    void unsupportedSchemaLoadsReadOnlyAndPreservesRawData() {
         CompoundTag tag = new CompoundTag();
         tag.putInt("schemaVersion", 3);
         PostalNetwork network = PostalNetwork.load(tag, null);
         assertTrue(network.liveDomainCodes().isEmpty());
+        assertFalse(network.isDirty());
+        PolicyDecision permission = network.canConfigure(PostalActionContext.empty());
+        assertFalse(permission.allowed());
+        assertEquals("message.everechoes.postal.unsupported_schema", permission.reasonKey());
+        UUID transientNodeId = UUID.randomUUID();
+        PostBoxNode transientNode = network.registerNode(transientNodeId, OVERWORLD, BlockPos.ZERO);
+        assertEquals(transientNodeId, transientNode.nodeId());
+        assertTrue(network.node(transientNodeId).isEmpty());
+        assertFalse(network.isDirty());
         CompoundTag saved = network.save(new CompoundTag(), null);
-        assertEquals(PostalNetwork.SCHEMA_VERSION, saved.getInt("schemaVersion"));
+        assertEquals(3, saved.getInt("schemaVersion"));
     }
 
+    /**
+     * 执行 {@code malformedEnumValuesAreSkippedInsteadOfCrashingTheWorldLoad} 对应的业务操作。
+     */
+    @Test
+    void malformedEnumValuesAreSkippedInsteadOfCrashingTheWorldLoad() {
+        PostalNetwork original = new PostalNetwork();
+        UUID hub = register(original, 0, 0);
+        PostalDistrict district = original.createDistrict(hub, PostalActionContext.empty()).orElseThrow();
+        original.establishAndJoin(district.districtId(), "ev", PostalActionContext.empty(), 0L).orElseThrow();
+
+        CompoundTag badDomain = original.save(new CompoundTag(), null).copy();
+        badDomain.getList("domains", Tag.TAG_COMPOUND).getCompound(0).putString("lifecycle", "BROKEN");
+        assertTrue(PostalNetwork.load(badDomain, null).liveDomainCodes().isEmpty());
+
+        CompoundTag badMembership = original.save(new CompoundTag(), null).copy();
+        badMembership.getList("memberships", Tag.TAG_COMPOUND).getCompound(0).putString("state", "BROKEN");
+        assertTrue(PostalNetwork.load(badMembership, null).membership(district.districtId()).isEmpty());
+
+        CompoundTag badNode = original.save(new CompoundTag(), null).copy();
+        badNode.getList("nodes", Tag.TAG_COMPOUND).getCompound(0).putString("role", "BROKEN");
+        assertTrue(PostalNetwork.load(badNode, null).node(hub).isEmpty());
+    }
+
+    /**
+     * 执行 {@code malformedUuidValuesAreSkippedInsteadOfCrashingTheWorldLoad} 对应的业务操作。
+     */
+    @Test
+    void malformedUuidValuesAreSkippedInsteadOfCrashingTheWorldLoad() {
+        PostalNetwork original = new PostalNetwork();
+        UUID hub = register(original, 0, 0);
+        PostalDistrict district = original.createDistrict(hub, PostalActionContext.empty()).orElseThrow();
+        original.establishAndJoin(district.districtId(), "ev", PostalActionContext.empty(), 0L).orElseThrow();
+
+        CompoundTag malformed = original.save(new CompoundTag(), null).copy();
+        malformed.getList("domains", Tag.TAG_COMPOUND).getCompound(0).putString("domainId", "not-a-uuid");
+        malformed.getList("districts", Tag.TAG_COMPOUND).getCompound(0).putString("districtId", "not-a-uuid");
+        malformed.getList("memberships", Tag.TAG_COMPOUND).getCompound(0).remove("domainId");
+        malformed.getList("nodes", Tag.TAG_COMPOUND).getCompound(0).putInt("nodeId", 1);
+        malformed.getList("coverages", Tag.TAG_COMPOUND).getCompound(0).remove("districtId");
+
+        PostalNetwork loaded = PostalNetwork.load(malformed, null);
+        assertTrue(loaded.liveDomainCodes().isEmpty());
+        assertTrue(loaded.district(district.districtId()).isEmpty());
+        assertTrue(loaded.membership(district.districtId()).isEmpty());
+        assertTrue(loaded.node(hub).isEmpty());
+        assertTrue(loaded.coverage(district.districtId()).isEmpty());
+    }
+
+    /**
+     * 执行 {@code districtsDoNotReuseActiveCodes} 对应的业务操作。
+     */
     @Test
     void districtsDoNotReuseActiveCodes() {
         PostalNetwork network = new PostalNetwork();
@@ -357,16 +519,25 @@ class PostalNetworkTest {
         assertEquals("2", network.membership(second.districtId()).orElseThrow().districtCode());
     }
 
+    /**
+     * 注册 {@code register} 对应的业务操作。
+     */
     private static UUID register(PostalNetwork network, int x, int z) {
         UUID nodeId = UUID.randomUUID();
         network.registerNode(nodeId, OVERWORLD, new BlockPos(x, 64, z));
         return nodeId;
     }
 
+    /**
+     * 执行 {@code context} 对应的业务操作。
+     */
     private static PostalActionContext context(UUID nodeId, int x, int z) {
         return new PostalActionContext(null, nodeId, UUID.randomUUID(), OVERWORLD, new BlockPos(x, 64, z));
     }
 
+    /**
+     * 执行 {@code mapLine} 对应的业务操作。
+     */
     private static void mapLine(PostalNetwork network, UUID districtId, int firstChunkX, int lastChunkX) {
         Set<PostalChunk> chunks = new LinkedHashSet<>();
         for (int x = firstChunkX; x <= lastChunkX; x++) {
@@ -375,29 +546,50 @@ class PostalNetworkTest {
         network.replaceDistrictCoverage(districtId, chunks, PostalActionContext.empty()).orElseThrow();
     }
 
+    /**
+     * 封装邮政业务的权限与准入策略。
+     */
     private static final class PendingMembershipPolicy implements DomainMembershipPolicy {
+        /**
+         * 执行 {@code policyId} 对应的业务操作。
+         */
         @Override
         public String policyId() {
             return "pending-test";
         }
 
+        /**
+         * 判断 {@code canJoin} 对应的业务操作。
+         */
         @Override
         public PolicyDecision canJoin(PostalNetwork network, DomainJoinRequest request) {
             return PolicyDecision.allow();
         }
 
+        /**
+         * 执行 {@code autoActivate} 对应的业务操作。
+         */
         @Override
         public boolean autoActivate() {
             return false;
         }
     }
 
+    /**
+     * 封装邮政业务的权限与准入策略。
+     */
     private static final class DeniedMembershipPolicy implements DomainMembershipPolicy {
+        /**
+         * 执行 {@code policyId} 对应的业务操作。
+         */
         @Override
         public String policyId() {
             return "denied-test";
         }
 
+        /**
+         * 判断 {@code canJoin} 对应的业务操作。
+         */
         @Override
         public PolicyDecision canJoin(PostalNetwork network, DomainJoinRequest request) {
             return PolicyDecision.deny("denied");

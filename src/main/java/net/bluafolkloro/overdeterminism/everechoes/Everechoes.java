@@ -15,10 +15,19 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 
 // The value here should match an entry in the META-INF/neoforge.mods.toml file
+/**
+ * 封装该模块的相关职责。
+ */
 @Mod(Everechoes.MODID)
 public class Everechoes {
     // Define mod id in a common place for everything to reference
+    /**
+     * 定义 {@code MODID} 常量。
+     */
     public static final String MODID = "everechoes";
+    /**
+     * 创建并初始化当前对象。
+     */
     public Everechoes(IEventBus modEventBus) {
         //注册标签页
         ModCreativeModeTabs.register(modEventBus);

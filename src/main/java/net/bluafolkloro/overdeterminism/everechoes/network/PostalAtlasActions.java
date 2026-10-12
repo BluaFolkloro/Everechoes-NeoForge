@@ -24,14 +24,26 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * 封装玩家操作的服务端处理流程。
+ */
 public final class PostalAtlasActions {
+    /**
+     * 创建并初始化当前对象。
+     */
     private PostalAtlasActions() {
     }
 
+    /**
+     * 处理 {@code handleRequest} 对应的业务操作。
+     */
     public static void handleRequest(PostalAtlasRequestPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> handleRequestOnMain(payload, context));
     }
 
+    /**
+     * 处理 {@code handleSync} 对应的业务操作。
+     */
     public static void handleSync(PostalAtlasSyncPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (context.player().containerMenu instanceof PostalAtlasMenu menu) {
@@ -52,6 +64,9 @@ public final class PostalAtlasActions {
         });
     }
 
+    /**
+     * 处理 {@code handleRequestOnMain} 对应的业务操作。
+     */
     private static void handleRequestOnMain(PostalAtlasRequestPayload payload, IPayloadContext context) {
         if (!(context.player() instanceof ServerPlayer player)) {
             return;
@@ -82,6 +97,9 @@ public final class PostalAtlasActions {
         }
     }
 
+    /**
+     * 处理 {@code handlePan} 对应的业务操作。
+     */
     private static void handlePan(
             ServerPlayer player,
             PostalAtlasMenu menu,
@@ -104,6 +122,9 @@ public final class PostalAtlasActions {
         });
     }
 
+    /**
+     * 处理 {@code handleSubmit} 对应的业务操作。
+     */
     private static void handleSubmit(
             ServerPlayer player,
             PostalAtlasMenu menu,
@@ -179,6 +200,9 @@ public final class PostalAtlasActions {
         );
     }
 
+    /**
+     * 执行 {@code deny} 对应的业务操作。
+     */
     private static void deny(ServerPlayer player, PostalAtlasMenu menu, String reasonKey) {
         player.displayClientMessage(Component.translatable(reasonKey), true);
         PacketDistributor.sendToPlayer(

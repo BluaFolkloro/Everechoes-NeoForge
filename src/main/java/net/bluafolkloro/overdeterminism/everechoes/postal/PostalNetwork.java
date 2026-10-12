@@ -23,22 +23,72 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * 封装邮政网络的权威状态与业务操作。
+ */
 public class PostalNetwork extends SavedData {
+    /**
+     * 定义 {@code SCHEMA_VERSION} 常量。
+     */
     public static final int SCHEMA_VERSION = 5;
+    /**
+     * 定义 {@code DATA_NAME} 常量。
+     */
     private static final String DATA_NAME = "everechoes_postal_network";
 
+    /**
+     * 保存 {@code domains} 对应的状态或依赖。
+     */
     private final Map<UUID, PostalDomain> domains = new LinkedHashMap<>();
+    /**
+     * 保存 {@code districts} 对应的状态或依赖。
+     */
     private final Map<UUID, PostalDistrict> districts = new LinkedHashMap<>();
+    /**
+     * 保存 {@code memberships} 对应的状态或依赖。
+     */
     private final Map<UUID, DomainMembership> memberships = new LinkedHashMap<>();
+    /**
+     * 保存 {@code nodes} 对应的状态或依赖。
+     */
     private final Map<UUID, PostBoxNode> nodes = new LinkedHashMap<>();
+    /**
+     * 保存 {@code coverages} 对应的状态或依赖。
+     */
     private final Map<UUID, DistrictCoverage> coverages = new LinkedHashMap<>();
+    /**
+     * 保存 {@code coverageIndex} 对应的状态或依赖。
+     */
     private final Map<PostalChunk, Set<UUID>> coverageIndex = new LinkedHashMap<>();
+    /**
+     * 保存 {@code preservedUnsupportedData} 对应的状态或依赖。
+     */
+    @Nullable
+    private CompoundTag preservedUnsupportedData;
+    /**
+     * 保存 {@code creationPolicy} 对应的状态或依赖。
+     */
     private final DomainCreationPolicy creationPolicy;
+    /**
+     * 保存 {@code membershipPolicy} 对应的状态或依赖。
+     */
     private final DomainMembershipPolicy membershipPolicy;
+    /**
+     * 保存 {@code exitPolicy} 对应的状态或依赖。
+     */
     private final DomainExitPolicy exitPolicy;
+    /**
+     * 保存 {@code nodeAdmissionPolicy} 对应的状态或依赖。
+     */
     private final DistrictNodeAdmissionPolicy nodeAdmissionPolicy;
+    /**
+     * 保存 {@code interactionPolicy} 对应的状态或依赖。
+     */
     private final InteractionPolicy interactionPolicy;
 
+    /**
+     * 创建并初始化当前对象。
+     */
     public PostalNetwork() {
         this(
                 OpenDomainPolicies.CREATION,
@@ -49,6 +99,9 @@ public class PostalNetwork extends SavedData {
         );
     }
 
+    /**
+     * 创建并初始化当前对象。
+     */
     public PostalNetwork(
             DomainCreationPolicy creationPolicy,
             DomainMembershipPolicy membershipPolicy,
@@ -57,6 +110,9 @@ public class PostalNetwork extends SavedData {
         this(creationPolicy, membershipPolicy, exitPolicy, CoveredNodeAdmissionPolicy.INSTANCE, PostalPolicies.interaction(PostalPolicies.ALLOW_CONFIG));
     }
 
+    /**
+     * 创建并初始化当前对象。
+     */
     public PostalNetwork(
             DomainCreationPolicy creationPolicy,
             DomainMembershipPolicy membershipPolicy,
@@ -71,6 +127,9 @@ public class PostalNetwork extends SavedData {
         this.interactionPolicy = interactionPolicy;
     }
 
+    /**
+     * 获取或解析 {@code get} 对应的业务操作。
+     */
     public static PostalNetwork get(ServerLevel level) {
         return level.getServer().overworld().getDataStorage().computeIfAbsent(
                 new SavedData.Factory<>(PostalNetwork::new, PostalNetwork::load),
@@ -78,37 +137,58 @@ public class PostalNetwork extends SavedData {
         );
     }
 
+    /**
+     * 执行 {@code domain} 对应的业务操作。
+     */
     public Optional<PostalDomain> domain(UUID domainId) {
         return Optional.ofNullable(domains.get(domainId));
     }
 
+    /**
+     * 执行 {@code district} 对应的业务操作。
+     */
     public Optional<PostalDistrict> district(UUID districtId) {
         return Optional.ofNullable(districts.get(districtId));
     }
 
+    /**
+     * 执行 {@code membership} 对应的业务操作。
+     */
     public Optional<DomainMembership> membership(UUID districtId) {
         return Optional.ofNullable(memberships.get(districtId));
     }
 
+    /**
+     * 执行 {@code node} 对应的业务操作。
+     */
     public Optional<PostBoxNode> node(UUID nodeId) {
         return Optional.ofNullable(nodes.get(nodeId));
     }
 
+    /**
+     * 执行 {@code coverage} 对应的业务操作。
+     */
     public Optional<DistrictCoverage> coverage(UUID districtId) {
         return Optional.ofNullable(coverages.get(districtId));
     }
 
+    /**
+     * 执行 {@code districtsAt} 对应的业务操作。
+     */
     public List<PostalDistrict> districtsAt(ResourceLocation dimension, BlockPos position) {
         return districtsAt(PostalChunk.at(dimension, position));
     }
 
+    /**
+     * 执行 {@code districtsAt} 对应的业务操作。
+     */
     public List<PostalDistrict> districtsAt(PostalChunk chunk) {
         Set<UUID> ids = coverageIndex.get(chunk);
         if (ids == null || ids.isEmpty()) {
             return List.of();
         }
         List<PostalDistrict> result = new ArrayList<>();
-        for (UUID districtId : Set.copyOf(ids)) {
+        for (UUID districtId : ids.stream().sorted().toList()) {
             PostalDistrict district = districts.get(districtId);
             if (district != null) {
                 result.add(district);
@@ -117,6 +197,9 @@ public class PostalNetwork extends SavedData {
         return Collections.unmodifiableList(result);
     }
 
+    /**
+     * 添加或加入 {@code joinableDistrictsAt} 对应的业务操作。
+     */
     public List<PostalDistrict> joinableDistrictsAt(UUID nodeId, PostalActionContext context) {
         List<PostalDistrict> joinable = new ArrayList<>();
         for (CoverageMatch match : coverageMatches(nodeId, context)) {
@@ -127,6 +210,9 @@ public class PostalNetwork extends SavedData {
         return Collections.unmodifiableList(joinable);
     }
 
+    /**
+     * 执行 {@code coverageMatches} 对应的业务操作。
+     */
     public List<CoverageMatch> coverageMatches(UUID nodeId, PostalActionContext context) {
         if (context.dimension() == null || context.position() == null) {
             return List.of();
@@ -156,6 +242,9 @@ public class PostalNetwork extends SavedData {
         return Collections.unmodifiableList(matches);
     }
 
+    /**
+     * 更新 {@code rebuildCoverageIndex} 对应的业务操作。
+     */
     public void rebuildCoverageIndex() {
         coverageIndex.clear();
         for (DistrictCoverage coverage : coverages.values()) {
@@ -163,9 +252,25 @@ public class PostalNetwork extends SavedData {
         }
     }
 
-    public record CoverageMatch(PostalDistrict district, boolean joinable, @Nullable String reasonKey) {
+    /**
+     * 封装不可变业务数据。
+     */
+    public record CoverageMatch(/** 保存 {@code district} 对应的状态或依赖。 */ PostalDistrict district, /** 保存 {@code joinable} 对应的状态或依赖。 */ boolean joinable, /** 保存 {@code reasonKey} 对应的状态或依赖。 */ @Nullable String reasonKey) {
     }
 
+    /**
+     * 判断 {@code canConfigure} 对应的业务操作。
+     */
+    public PolicyDecision canConfigure(PostalActionContext context) {
+        if (preservedUnsupportedData != null) {
+            return PolicyDecision.deny("message.everechoes.postal.unsupported_schema");
+        }
+        return interactionPolicy.canSubmit(context);
+    }
+
+    /**
+     * 执行 {@code atlasWindow} 对应的业务操作。
+     */
     public Optional<PostalAtlasSnapshot> atlasWindow(
             UUID districtId,
             ResourceLocation dimension,
@@ -282,6 +387,9 @@ public class PostalNetwork extends SavedData {
         ));
     }
 
+    /**
+     * 执行 {@code domainCoverage} 对应的业务操作。
+     */
     public Set<PostalChunk> domainCoverage(UUID domainId) {
         Set<PostalChunk> result = new LinkedHashSet<>();
         for (DomainMembership membership : memberships.values()) {
@@ -298,6 +406,9 @@ public class PostalNetwork extends SavedData {
         return Set.copyOf(result);
     }
 
+    /**
+     * 执行 {@code nodesOf} 对应的业务操作。
+     */
     public List<PostBoxNode> nodesOf(UUID districtId) {
         PostalDistrict district = districts.get(districtId);
         if (district == null) {
@@ -313,10 +424,16 @@ public class PostalNetwork extends SavedData {
         return result;
     }
 
+    /**
+     * 执行 {@code hubOf} 对应的业务操作。
+     */
     public Optional<PostBoxNode> hubOf(UUID districtId) {
         return nodesOf(districtId).stream().filter(node -> node.role() == NodeRole.HUB).findFirst();
     }
 
+    /**
+     * 执行 {@code liveDomainCodes} 对应的业务操作。
+     */
     public List<String> liveDomainCodes() {
         return domains.values().stream()
                 .filter(domain -> domain.lifecycle() != DomainLifecycle.HISTORICAL)
@@ -324,6 +441,9 @@ public class PostalNetwork extends SavedData {
                 .toList();
     }
 
+    /**
+     * 获取或解析 {@code findLiveDomainByCode} 对应的业务操作。
+     */
     public Optional<PostalDomain> findLiveDomainByCode(String rawCode) {
         return PostalCodes.canonicalDomain(rawCode).flatMap(code -> domains.values().stream()
                 .filter(domain -> domain.lifecycle() != DomainLifecycle.HISTORICAL)
@@ -331,12 +451,18 @@ public class PostalNetwork extends SavedData {
                 .findFirst());
     }
 
+    /**
+     * 获取或解析 {@code findDomainByCode} 对应的业务操作。
+     */
     public Optional<PostalDomain> findDomainByCode(String rawCode) {
         return PostalCodes.canonicalDomain(rawCode).flatMap(code -> domains.values().stream()
                 .filter(domain -> domain.domainCode().equals(code))
                 .findFirst());
     }
 
+    /**
+     * 获取或解析 {@code findDistrictByCode} 对应的业务操作。
+     */
     public Optional<PostalDistrict> findDistrictByCode(UUID domainId, String districtCode) {
         return PostalCodes.canonicalDistrict(districtCode).flatMap(code -> memberships.values().stream()
                 .filter(membership -> membership.domainId().equals(domainId) && membership.districtCode().equals(code))
@@ -345,6 +471,9 @@ public class PostalNetwork extends SavedData {
                 .findFirst());
     }
 
+    /**
+     * 判断 {@code isActiveDeliveryDistrict} 对应的业务操作。
+     */
     public boolean isActiveDeliveryDistrict(UUID districtId) {
         DomainMembership membership = memberships.get(districtId);
         PostalDomain domain = membership == null ? null : domains.get(membership.domainId());
@@ -355,6 +484,9 @@ public class PostalNetwork extends SavedData {
                 && isServedDistrict(districtId);
     }
 
+    /**
+     * 判断 {@code isServedDistrict} 对应的业务操作。
+     */
     public boolean isServedDistrict(UUID districtId) {
         PostalDistrict district = districts.get(districtId);
         DistrictCoverage coverage = coverages.get(districtId);
@@ -366,6 +498,9 @@ public class PostalNetwork extends SavedData {
                 coverage.contains(PostalChunk.at(node.dimension(), node.position())));
     }
 
+    /**
+     * 获取或解析 {@code resolveAddress} 对应的业务操作。
+     */
     public MailBoxAddress resolveAddress(MailBoxAddress display) {
         PostalDomain domain = findLiveDomainByCode(display.domainCode()).orElse(null);
         if (domain == null) {
@@ -375,16 +510,42 @@ public class PostalNetwork extends SavedData {
         return display.resolved(domain.domainId(), district == null ? null : district.districtId(), null);
     }
 
+    /**
+     * 注册 {@code registerNode} 对应的业务操作。
+     */
     public PostBoxNode registerNode(UUID nodeId, ResourceLocation dimension, BlockPos position) {
+        if (preservedUnsupportedData != null) {
+            return new PostBoxNode(nodeId, null, NodeRole.COLLECTION, dimension, position, NodeState.REGISTERED);
+        }
         PostBoxNode existing = nodes.get(nodeId);
-        PostBoxNode node = existing == null
-                ? new PostBoxNode(nodeId, null, NodeRole.COLLECTION, dimension, position, NodeState.REGISTERED)
-                : existing.withPosition(dimension, position);
-        nodes.put(nodeId, node);
+        if (existing != null
+                && existing.dimension().equals(dimension)
+                && existing.position().equals(position)) {
+            return existing;
+        }
+
+        UUID registeredId = nodeId;
+        if (existing != null) {
+            do {
+                registeredId = UUID.randomUUID();
+            } while (nodes.containsKey(registeredId));
+        }
+        PostBoxNode node = new PostBoxNode(
+                registeredId,
+                null,
+                NodeRole.COLLECTION,
+                dimension,
+                position,
+                NodeState.REGISTERED
+        );
+        nodes.put(registeredId, node);
         setDirty();
         return node;
     }
 
+    /**
+     * 创建 {@code createDistrict} 对应的业务操作。
+     */
     public Optional<PostalDistrict> createDistrict(UUID hubNodeId, PostalActionContext context) {
         if (!interactionPolicy.canSubmit(context).allowed()) {
             return Optional.empty();
@@ -409,6 +570,9 @@ public class PostalNetwork extends SavedData {
         return Optional.of(district);
     }
 
+    /**
+     * 添加或加入 {@code joinDistrictAsCollection} 对应的业务操作。
+     */
     public Optional<PostBoxNode> joinDistrictAsCollection(UUID nodeId, UUID districtId, PostalActionContext context) {
         if (!interactionPolicy.canSubmit(context).allowed()) {
             return Optional.empty();
@@ -426,6 +590,9 @@ public class PostalNetwork extends SavedData {
         return Optional.of(joined);
     }
 
+    /**
+     * 执行 {@code replaceDistrictCoverage} 对应的业务操作。
+     */
     public Optional<DistrictCoverage> replaceDistrictCoverage(
             UUID districtId,
             Collection<PostalChunk> proposedChunks,
@@ -438,6 +605,9 @@ public class PostalNetwork extends SavedData {
         return replaceDistrictCoverage(districtId, proposedChunks, current.revision(), context);
     }
 
+    /**
+     * 执行 {@code replaceDistrictCoverage} 对应的业务操作。
+     */
     public Optional<DistrictCoverage> replaceDistrictCoverage(
             UUID districtId,
             Collection<PostalChunk> proposedChunks,
@@ -458,6 +628,9 @@ public class PostalNetwork extends SavedData {
         return Optional.of(updated);
     }
 
+    /**
+     * 校验 {@code validateCoverageReplacement} 对应的业务操作。
+     */
     public PolicyDecision validateCoverageReplacement(
             UUID districtId,
             Collection<PostalChunk> proposedChunks,
@@ -468,6 +641,9 @@ public class PostalNetwork extends SavedData {
         return validateCoverageReplacement(districtId, proposedChunks, expectedRevision, context);
     }
 
+    /**
+     * 校验 {@code validateCoverageReplacement} 对应的业务操作。
+     */
     public PolicyDecision validateCoverageReplacement(
             UUID districtId,
             Collection<PostalChunk> proposedChunks,
@@ -514,6 +690,9 @@ public class PostalNetwork extends SavedData {
         return PolicyDecision.allow();
     }
 
+    /**
+     * 移除或退出 {@code leaveDistrict} 对应的业务操作。
+     */
     public Optional<PostBoxNode> leaveDistrict(UUID nodeId) {
         PostBoxNode node = nodes.get(nodeId);
         if (node == null || node.districtId() == null || node.role() == NodeRole.HUB) {
@@ -531,6 +710,9 @@ public class PostalNetwork extends SavedData {
         return Optional.of(detached);
     }
 
+    /**
+     * 移除或退出 {@code removeNode} 对应的业务操作。
+     */
     public void removeNode(UUID nodeId) {
         PostBoxNode node = nodes.remove(nodeId);
         if (node == null || node.districtId() == null) {
@@ -556,11 +738,17 @@ public class PostalNetwork extends SavedData {
         setDirty();
     }
 
+    /**
+     * 执行 {@code covers} 对应的业务操作。
+     */
     public boolean covers(UUID districtId, ResourceLocation dimension, BlockPos position) {
         DistrictCoverage coverage = coverages.get(districtId);
         return coverage != null && coverage.contains(PostalChunk.at(dimension, position));
     }
 
+    /**
+     * 执行 {@code establishAndJoin} 对应的业务操作。
+     */
     public Optional<PostalDomain> establishAndJoin(UUID districtId, String rawCode, PostalActionContext context, long joinedAt) {
         if (!interactionPolicy.canSubmit(context).allowed()) {
             return Optional.empty();
@@ -600,10 +788,16 @@ public class PostalNetwork extends SavedData {
         return Optional.of(domains.get(domain.domainId()));
     }
 
+    /**
+     * 执行 {@code establishDomain} 对应的业务操作。
+     */
     public Optional<PostalDomain> establishDomain(String rawCode) {
         return establishDomain(rawCode, PostalActionContext.empty());
     }
 
+    /**
+     * 执行 {@code establishDomain} 对应的业务操作。
+     */
     public Optional<PostalDomain> establishDomain(String rawCode, PostalActionContext context) {
         Optional<String> domainCode = PostalCodes.canonicalDomain(rawCode);
         if (domainCode.isEmpty()) {
@@ -626,10 +820,16 @@ public class PostalNetwork extends SavedData {
         return Optional.of(domain);
     }
 
+    /**
+     * 提交或发送 {@code requestJoin} 对应的业务操作。
+     */
     public Optional<DomainMembership> requestJoin(UUID districtId, UUID domainId, long joinedAt) {
         return requestJoin(districtId, domainId, PostalActionContext.empty(), joinedAt);
     }
 
+    /**
+     * 提交或发送 {@code requestJoin} 对应的业务操作。
+     */
     public Optional<DomainMembership> requestJoin(UUID districtId, UUID domainId, PostalActionContext context, long joinedAt) {
         PostalDomain domain = domains.get(domainId);
         PostalDistrict district = districts.get(districtId);
@@ -675,6 +875,9 @@ public class PostalNetwork extends SavedData {
         return Optional.of(membership);
     }
 
+    /**
+     * 执行 {@code approveJoin} 对应的业务操作。
+     */
     public Optional<DomainMembership> approveJoin(UUID districtId) {
         DomainMembership membership = memberships.get(districtId);
         if (membership == null || membership.state() != MembershipState.PENDING) {
@@ -687,6 +890,9 @@ public class PostalNetwork extends SavedData {
         return Optional.of(active);
     }
 
+    /**
+     * 执行 {@code rejectJoin} 对应的业务操作。
+     */
     public Optional<DomainMembership> rejectJoin(UUID districtId) {
         DomainMembership membership = memberships.get(districtId);
         if (membership == null || membership.state() != MembershipState.PENDING) {
@@ -699,6 +905,9 @@ public class PostalNetwork extends SavedData {
         return Optional.of(detached);
     }
 
+    /**
+     * 移除或退出 {@code leaveDomain} 对应的业务操作。
+     */
     public Optional<DomainMembership> leaveDomain(UUID districtId) {
         Optional<DomainMembership> leaving = requestLeave(districtId);
         if (leaving.isEmpty()) {
@@ -712,6 +921,9 @@ public class PostalNetwork extends SavedData {
         return leaving;
     }
 
+    /**
+     * 提交或发送 {@code requestLeave} 对应的业务操作。
+     */
     public Optional<DomainMembership> requestLeave(UUID districtId) {
         DomainMembership membership = memberships.get(districtId);
         if (membership == null) {
@@ -729,6 +941,9 @@ public class PostalNetwork extends SavedData {
         return Optional.of(leaving);
     }
 
+    /**
+     * 执行 {@code completeLeave} 对应的业务操作。
+     */
     public Optional<DomainMembership> completeLeave(UUID districtId) {
         DomainMembership membership = memberships.get(districtId);
         if (membership == null) {
@@ -746,6 +961,9 @@ public class PostalNetwork extends SavedData {
         return Optional.of(detached);
     }
 
+    /**
+     * 执行 {@code retireDomain} 对应的业务操作。
+     */
     public Optional<PostalDomain> retireDomain(UUID domainId) {
         PostalDomain domain = domains.get(domainId);
         if (domain == null) {
@@ -763,10 +981,13 @@ public class PostalNetwork extends SavedData {
         return Optional.of(historical);
     }
 
+    /**
+     * 读取并恢复 {@code load} 对应的业务操作。
+     */
     public static PostalNetwork load(CompoundTag tag, HolderLookup.Provider registries) {
         PostalNetwork network = new PostalNetwork();
         if (tag.getInt("schemaVersion") != SCHEMA_VERSION) {
-            network.setDirty();
+            network.preservedUnsupportedData = tag.copy();
             return network;
         }
         readDomains(network, tag);
@@ -777,8 +998,14 @@ public class PostalNetwork extends SavedData {
         return network;
     }
 
+    /**
+     * 保存或编码 {@code save} 对应的业务操作。
+     */
     @Override
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
+        if (preservedUnsupportedData != null) {
+            return preservedUnsupportedData.copy();
+        }
         tag.putInt("schemaVersion", SCHEMA_VERSION);
         writeDomains(tag);
         writeDistricts(tag);
@@ -788,6 +1015,9 @@ public class PostalNetwork extends SavedData {
         return tag;
     }
 
+    /**
+     * 执行 {@code promoteHub} 对应的业务操作。
+     */
     private void promoteHub(PostalDistrict district) {
         for (UUID nodeId : district.nodeIds()) {
             PostBoxNode node = nodes.get(nodeId);
@@ -798,6 +1028,9 @@ public class PostalNetwork extends SavedData {
         }
     }
 
+    /**
+     * 移除或退出 {@code removeEmptyDistrict} 对应的业务操作。
+     */
     private void removeEmptyDistrict(PostalDistrict district) {
         UUID districtId = district.districtId();
         DomainMembership membership = memberships.get(districtId);
@@ -810,12 +1043,18 @@ public class PostalNetwork extends SavedData {
         unindexCoverage(coverage);
     }
 
+    /**
+     * 执行 {@code indexCoverage} 对应的业务操作。
+     */
     private void indexCoverage(DistrictCoverage coverage) {
         for (PostalChunk chunk : coverage.chunks()) {
             coverageIndex.computeIfAbsent(chunk, ignored -> new LinkedHashSet<>()).add(coverage.districtId());
         }
     }
 
+    /**
+     * 执行 {@code unindexCoverage} 对应的业务操作。
+     */
     private void unindexCoverage(@Nullable DistrictCoverage coverage) {
         if (coverage == null) {
             return;
@@ -832,6 +1071,9 @@ public class PostalNetwork extends SavedData {
         }
     }
 
+    /**
+     * 更新 {@code refreshDistrictService} 对应的业务操作。
+     */
     private void refreshDistrictService(UUID districtId) {
         PostalDistrict district = districts.get(districtId);
         if (district == null) {
@@ -848,6 +1090,9 @@ public class PostalNetwork extends SavedData {
         }
     }
 
+    /**
+     * 执行 {@code membershipPolicyFor} 对应的业务操作。
+     */
     private Optional<DomainMembershipPolicy> membershipPolicyFor(PostalDomain domain) {
         if (membershipPolicy.policyId().equals(domain.membershipPolicyId())) {
             return Optional.of(membershipPolicy);
@@ -855,6 +1100,9 @@ public class PostalNetwork extends SavedData {
         return PostalPolicies.findMembership(domain.membershipPolicyId());
     }
 
+    /**
+     * 执行 {@code exitPolicyFor} 对应的业务操作。
+     */
     private Optional<DomainExitPolicy> exitPolicyFor(PostalDomain domain) {
         if (exitPolicy.policyId().equals(domain.exitPolicyId())) {
             return Optional.of(exitPolicy);
@@ -862,6 +1110,9 @@ public class PostalNetwork extends SavedData {
         return PostalPolicies.findExit(domain.exitPolicyId());
     }
 
+    /**
+     * 更新 {@code refreshLifecycle} 对应的业务操作。
+     */
     private void refreshLifecycle(UUID domainId) {
         PostalDomain domain = domains.get(domainId);
         if (domain == null || domain.lifecycle() == DomainLifecycle.HISTORICAL) {
@@ -874,6 +1125,9 @@ public class PostalNetwork extends SavedData {
         domains.put(domainId, domain.withLifecycle(hasActive ? DomainLifecycle.ACTIVE : DomainLifecycle.DORMANT));
     }
 
+    /**
+     * 执行 {@code usedDistrictCodes} 对应的业务操作。
+     */
     private List<String> usedDistrictCodes(UUID domainId) {
         return memberships.values().stream()
                 .filter(membership -> membership.domainId().equals(domainId))
@@ -882,6 +1136,9 @@ public class PostalNetwork extends SavedData {
                 .toList();
     }
 
+    /**
+     * 执行 {@code nextFreeDistrict} 对应的业务操作。
+     */
     private int nextFreeDistrict(PostalDomain domain) {
         List<String> used = usedDistrictCodes(domain.domainId());
         for (int value = 1; value <= PostalCodes.DISTRICT_MAX; value++) {
@@ -892,6 +1149,9 @@ public class PostalNetwork extends SavedData {
         return -1;
     }
 
+    /**
+     * 保存或编码 {@code writeDomains} 对应的业务操作。
+     */
     private void writeDomains(CompoundTag tag) {
         ListTag list = new ListTag();
         for (PostalDomain domain : domains.values()) {
@@ -908,6 +1168,9 @@ public class PostalNetwork extends SavedData {
         tag.put("domains", list);
     }
 
+    /**
+     * 保存或编码 {@code writeDistricts} 对应的业务操作。
+     */
     private void writeDistricts(CompoundTag tag) {
         ListTag list = new ListTag();
         for (PostalDistrict district : districts.values()) {
@@ -926,6 +1189,9 @@ public class PostalNetwork extends SavedData {
         tag.put("districts", list);
     }
 
+    /**
+     * 保存或编码 {@code writeMemberships} 对应的业务操作。
+     */
     private void writeMemberships(CompoundTag tag) {
         ListTag list = new ListTag();
         for (DomainMembership membership : memberships.values()) {
@@ -941,6 +1207,9 @@ public class PostalNetwork extends SavedData {
         tag.put("memberships", list);
     }
 
+    /**
+     * 保存或编码 {@code writeNodes} 对应的业务操作。
+     */
     private void writeNodes(CompoundTag tag) {
         ListTag list = new ListTag();
         for (PostBoxNode node : nodes.values()) {
@@ -960,6 +1229,9 @@ public class PostalNetwork extends SavedData {
         tag.put("nodes", list);
     }
 
+    /**
+     * 保存或编码 {@code writeCoverages} 对应的业务操作。
+     */
     private void writeCoverages(CompoundTag tag) {
         ListTag list = new ListTag();
         for (DistrictCoverage coverage : coverages.values()) {
@@ -972,6 +1244,9 @@ public class PostalNetwork extends SavedData {
         tag.put("coverages", list);
     }
 
+    /**
+     * 保存或编码 {@code writeChunkGroups} 对应的业务操作。
+     */
     private static ListTag writeChunkGroups(Collection<PostalChunk> chunks) {
         Map<ResourceLocation, List<Long>> byDimension = new LinkedHashMap<>();
         for (PostalChunk chunk : chunks) {
@@ -987,17 +1262,27 @@ public class PostalNetwork extends SavedData {
         return groups;
     }
 
+    /**
+     * 获取或解析 {@code readDomains} 对应的业务操作。
+     */
     private static void readDomains(PostalNetwork network, CompoundTag tag) {
         ListTag list = tag.getList("domains", Tag.TAG_COMPOUND);
         for (int index = 0; index < list.size(); index++) {
             CompoundTag domainTag = list.getCompound(index);
+            if (!domainTag.hasUUID("domainId")) {
+                continue;
+            }
             UUID domainId = domainTag.getUUID("domainId");
+            DomainLifecycle lifecycle = enumValue(DomainLifecycle.class, domainTag.getString("lifecycle"));
+            if (lifecycle == null) {
+                continue;
+            }
             PostalCodes.canonicalDomain(domainTag.getString("domainCode")).ifPresent(code -> network.domains.put(
                     domainId,
                     new PostalDomain(
                             domainId,
                             code,
-                            DomainLifecycle.valueOf(domainTag.getString("lifecycle")),
+                            lifecycle,
                             Math.max(1, domainTag.getInt("nextDistrict")),
                             defaultPolicy(domainTag.getString("creationPolicyId")),
                             defaultPolicy(domainTag.getString("membershipPolicyId")),
@@ -1007,57 +1292,98 @@ public class PostalNetwork extends SavedData {
         }
     }
 
+    /**
+     * 获取或解析 {@code readDistricts} 对应的业务操作。
+     */
     private static void readDistricts(PostalNetwork network, CompoundTag tag) {
         ListTag list = tag.getList("districts", Tag.TAG_COMPOUND);
         for (int index = 0; index < list.size(); index++) {
             CompoundTag districtTag = list.getCompound(index);
+            if (!districtTag.hasUUID("districtId")) {
+                continue;
+            }
             List<UUID> nodeIds = new ArrayList<>();
             ListTag nodesTag = districtTag.getList("nodeIds", Tag.TAG_COMPOUND);
             for (int nodeIndex = 0; nodeIndex < nodesTag.size(); nodeIndex++) {
-                nodeIds.add(nodesTag.getCompound(nodeIndex).getUUID("nodeId"));
+                CompoundTag nodeRefTag = nodesTag.getCompound(nodeIndex);
+                if (nodeRefTag.hasUUID("nodeId")) {
+                    nodeIds.add(nodeRefTag.getUUID("nodeId"));
+                }
             }
             UUID districtId = districtTag.getUUID("districtId");
             network.districts.put(districtId, new PostalDistrict(districtId, nodeIds, Math.max(1, districtTag.getInt("revision"))));
         }
     }
 
+    /**
+     * 获取或解析 {@code readMemberships} 对应的业务操作。
+     */
     private static void readMemberships(PostalNetwork network, CompoundTag tag) {
         ListTag list = tag.getList("memberships", Tag.TAG_COMPOUND);
         for (int index = 0; index < list.size(); index++) {
             CompoundTag membershipTag = list.getCompound(index);
+            if (!membershipTag.hasUUID("districtId") || !membershipTag.hasUUID("domainId")) {
+                continue;
+            }
             UUID districtId = membershipTag.getUUID("districtId");
-            network.memberships.put(districtId, new DomainMembership(
-                    districtId,
-                    membershipTag.getUUID("domainId"),
-                    MembershipState.valueOf(membershipTag.getString("state")),
-                    Math.max(1, membershipTag.getInt("revision")),
-                    membershipTag.getLong("joinedAt"),
-                    membershipTag.getString("districtCode")
-            ));
+            MembershipState state = enumValue(MembershipState.class, membershipTag.getString("state"));
+            if (state == null) {
+                continue;
+            }
+            try {
+                network.memberships.put(districtId, new DomainMembership(
+                        districtId,
+                        membershipTag.getUUID("domainId"),
+                        state,
+                        Math.max(1, membershipTag.getInt("revision")),
+                        membershipTag.getLong("joinedAt"),
+                        membershipTag.getString("districtCode")
+                ));
+            } catch (IllegalArgumentException ignored) {
+                // Skip malformed saved entries without making the whole world unloadable.
+            }
         }
     }
 
+    /**
+     * 获取或解析 {@code readNodes} 对应的业务操作。
+     */
     private static void readNodes(PostalNetwork network, CompoundTag tag) {
         ListTag list = tag.getList("nodes", Tag.TAG_COMPOUND);
         for (int index = 0; index < list.size(); index++) {
             CompoundTag nodeTag = list.getCompound(index);
+            if (!nodeTag.hasUUID("nodeId")) {
+                continue;
+            }
             UUID nodeId = nodeTag.getUUID("nodeId");
             UUID districtId = nodeTag.hasUUID("districtId") ? nodeTag.getUUID("districtId") : null;
+            NodeRole role = enumValue(NodeRole.class, nodeTag.getString("role"));
+            NodeState state = enumValue(NodeState.class, nodeTag.getString("state"));
+            ResourceLocation dimension = ResourceLocation.tryParse(nodeTag.getString("dimension"));
+            if (role == null || state == null || dimension == null) {
+                continue;
+            }
             network.nodes.put(nodeId, new PostBoxNode(
                     nodeId,
                     districtId,
-                    NodeRole.valueOf(nodeTag.getString("role")),
-                    ResourceLocation.parse(nodeTag.getString("dimension")),
+                    role,
+                    dimension,
                     new BlockPos(nodeTag.getInt("x"), nodeTag.getInt("y"), nodeTag.getInt("z")),
-                    NodeState.valueOf(nodeTag.getString("state"))
+                    state
             ));
         }
     }
 
+    /**
+     * 获取或解析 {@code readCoverages} 对应的业务操作。
+     */
     private static void readCoverages(PostalNetwork network, CompoundTag tag) {
         ListTag list = tag.getList("coverages", Tag.TAG_COMPOUND);
         for (int index = 0; index < list.size(); index++) {
             CompoundTag coverageTag = list.getCompound(index);
+            if (!coverageTag.hasUUID("districtId")) {
+                continue;
+            }
             UUID districtId = coverageTag.getUUID("districtId");
             Set<PostalChunk> chunks = readChunkGroups(coverageTag.getList("chunks", Tag.TAG_COMPOUND));
             if (!network.districts.containsKey(districtId)
@@ -1077,6 +1403,9 @@ public class PostalNetwork extends SavedData {
         }
     }
 
+    /**
+     * 获取或解析 {@code readChunkGroups} 对应的业务操作。
+     */
     private static Set<PostalChunk> readChunkGroups(ListTag groups) {
         Set<PostalChunk> chunks = new LinkedHashSet<>();
         for (int index = 0; index < groups.size(); index++) {
@@ -1092,6 +1421,21 @@ public class PostalNetwork extends SavedData {
         return chunks;
     }
 
+    /**
+     * 执行 {@code enumValue} 对应的业务操作。
+     */
+    @Nullable
+    private static <E extends Enum<E>> E enumValue(Class<E> type, String raw) {
+        try {
+            return Enum.valueOf(type, raw);
+        } catch (IllegalArgumentException | NullPointerException ignored) {
+            return null;
+        }
+    }
+
+    /**
+     * 执行 {@code defaultPolicy} 对应的业务操作。
+     */
     private static String defaultPolicy(String policyId) {
         return policyId == null || policyId.isBlank() ? PostalPolicies.OPEN : policyId;
     }

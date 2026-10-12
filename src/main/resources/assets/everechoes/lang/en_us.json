@@ -22,6 +22,7 @@
   "message.everechoes.post_box.domain_exists": "That domain code is already in use",
   "message.everechoes.post_box.unknown_domain": "That domain could not be found",
   "message.everechoes.post_box.join_denied": "Current rules do not allow joining that domain",
+  "message.everechoes.postal.unsupported_schema": "This postal save version is unsupported; postal configuration is read-only to protect its data",
   "message.everechoes.post_box.leave_invalid": "This district cannot leave now",
   "message.everechoes.post_box.leaving": "The district is leaving the domain",
   "message.everechoes.post_box.left": "The district left the domain",

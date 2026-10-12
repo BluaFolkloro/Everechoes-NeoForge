@@ -15,32 +15,80 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * 封装客户端与服务端之间的网络载荷。
+ */
 public record PostalAtlasSyncPayload(
+        /**
+         * 保存 {@code action} 对应的状态或依赖。
+         */
         Action action,
+        /**
+         * 保存 {@code window} 对应的状态或依赖。
+         */
         @Nullable PostalAtlasSnapshot window,
+        /**
+         * 保存 {@code allowed} 对应的状态或依赖。
+         */
         boolean allowed,
+        /**
+         * 保存 {@code reasonKey} 对应的状态或依赖。
+         */
         String reasonKey,
+        /**
+         * 保存 {@code revision} 对应的状态或依赖。
+         */
         int revision,
+        /**
+         * 保存 {@code savedCoveragePacked} 对应的状态或依赖。
+         */
         Set<Long> savedCoveragePacked
 ) implements CustomPacketPayload {
+    /**
+     * 定义 {@code TYPE} 常量。
+     */
     public static final CustomPacketPayload.Type<PostalAtlasSyncPayload> TYPE =
             new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(Everechoes.MODID, "postal_atlas_sync"));
 
+    /**
+     * 定义 {@code STREAM_CODEC} 常量。
+     */
     public static final StreamCodec<RegistryFriendlyByteBuf, PostalAtlasSyncPayload> STREAM_CODEC =
             StreamCodec.of(PostalAtlasSyncPayload::write, PostalAtlasSyncPayload::read);
 
+    /**
+     * 定义 {@code REASON_MAX} 常量。
+     */
     private static final int REASON_MAX = 64;
+    /**
+     * 定义 {@code CODE_MAX} 常量。
+     */
     private static final int CODE_MAX = 8;
 
+    /**
+     * 封装一组受限且稳定的业务状态。
+     */
     public enum Action {
+        /**
+         * 定义 {@code WINDOW} 常量。
+         */
         WINDOW,
+        /**
+         * 定义 {@code RESULT} 常量。
+         */
         RESULT
     }
 
+    /**
+     * 执行 {@code window} 对应的业务操作。
+     */
     public static PostalAtlasSyncPayload window(PostalAtlasSnapshot snapshot) {
         return new PostalAtlasSyncPayload(Action.WINDOW, snapshot, true, "", snapshot.revision(), Set.of());
     }
 
+    /**
+     * 执行 {@code result} 对应的业务操作。
+     */
     public static PostalAtlasSyncPayload result(boolean allowed, String reasonKey, int revision, Set<Long> savedCoveragePacked) {
         return new PostalAtlasSyncPayload(
                 Action.RESULT,
@@ -52,11 +100,17 @@ public record PostalAtlasSyncPayload(
         );
     }
 
+    /**
+     * 执行 {@code type} 对应的业务操作。
+     */
     @Override
     public Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 
+    /**
+     * 保存或编码 {@code writePackedSet} 对应的业务操作。
+     */
     public static void writePackedSet(FriendlyByteBuf buffer, Set<Long> values, int maxSize) {
         int size = Math.min(values.size(), maxSize);
         buffer.writeVarInt(size);
@@ -70,12 +124,18 @@ public record PostalAtlasSyncPayload(
         }
     }
 
+    /**
+     * 执行 {@code requirePackedCount} 对应的业务操作。
+     */
     public static void requirePackedCount(int count, int maxSize) {
         if (count < 0 || count > maxSize) {
             throw new DecoderException("packed set count " + count + " exceeds " + maxSize);
         }
     }
 
+    /**
+     * 获取或解析 {@code readPackedSet} 对应的业务操作。
+     */
     public static Set<Long> readPackedSet(FriendlyByteBuf buffer, int maxSize) {
         int count = buffer.readVarInt();
         requirePackedCount(count, maxSize);
@@ -86,6 +146,9 @@ public record PostalAtlasSyncPayload(
         return Set.copyOf(values);
     }
 
+    /**
+     * 保存或编码 {@code writeSnapshot} 对应的业务操作。
+     */
     public static void writeSnapshot(FriendlyByteBuf buffer, PostalAtlasSnapshot snapshot, boolean includeSavedCoverage) {
         buffer.writeUUID(snapshot.districtId());
         buffer.writeResourceLocation(snapshot.dimension());
@@ -110,6 +173,9 @@ public record PostalAtlasSyncPayload(
         buffer.writeVarInt(snapshot.maxChunks());
     }
 
+    /**
+     * 获取或解析 {@code readSnapshot} 对应的业务操作。
+     */
     public static PostalAtlasSnapshot readSnapshot(FriendlyByteBuf buffer) {
         UUID districtId = buffer.readUUID();
         ResourceLocation dimension = buffer.readResourceLocation();
@@ -156,6 +222,9 @@ public record PostalAtlasSyncPayload(
         );
     }
 
+    /**
+     * 保存或编码 {@code write} 对应的业务操作。
+     */
     private static void write(RegistryFriendlyByteBuf buffer, PostalAtlasSyncPayload payload) {
         buffer.writeEnum(payload.action);
         switch (payload.action) {
@@ -173,6 +242,9 @@ public record PostalAtlasSyncPayload(
         }
     }
 
+    /**
+     * 获取或解析 {@code read} 对应的业务操作。
+     */
     private static PostalAtlasSyncPayload read(RegistryFriendlyByteBuf buffer) {
         Action action = buffer.readEnum(Action.class);
         return switch (action) {
@@ -186,6 +258,9 @@ public record PostalAtlasSyncPayload(
         };
     }
 
+    /**
+     * 执行 {@code clamp} 对应的业务操作。
+     */
     private static String clamp(String value, int maxLength) {
         if (value == null) {
             return "";

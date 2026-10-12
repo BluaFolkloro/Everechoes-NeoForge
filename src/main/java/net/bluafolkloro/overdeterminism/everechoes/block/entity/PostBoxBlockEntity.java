@@ -30,18 +30,37 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 import java.util.UUID;
 
+/**
+ * 封装方块实体的持久状态与运行逻辑。
+ */
 public class PostBoxBlockEntity extends BlockEntity implements MenuProvider {
+    /**
+     * 定义 {@code SLOT_COUNT} 常量。
+     */
     public static final int SLOT_COUNT = 5;
+    /**
+     * 定义 {@code LEGACY_SLOT_COUNT} 常量。
+     */
     private static final int LEGACY_SLOT_COUNT = 27;
 
-    private final SimpleContainer items = new SimpleContainer(SLOT_COUNT) {
+    /**
+     * 保存 {@code items} 对应的状态或依赖。
+     */
+    private final SimpleContainer items = new SimpleContainer(SLOT_COUNT) /** 封装该模块的相关职责。 */ {
+        /**
+         * 判断 {@code canPlaceItem} 对应的业务操作。
+         */
         @Override
         public boolean canPlaceItem(int index, ItemStack stack) {
             return Waybills.isDepositable(stack) && PostBoxBlockEntity.this.acceptsMail();
         }
 
+        /**
+         * 设置或写入 {@code setItem} 对应的业务操作。
+         */
         @Override
         public void setItem(int index, ItemStack stack) {
             if (Waybills.isDepositable(stack) && PostBoxBlockEntity.this.acceptsMail()) {
@@ -54,6 +73,9 @@ public class PostBoxBlockEntity extends BlockEntity implements MenuProvider {
             }
         }
 
+        /**
+         * 设置或写入 {@code setChanged} 对应的业务操作。
+         */
         @Override
         public void setChanged() {
             super.setChanged();
@@ -61,24 +83,51 @@ public class PostBoxBlockEntity extends BlockEntity implements MenuProvider {
         }
     };
 
+    /**
+     * 保存 {@code nodeId} 对应的状态或依赖。
+     */
     @Nullable
     private UUID nodeId;
+    /**
+     * 保存 {@code districtId} 对应的状态或依赖。
+     */
     @Nullable
     private UUID districtId;
+    /**
+     * 保存 {@code nodeRole} 对应的状态或依赖。
+     */
     @Nullable
     private NodeRole nodeRole;
+    /**
+     * 保存 {@code domainCode} 对应的状态或依赖。
+     */
     @Nullable
     private String domainCode;
+    /**
+     * 保存 {@code districtCode} 对应的状态或依赖。
+     */
     @Nullable
     private String districtCode;
+    /**
+     * 保存 {@code membershipState} 对应的状态或依赖。
+     */
     @Nullable
     private MembershipState membershipState;
+    /**
+     * 保存 {@code overflow} 对应的状态或依赖。
+     */
     private final NonNullList<ItemStack> overflow = NonNullList.create();
 
+    /**
+     * 创建并初始化当前对象。
+     */
     public PostBoxBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.POST_BOX.get(), pos, state);
     }
 
+    /**
+     * 执行 {@code nodeId} 对应的业务操作。
+     */
     public UUID nodeId() {
         if (nodeId == null) {
             nodeId = UUID.randomUUID();
@@ -86,36 +135,57 @@ public class PostBoxBlockEntity extends BlockEntity implements MenuProvider {
         return nodeId;
     }
 
+    /**
+     * 执行 {@code districtId} 对应的业务操作。
+     */
     @Nullable
     public UUID districtId() {
         return districtId;
     }
 
+    /**
+     * 执行 {@code nodeRole} 对应的业务操作。
+     */
     @Nullable
     public NodeRole nodeRole() {
         return nodeRole;
     }
 
+    /**
+     * 执行 {@code domainCode} 对应的业务操作。
+     */
     @Nullable
     public String domainCode() {
         return domainCode;
     }
 
+    /**
+     * 执行 {@code districtCode} 对应的业务操作。
+     */
     @Nullable
     public String districtCode() {
         return districtCode;
     }
 
+    /**
+     * 执行 {@code membershipState} 对应的业务操作。
+     */
     @Nullable
     public MembershipState membershipState() {
         return membershipState;
     }
 
+    /**
+     * 执行 {@code actionContext} 对应的业务操作。
+     */
     public PostalActionContext actionContext(@Nullable UUID actorId) {
         ResourceLocation dimension = level == null ? ResourceLocation.fromNamespaceAndPath("minecraft", "overworld") : level.dimension().location();
         return new PostalActionContext(districtId, nodeId(), actorId, dimension, getBlockPos());
     }
 
+    /**
+     * 判断 {@code hasActiveMembership} 对应的业务操作。
+     */
     public boolean hasActiveMembership() {
         if (level instanceof ServerLevel serverLevel && districtId != null) {
             return PostalNetwork.get(serverLevel).isActiveDeliveryDistrict(districtId);
@@ -123,10 +193,16 @@ public class PostBoxBlockEntity extends BlockEntity implements MenuProvider {
         return membershipState == MembershipState.ACTIVE && domainCode != null && districtCode != null;
     }
 
+    /**
+     * 执行 {@code acceptsMail} 对应的业务操作。
+     */
     public boolean acceptsMail() {
         return hasActiveMembership();
     }
 
+    /**
+     * 获取或解析 {@code getDisplayName} 对应的业务操作。
+     */
     @Override
     public Component getDisplayName() {
         if (domainCode != null && districtCode != null) {
@@ -138,11 +214,17 @@ public class PostBoxBlockEntity extends BlockEntity implements MenuProvider {
         return Component.translatable("block.everechoes.post_box");
     }
 
+    /**
+     * 创建 {@code createMenu} 对应的业务操作。
+     */
     @Override
     public AbstractContainerMenu createMenu(int windowId, Inventory playerInv, Player player) {
         return new PostBoxMenu(windowId, playerInv, this);
     }
 
+    /**
+     * 处理 {@code onLoad} 对应的业务操作。
+     */
     @Override
     public void onLoad() {
         super.onLoad();
@@ -152,40 +234,74 @@ public class PostBoxBlockEntity extends BlockEntity implements MenuProvider {
         }
     }
 
+    /**
+     * 同步 {@code syncFromNetwork} 对应的业务操作。
+     */
     public void syncFromNetwork(ServerLevel level) {
         PostalNetwork network = PostalNetwork.get(level);
-        PostBoxNode node = network.registerNode(nodeId(), level.dimension().location(), getBlockPos());
+        UUID requestedId = nodeId();
+        PostBoxNode node = network.registerNode(requestedId, level.dimension().location(), getBlockPos());
+        boolean nodeChanged = !Objects.equals(nodeId, node.nodeId())
+                || !Objects.equals(districtId, node.districtId())
+                || nodeRole != node.role();
+        nodeId = node.nodeId();
         districtId = node.districtId();
         nodeRole = node.role();
         if (districtId == null) {
+            boolean membershipChanged = domainCode != null || districtCode != null || membershipState != null;
             domainCode = null;
             districtCode = null;
             membershipState = null;
-            setChanged();
+            if (nodeChanged || membershipChanged) {
+                setChanged();
+            }
             return;
         }
         DomainMembership membership = network.membership(districtId).orElse(null);
         PostalDomain domain = membership == null ? null : network.domain(membership.domainId()).orElse(null);
         applyMembership(membership, domain);
+        if (nodeChanged) {
+            setChanged();
+        }
     }
 
+    /**
+     * 应用 {@code applyMembership} 对应的业务操作。
+     */
     public void applyMembership(@Nullable DomainMembership membership, @Nullable PostalDomain domain) {
+        String nextDomainCode;
+        String nextDistrictCode;
+        MembershipState nextState;
         if (membership == null || membership.state() == MembershipState.DETACHED) {
-            domainCode = null;
-            districtCode = null;
-            membershipState = membership == null ? null : MembershipState.DETACHED;
+            nextDomainCode = null;
+            nextDistrictCode = null;
+            nextState = membership == null ? null : MembershipState.DETACHED;
         } else {
-            domainCode = domain == null ? domainCode : domain.domainCode();
-            districtCode = membership.districtCode();
-            membershipState = membership.state();
+            nextDomainCode = domain == null ? domainCode : domain.domainCode();
+            nextDistrictCode = membership.districtCode();
+            nextState = membership.state();
         }
+        if (Objects.equals(domainCode, nextDomainCode)
+                && Objects.equals(districtCode, nextDistrictCode)
+                && membershipState == nextState) {
+            return;
+        }
+        domainCode = nextDomainCode;
+        districtCode = nextDistrictCode;
+        membershipState = nextState;
         setChanged();
     }
 
+    /**
+     * 执行 {@code unregister} 对应的业务操作。
+     */
     public void unregister(ServerLevel level) {
         PostalNetwork.get(level).removeNode(nodeId());
     }
 
+    /**
+     * 保存或编码 {@code saveAdditional} 对应的业务操作。
+     */
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
@@ -208,6 +324,9 @@ public class PostBoxBlockEntity extends BlockEntity implements MenuProvider {
         }
     }
 
+    /**
+     * 读取并恢复 {@code loadAdditional} 对应的业务操作。
+     */
     @Override
     public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
@@ -235,19 +354,37 @@ public class PostBoxBlockEntity extends BlockEntity implements MenuProvider {
             districtId = tag.getUUID("districtId");
         }
         if (tag.contains("nodeRole") && !tag.getString("nodeRole").isEmpty()) {
-            nodeRole = NodeRole.valueOf(tag.getString("nodeRole"));
+            nodeRole = enumValue(NodeRole.class, tag.getString("nodeRole"));
         }
         domainCode = PostalCodes.canonicalDomain(tag.getString("domainCode")).orElse(null);
         districtCode = PostalCodes.canonicalDistrict(tag.getString("districtCode")).orElse(null);
         if (tag.contains("membershipState") && !tag.getString("membershipState").isEmpty()) {
-            membershipState = MembershipState.valueOf(tag.getString("membershipState"));
+            membershipState = enumValue(MembershipState.class, tag.getString("membershipState"));
         }
     }
 
+    /**
+     * 执行 {@code enumValue} 对应的业务操作。
+     */
+    @Nullable
+    static <E extends Enum<E>> E enumValue(Class<E> type, String raw) {
+        try {
+            return Enum.valueOf(type, raw);
+        } catch (IllegalArgumentException | NullPointerException ignored) {
+            return null;
+        }
+    }
+
+    /**
+     * 获取或解析 {@code getItems} 对应的业务操作。
+     */
     public SimpleContainer getItems() {
         return items;
     }
 
+    /**
+     * 执行 {@code dropOverflow} 对应的业务操作。
+     */
     private void dropOverflow(ServerLevel level) {
         if (overflow.isEmpty()) {
             return;

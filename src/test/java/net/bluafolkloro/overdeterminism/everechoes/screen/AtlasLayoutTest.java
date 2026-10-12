@@ -5,7 +5,13 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * 封装相关行为的自动化回归测试。
+ */
 class AtlasLayoutTest {
+    /**
+     * 执行 {@code defaultScalePrioritizesTheMapAndUsesTheAvailableHeight} 对应的业务操作。
+     */
     @Test
     void defaultScalePrioritizesTheMapAndUsesTheAvailableHeight() {
         AtlasLayout.TextNeed need = AtlasLayout.TextNeed.estimate(9);
@@ -22,6 +28,9 @@ class AtlasLayoutTest {
         }
     }
 
+    /**
+     * 执行 {@code widgetsStayInsideWindowOnTypicalScales} 对应的业务操作。
+     */
     @Test
     void widgetsStayInsideWindowOnTypicalScales() {
         AtlasLayout.TextNeed need = AtlasLayout.TextNeed.estimate(9);

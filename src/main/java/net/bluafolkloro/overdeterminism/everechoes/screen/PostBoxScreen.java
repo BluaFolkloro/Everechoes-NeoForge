@@ -9,11 +9,20 @@ import net.minecraft.world.entity.player.Inventory;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
+/**
+ * 封装客户端界面及其交互布局。
+ */
 @OnlyIn(Dist.CLIENT)
 public class PostBoxScreen extends AbstractContainerScreen<PostBoxMenu> {
+    /**
+     * 定义 {@code BG} 常量。
+     */
     private static final ResourceLocation BG =
             ResourceLocation.fromNamespaceAndPath("minecraft", "textures/gui/container/hopper.png");
 
+    /**
+     * 创建并初始化当前对象。
+     */
     public PostBoxScreen(PostBoxMenu menu, Inventory playerInv, Component title) {
         super(menu, playerInv, title);
         this.imageWidth = 176;
@@ -21,12 +30,18 @@ public class PostBoxScreen extends AbstractContainerScreen<PostBoxMenu> {
         this.inventoryLabelY = this.imageHeight - 94;
     }
 
+    /**
+     * 绘制 {@code render} 对应的业务操作。
+     */
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
         this.renderTooltip(graphics, mouseX, mouseY);
     }
 
+    /**
+     * 绘制 {@code renderBg} 对应的业务操作。
+     */
     @Override
     protected void renderBg(GuiGraphics graphics, float partialTicks, int x, int y) {
         graphics.blit(BG, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);

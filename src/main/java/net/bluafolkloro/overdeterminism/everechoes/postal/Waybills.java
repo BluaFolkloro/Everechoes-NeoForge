@@ -9,10 +9,19 @@ import net.minecraft.world.item.ItemStack;
 
 import javax.annotation.Nullable;
 
+/**
+ * 封装该模块的相关职责。
+ */
 public final class Waybills {
+    /**
+     * 创建并初始化当前对象。
+     */
     private Waybills() {
     }
 
+    /**
+     * 判断 {@code isDepositable} 对应的业务操作。
+     */
     public static boolean isDepositable(ItemStack stack) {
         if (!stack.is(LetterItems.SEALED_LETTER.get())) {
             return false;
@@ -22,11 +31,17 @@ public final class Waybills {
         return data != null && data.isSealed() && data.recipientAddress().isPresent();
     }
 
+    /**
+     * 获取或解析 {@code get} 对应的业务操作。
+     */
     @Nullable
     public static Waybill get(ItemStack stack) {
         return stack.get(ModDataComponents.WAYBILL.get());
     }
 
+    /**
+     * 执行 {@code markAwaitingCarrier} 对应的业务操作。
+     */
     public static void markAwaitingCarrier(ItemStack stack) {
         if (!isDepositable(stack)) {
             return;
@@ -36,6 +51,9 @@ public final class Waybills {
         stack.set(ModDataComponents.WAYBILL.get(), existing == null ? Waybill.awaitingCarrier() : existing.depositedAtPostBox());
     }
 
+    /**
+     * 执行 {@code markTakenBy} 对应的业务操作。
+     */
     public static void markTakenBy(ItemStack stack, Player player) {
         if (!isDepositable(stack)) {
             return;

@@ -17,7 +17,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * 封装相关行为的自动化回归测试。
+ */
 class PostalAtlasLimitsCodecTest {
+    /**
+     * 获取或解析 {@code readPackedSetRejectsOversizedCountBeforeAllocating} 对应的业务操作。
+     */
     @Test
     void readPackedSetRejectsOversizedCountBeforeAllocating() {
         FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
@@ -30,6 +36,9 @@ class PostalAtlasLimitsCodecTest {
         assertEquals(0, buffer.readableBytes());
     }
 
+    /**
+     * 获取或解析 {@code readPackedSetRejectsNegativeCount} 对应的业务操作。
+     */
     @Test
     void readPackedSetRejectsNegativeCount() {
         FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
@@ -40,6 +49,9 @@ class PostalAtlasLimitsCodecTest {
         );
     }
 
+    /**
+     * 保存或编码 {@code writePackedSetTruncatesToCap} 对应的业务操作。
+     */
     @Test
     void writePackedSetTruncatesToCap() {
         Set<Long> values = new LinkedHashSet<>();
@@ -55,6 +67,9 @@ class PostalAtlasLimitsCodecTest {
         assertEquals(0, buffer.readableBytes());
     }
 
+    /**
+     * 获取或解析 {@code readPackedSetAcceptsExactCap} 对应的业务操作。
+     */
     @Test
     void readPackedSetAcceptsExactCap() {
         FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
@@ -65,6 +80,9 @@ class PostalAtlasLimitsCodecTest {
         assertEquals(Set.of(10L, 11L), values);
     }
 
+    /**
+     * 保存或编码 {@code writeSnapshotReadSnapshotRoundTripDoesNotWriteExploredSet} 对应的业务操作。
+     */
     @Test
     void writeSnapshotReadSnapshotRoundTripDoesNotWriteExploredSet() {
         ResourceLocation overworld = ResourceLocation.fromNamespaceAndPath("minecraft", "overworld");

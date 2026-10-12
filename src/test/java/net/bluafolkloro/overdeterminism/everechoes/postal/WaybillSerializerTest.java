@@ -10,7 +10,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * 封装相关行为的自动化回归测试。
+ */
 class WaybillSerializerTest {
+    /**
+     * 执行 {@code awaitingAndInTransitRoundTrip} 对应的业务操作。
+     */
     @Test
     void awaitingAndInTransitRoundTrip() {
         Waybill awaiting = Waybill.awaitingCarrier();
@@ -23,6 +29,9 @@ class WaybillSerializerTest {
         assertEquals(Waybill.CustodyState.AWAITING_CARRIER, inTransit.depositedAtPostBox().state());
     }
 
+    /**
+     * 执行 {@code inTransitWithoutCarrierIsRejected} 对应的业务操作。
+     */
     @Test
     void inTransitWithoutCarrierIsRejected() {
         assertThrows(IllegalArgumentException.class, () -> new Waybill(
@@ -32,6 +41,9 @@ class WaybillSerializerTest {
         ));
     }
 
+    /**
+     * 执行 {@code unknownStateIsRejected} 对应的业务操作。
+     */
     @Test
     void unknownStateIsRejected() {
         JsonObject json = new JsonObject();
@@ -41,6 +53,9 @@ class WaybillSerializerTest {
         assertTrue(WaybillSerializer.CODEC.parse(JsonOps.INSTANCE, json).error().isPresent());
     }
 
+    /**
+     * 执行 {@code roundTrip} 对应的业务操作。
+     */
     private static Waybill roundTrip(Waybill waybill) {
         var encoded = WaybillSerializer.CODEC.encodeStart(JsonOps.INSTANCE, waybill);
         assertTrue(encoded.result().isPresent(), encoded.error().map(Object::toString).orElse("encode failed"));

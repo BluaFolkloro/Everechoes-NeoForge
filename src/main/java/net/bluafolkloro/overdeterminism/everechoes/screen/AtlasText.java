@@ -6,17 +6,38 @@ import net.minecraft.network.chat.Component;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
+/**
+ * 封装该模块的相关职责。
+ */
 @OnlyIn(Dist.CLIENT)
 final class AtlasText {
+    /**
+     * 封装一组受限且稳定的业务状态。
+     */
     enum Align {
+        /**
+         * 定义 {@code LEFT} 常量。
+         */
         LEFT,
+        /**
+         * 定义 {@code CENTER} 常量。
+         */
         CENTER,
+        /**
+         * 定义 {@code RIGHT} 常量。
+         */
         RIGHT
     }
 
+    /**
+     * 创建并初始化当前对象。
+     */
     private AtlasText() {
     }
 
+    /**
+     * 绘制 {@code draw} 对应的业务操作。
+     */
     static void draw(
             GuiGraphics graphics,
             Font font,
@@ -30,6 +51,9 @@ final class AtlasText {
         draw(graphics, font, text, area, originX, originY, align, color, false);
     }
 
+    /**
+     * 绘制 {@code draw} 对应的业务操作。
+     */
     static void draw(
             GuiGraphics graphics,
             Font font,
@@ -61,10 +85,16 @@ final class AtlasText {
         graphics.disableScissor();
     }
 
+    /**
+     * 执行 {@code truncated} 对应的业务操作。
+     */
     static boolean truncated(Font font, Component text, AtlasLayout.Rect area) {
         return font.width(text) > area.w();
     }
 
+    /**
+     * 执行 {@code fit} 对应的业务操作。
+     */
     static Component fit(Font font, Component text, int maxWidth) {
         if (maxWidth <= 0) {
             return Component.empty();

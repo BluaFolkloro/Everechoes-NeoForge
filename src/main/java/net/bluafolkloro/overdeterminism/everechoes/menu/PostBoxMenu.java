@@ -12,10 +12,22 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
+/**
+ * 封装服务端容器菜单及数据同步。
+ */
 public class PostBoxMenu extends AbstractContainerMenu {
+    /**
+     * 保存 {@code postBox} 对应的状态或依赖。
+     */
     private final PostBoxBlockEntity postBox;
+    /**
+     * 保存 {@code container} 对应的状态或依赖。
+     */
     private final Container container;
 
+    /**
+     * 创建并初始化当前对象。
+     */
     public PostBoxMenu(int windowId, Inventory playerInv, PostBoxBlockEntity postbox) {
         super(ModMenuTypes.POST_BOX_MENU.get(), windowId);
         this.postBox = postbox;
@@ -36,10 +48,16 @@ public class PostBoxMenu extends AbstractContainerMenu {
         }
     }
 
+    /**
+     * 创建并初始化当前对象。
+     */
     public PostBoxMenu(int containerId, Inventory playerInv, FriendlyByteBuf extraData) {
         this(containerId, playerInv, getPostBox(playerInv, extraData));
     }
 
+    /**
+     * 获取或解析 {@code getPostBox} 对应的业务操作。
+     */
     private static PostBoxBlockEntity getPostBox(Inventory playerInv, FriendlyByteBuf extraData) {
         BlockPos pos = extraData.readBlockPos();
         BlockEntity be = playerInv.player.level().getBlockEntity(pos);
@@ -50,6 +68,9 @@ public class PostBoxMenu extends AbstractContainerMenu {
         throw new IllegalStateException("Expected postbox block entity at " + pos + ", got " + be);
     }
 
+    /**
+     * 执行 {@code quickMoveStack} 对应的业务操作。
+     */
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
         ItemStack newStack = ItemStack.EMPTY;
@@ -81,6 +102,9 @@ public class PostBoxMenu extends AbstractContainerMenu {
         return newStack;
     }
 
+    /**
+     * 执行 {@code stillValid} 对应的业务操作。
+     */
     @Override
     public boolean stillValid(Player player) {
         if (this.postBox.isRemoved()) {

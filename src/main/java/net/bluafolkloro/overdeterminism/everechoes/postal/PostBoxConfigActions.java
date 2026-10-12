@@ -8,10 +8,19 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
+/**
+ * 封装玩家操作的服务端处理流程。
+ */
 public final class PostBoxConfigActions {
+    /**
+     * 创建并初始化当前对象。
+     */
     private PostBoxConfigActions() {
     }
 
+    /**
+     * 处理 {@code handle} 对应的业务操作。
+     */
     public static void handle(PostBoxConfigPayload payload, IPayloadContext context) {
         if (!(context.player() instanceof ServerPlayer player)) {
             return;
@@ -32,6 +41,14 @@ public final class PostBoxConfigActions {
         postBox.syncFromNetwork(level);
         PostalNetwork network = PostalNetwork.get(level);
         PostalActionContext actionContext = postBox.actionContext(player.getUUID());
+        PolicyDecision permission = network.canConfigure(actionContext);
+        if (!permission.allowed()) {
+            String reason = permission.reasonKey() == null
+                    ? "message.everechoes.post_box.join_denied"
+                    : permission.reasonKey();
+            player.displayClientMessage(Component.translatable(reason), true);
+            return;
+        }
         boolean changed = switch (payload.action()) {
             case CREATE_DISTRICT -> createDistrict(player, network, postBox, actionContext);
             case JOIN_DISTRICT -> joinDistrict(player, network, postBox, actionContext, payload.targetDistrictId());
@@ -46,6 +63,9 @@ public final class PostBoxConfigActions {
         }
     }
 
+    /**
+     * 创建 {@code createDistrict} 对应的业务操作。
+     */
     private static boolean createDistrict(ServerPlayer player, PostalNetwork network, PostBoxBlockEntity postBox, PostalActionContext context) {
         if (network.createDistrict(postBox.nodeId(), context).isEmpty()) {
             player.displayClientMessage(Component.translatable("message.everechoes.post_box.district_create_failed"), true);
@@ -55,6 +75,9 @@ public final class PostBoxConfigActions {
         return true;
     }
 
+    /**
+     * 添加或加入 {@code joinDistrict} 对应的业务操作。
+     */
     private static boolean joinDistrict(
             ServerPlayer player,
             PostalNetwork network,
@@ -70,6 +93,9 @@ public final class PostBoxConfigActions {
         return true;
     }
 
+    /**
+     * 执行 {@code establishDomain} 对应的业务操作。
+     */
     private static boolean establishDomain(
             ServerPlayer player,
             PostalNetwork network,
@@ -95,6 +121,9 @@ public final class PostBoxConfigActions {
         return true;
     }
 
+    /**
+     * 添加或加入 {@code joinDomain} 对应的业务操作。
+     */
     private static boolean joinDomain(
             ServerPlayer player,
             PostalNetwork network,
@@ -124,6 +153,9 @@ public final class PostBoxConfigActions {
         return true;
     }
 
+    /**
+     * 移除或退出 {@code leaveDomain} 对应的业务操作。
+     */
     private static boolean leaveDomain(ServerPlayer player, PostalNetwork network, PostBoxBlockEntity postBox) {
         if (postBox.districtId() == null) {
             return false;
@@ -141,6 +173,9 @@ public final class PostBoxConfigActions {
         return true;
     }
 
+    /**
+     * 移除或退出 {@code leaveDistrict} 对应的业务操作。
+     */
     private static boolean leaveDistrict(ServerPlayer player, PostalNetwork network, PostBoxBlockEntity postBox) {
         if (network.leaveDistrict(postBox.nodeId()).isEmpty()) {
             player.displayClientMessage(Component.translatable("message.everechoes.post_box.leave_invalid"), true);
@@ -150,6 +185,9 @@ public final class PostBoxConfigActions {
         return true;
     }
 
+    /**
+     * 执行 {@code postBoxOutward} 对应的业务操作。
+     */
     private static String postBoxOutward(PostalNetwork network, PostBoxBlockEntity postBox) {
         if (postBox.districtId() == null) {
             return "";

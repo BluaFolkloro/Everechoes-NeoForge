@@ -23,28 +23,70 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 import javax.annotation.Nullable;
 
+/**
+ * 封装客户端界面及其交互布局。
+ */
 @OnlyIn(Dist.CLIENT)
 public class LetterScreen extends AbstractContainerScreen<LetterMenu> {
+    /**
+     * 定义 {@code PANEL_COLOR} 常量。
+     */
     private static final int PANEL_COLOR = 0xFF2B2118;
+    /**
+     * 定义 {@code PAPER_COLOR} 常量。
+     */
     private static final int PAPER_COLOR = 0xFFF5E6C8;
+    /**
+     * 定义 {@code LABEL_COLOR} 常量。
+     */
     private static final int LABEL_COLOR = 0x3F2A14;
+    /**
+     * 定义 {@code BODY_COLOR} 常量。
+     */
     private static final int BODY_COLOR = 0x2A1C10;
 
+    /**
+     * 保存 {@code displayedState} 对应的状态或依赖。
+     */
     private LetterState displayedState;
+    /**
+     * 保存 {@code skipSaveOnClose} 对应的状态或依赖。
+     */
     private boolean skipSaveOnClose;
+    /**
+     * 保存 {@code titleBox} 对应的状态或依赖。
+     */
     @Nullable
     private EditBox titleBox;
+    /**
+     * 保存 {@code letterRecipientBox} 对应的状态或依赖。
+     */
     @Nullable
     private EditBox letterRecipientBox;
+    /**
+     * 保存 {@code addressValueBox} 对应的状态或依赖。
+     */
     @Nullable
     private EditBox addressValueBox;
+    /**
+     * 保存 {@code signatureBox} 对应的状态或依赖。
+     */
     @Nullable
     private EditBox signatureBox;
+    /**
+     * 保存 {@code bodyBox} 对应的状态或依赖。
+     */
     @Nullable
     private MultiLineEditBox bodyBox;
+    /**
+     * 保存 {@code addressKindButton} 对应的状态或依赖。
+     */
     @Nullable
     private CycleButton<AddressInputKind> addressKindButton;
 
+    /**
+     * 创建并初始化当前对象。
+     */
     public LetterScreen(LetterMenu menu, Inventory playerInv, Component title) {
         super(menu, playerInv, title);
         this.imageWidth = 256;
@@ -52,12 +94,18 @@ public class LetterScreen extends AbstractContainerScreen<LetterMenu> {
         this.inventoryLabelY = 10000;
     }
 
+    /**
+     * 执行 {@code init} 对应的业务操作。
+     */
     @Override
     protected void init() {
         super.init();
         rebuildWidgets(menu.letterData(minecraft.player));
     }
 
+    /**
+     * 执行 {@code containerTick} 对应的业务操作。
+     */
     @Override
     protected void containerTick() {
         LetterData data = menu.letterData(minecraft.player);
@@ -66,6 +114,9 @@ public class LetterScreen extends AbstractContainerScreen<LetterMenu> {
         }
     }
 
+    /**
+     * 更新 {@code rebuildWidgets} 对应的业务操作。
+     */
     private void rebuildWidgets(LetterData data) {
         this.clearWidgets();
         this.clearFocus();
@@ -84,6 +135,9 @@ public class LetterScreen extends AbstractContainerScreen<LetterMenu> {
         }
     }
 
+    /**
+     * 执行 {@code initDraftWidgets} 对应的业务操作。
+     */
     private void initDraftWidgets(LetterData data) {
         int x = leftPos + 50;
         int fieldWidth = imageWidth - 58;
@@ -150,6 +204,9 @@ public class LetterScreen extends AbstractContainerScreen<LetterMenu> {
                 .build());
     }
 
+    /**
+     * 执行 {@code initReadOnlyButtons} 对应的业务操作。
+     */
     private void initReadOnlyButtons(LetterData data) {
         int buttonY = topPos + 192;
         if (data.isSealed()) {
@@ -163,6 +220,9 @@ public class LetterScreen extends AbstractContainerScreen<LetterMenu> {
                 .build());
     }
 
+    /**
+     * 执行 {@code keyPressed} 对应的业务操作。
+     */
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         InputConstants.Key key = InputConstants.getKey(keyCode, scanCode);
@@ -175,6 +235,9 @@ public class LetterScreen extends AbstractContainerScreen<LetterMenu> {
         return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
+    /**
+     * 创建 {@code createLineBox} 对应的业务操作。
+     */
     private EditBox createLineBox(int x, int y, int width, String value, int maxLength) {
         EditBox box = new EditBox(font, x, y, width, 18, Component.empty());
         box.setMaxLength(maxLength);
@@ -183,6 +246,9 @@ public class LetterScreen extends AbstractContainerScreen<LetterMenu> {
         return box;
     }
 
+    /**
+     * 更新 {@code updateAddressFieldVisibility} 对应的业务操作。
+     */
     private void updateAddressFieldVisibility() {
         if (addressValueBox == null || addressKindButton == null) {
             return;
@@ -193,18 +259,27 @@ public class LetterScreen extends AbstractContainerScreen<LetterMenu> {
         addressValueBox.setEditable(visible);
     }
 
+    /**
+     * 绘制 {@code render} 对应的业务操作。
+     */
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
         renderTooltip(graphics, mouseX, mouseY);
     }
 
+    /**
+     * 绘制 {@code renderBg} 对应的业务操作。
+     */
     @Override
     protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
         graphics.fill(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight, PANEL_COLOR);
         graphics.fill(leftPos + 2, topPos + 2, leftPos + imageWidth - 2, topPos + imageHeight - 2, PAPER_COLOR);
     }
 
+    /**
+     * 绘制 {@code renderLabels} 对应的业务操作。
+     */
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
         LetterData data = menu.letterData(minecraft.player);
@@ -258,6 +333,9 @@ public class LetterScreen extends AbstractContainerScreen<LetterMenu> {
         );
     }
 
+    /**
+     * 执行 {@code recipientLine} 对应的业务操作。
+     */
     private Component recipientLine(LetterData data) {
         return Component.translatable(
                 "gui.everechoes.letter.recipient_value",
@@ -267,23 +345,35 @@ public class LetterScreen extends AbstractContainerScreen<LetterMenu> {
         );
     }
 
+    /**
+     * 处理 {@code onClose} 对应的业务操作。
+     */
     @Override
     public void onClose() {
         saveDraftIfNeeded();
         super.onClose();
     }
 
+    /**
+     * 移除或退出 {@code removed} 对应的业务操作。
+     */
     @Override
     public void removed() {
         saveDraftIfNeeded();
         super.removed();
     }
 
+    /**
+     * 关闭 {@code closeAfterSaving} 对应的业务操作。
+     */
     private void closeAfterSaving() {
         saveDraftIfNeeded();
         onClose();
     }
 
+    /**
+     * 保存或编码 {@code saveDraftIfNeeded} 对应的业务操作。
+     */
     private void saveDraftIfNeeded() {
         if (skipSaveOnClose || displayedState != LetterState.DRAFT || minecraft == null || minecraft.getConnection() == null) {
             return;
@@ -293,6 +383,9 @@ public class LetterScreen extends AbstractContainerScreen<LetterMenu> {
         PacketDistributor.sendToServer(createPayload(LetterActionPayload.Action.SAVE));
     }
 
+    /**
+     * 提交或发送 {@code sendAction} 对应的业务操作。
+     */
     private void sendAction(LetterActionPayload.Action action) {
         PacketDistributor.sendToServer(createPayload(action));
         if (action == LetterActionPayload.Action.SEAL || action == LetterActionPayload.Action.OPEN) {
@@ -301,6 +394,9 @@ public class LetterScreen extends AbstractContainerScreen<LetterMenu> {
         }
     }
 
+    /**
+     * 创建 {@code createPayload} 对应的业务操作。
+     */
     private LetterActionPayload createPayload(LetterActionPayload.Action action) {
         LetterData data = menu.letterData(minecraft.player);
         AddressInputKind kind = addressKindButton == null ? LetterContents.addressInputKind(data.recipientAddress().orElse(null)) : addressKindButton.getValue();
@@ -317,10 +413,16 @@ public class LetterScreen extends AbstractContainerScreen<LetterMenu> {
         );
     }
 
+    /**
+     * 执行 {@code valueOf} 对应的业务操作。
+     */
     private static String valueOf(@Nullable EditBox box, String fallback) {
         return box == null ? fallback : box.getValue();
     }
 
+    /**
+     * 添加或加入 {@code addressKindLabel} 对应的业务操作。
+     */
     private static Component addressKindLabel(AddressInputKind kind) {
         return switch (kind) {
             case NONE -> Component.translatable("gui.everechoes.letter.address.none");

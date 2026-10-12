@@ -22,19 +22,43 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * 封装客户端界面及其交互布局。
+ */
 @OnlyIn(Dist.CLIENT)
 public class PostBoxConfigScreen extends AbstractContainerScreen<PostBoxConfigMenu> {
+    /**
+     * 定义 {@code PANEL} 常量。
+     */
     private static final int PANEL = 0xFF2B2118;
+    /**
+     * 定义 {@code PAPER} 常量。
+     */
     private static final int PAPER = 0xFFF5E6C8;
+    /**
+     * 定义 {@code INK} 常量。
+     */
     private static final int INK = 0x3F2A14;
 
+    /**
+     * 保存 {@code domainBox} 对应的状态或依赖。
+     */
     @Nullable
     private EditBox domainBox;
+    /**
+     * 保存 {@code domainCycle} 对应的状态或依赖。
+     */
     @Nullable
     private CycleButton<String> domainCycle;
+    /**
+     * 保存 {@code districtCycle} 对应的状态或依赖。
+     */
     @Nullable
     private CycleButton<PostBoxConfigMenu.CoveringDistrict> districtCycle;
 
+    /**
+     * 创建并初始化当前对象。
+     */
     public PostBoxConfigScreen(PostBoxConfigMenu menu, Inventory playerInv, Component title) {
         super(menu, playerInv, title);
         this.imageWidth = 176;
@@ -42,6 +66,9 @@ public class PostBoxConfigScreen extends AbstractContainerScreen<PostBoxConfigMe
         this.inventoryLabelY = 10000;
     }
 
+    /**
+     * 执行 {@code init} 对应的业务操作。
+     */
     @Override
     protected void init() {
         super.init();
@@ -132,6 +159,9 @@ public class PostBoxConfigScreen extends AbstractContainerScreen<PostBoxConfigMe
                 .build());
     }
 
+    /**
+     * 执行 {@code keyPressed} 对应的业务操作。
+     */
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         InputConstants.Key key = InputConstants.getKey(keyCode, scanCode);
@@ -142,12 +172,18 @@ public class PostBoxConfigScreen extends AbstractContainerScreen<PostBoxConfigMe
         return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
+    /**
+     * 绘制 {@code renderBg} 对应的业务操作。
+     */
     @Override
     protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
         graphics.fill(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight, PANEL);
         graphics.fill(leftPos + 2, topPos + 2, leftPos + imageWidth - 2, topPos + imageHeight - 2, PAPER);
     }
 
+    /**
+     * 绘制 {@code renderLabels} 对应的业务操作。
+     */
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
         graphics.drawString(font, title, 8, 8, INK, false);
@@ -161,6 +197,9 @@ public class PostBoxConfigScreen extends AbstractContainerScreen<PostBoxConfigMe
         }
     }
 
+    /**
+     * 执行 {@code statusLine} 对应的业务操作。
+     */
     private Component statusLine() {
         if (menu.membershipState() == MembershipState.ACTIVE && menu.domainCode() != null && menu.districtCode() != null) {
             return Component.translatable(
@@ -180,6 +219,9 @@ public class PostBoxConfigScreen extends AbstractContainerScreen<PostBoxConfigMe
         return Component.translatable("gui.everechoes.post_box.no_district");
     }
 
+    /**
+     * 提交或发送 {@code send} 对应的业务操作。
+     */
     private void send(PostBoxConfigPayload.Action action, String domainCode, @Nullable UUID targetDistrict) {
         PacketDistributor.sendToServer(new PostBoxConfigPayload(action, menu.pos(), domainCode, targetDistrict));
     }

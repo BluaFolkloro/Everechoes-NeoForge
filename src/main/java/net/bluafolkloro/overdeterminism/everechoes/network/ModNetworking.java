@@ -5,10 +5,19 @@ import net.bluafolkloro.overdeterminism.everechoes.postal.PostBoxConfigActions;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
+/**
+ * 封装该模块的相关职责。
+ */
 public final class ModNetworking {
+    /**
+     * 创建并初始化当前对象。
+     */
     private ModNetworking() {
     }
 
+    /**
+     * 注册 {@code register} 对应的业务操作。
+     */
     public static void register(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar("1");
         registrar.playToServer(
