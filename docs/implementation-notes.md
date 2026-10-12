@@ -61,7 +61,7 @@
 - `PostalAtlasLimits`：默认窗口为 `25×19`，单边上限 `25`，`MAX_WINDOW_CELLS=475`，`MAX_SUBMIT_CHUNKS=DistrictCoverage.MAX_CHUNKS`（4096）。合法区块坐标为 `MIN_CHUNK..MAX_CHUNK`（由 `Level.MAX_LEVEL_SIZE` 换算，避免 chunk×16 溢出）；不使用动态世界边界。
 - `PostalNetwork.atlasWindow` 返回 `PostalAtlasSnapshot`（无探索集合）；非法窗口或未知邮区为 `Optional.empty()`。`includeSavedCoverage=false` 时 `savedCoveragePacked` 为空，但 `savedCoverageSize` 仍是完整辖区大小。`nodePacked` 含本邮区全部节点区块；`hubPacked` / `collectionPacked` 按窗口裁剪。打开、平移、提交不调用 `getChunk`、不生成区块。
 - `postal_atlas` 物品对已加入邮区的邮筒 `useOn` 打开 `PostalAtlasMenu`。C2S `postal_atlas_request`（PAN/SUBMIT）不信任客户端 `districtId`；PAN 携带受服务器上限校验的窗口宽高，提交集合在解码时若 `count` 超过上限会抛 `DecoderException`。S2C `postal_atlas_sync` 推送窗口或提交结果。屏幕绘制 25×19 横向坐标网格，格子只表示邮政状态；地图与右侧邮政工具面板使用独立响应式布局。
-- `PostalNetwork` 使用 `schemaVersion`。当前为 **6**；版本 5 会显式迁移，并兼容其缺失或开发期附加的 `mailboxes` 列表。半绑定（district XOR code）跳过；双字段但非法投递码按未绑定加载。加载后会校验邮区引用、在线邮箱辖区位置和区内投递码唯一性；在线坏绑定降级为未绑定，离线坏绑定删除。遇到其他无法识别的版本时保留原始 NBT，并以只读降级状态运行，避免自动保存把旧网络覆盖为空。旧邮筒库存继续保留。
+- `PostalNetwork` 使用 `schemaVersion`。当前为 **6**；首个正式版本发布前不维护开发版之间的跨版本存档迁移，只读取当前 schema。半绑定（district XOR code）跳过；双字段但非法投递码按未绑定加载。加载后会校验邮区引用、在线邮箱辖区位置和区内投递码唯一性；在线坏绑定降级为未绑定，离线坏绑定删除。遇到无法识别的版本时保留原始 NBT，并以只读降级状态运行，避免自动保存把旧网络覆盖为空。
 - 信箱 UUID 是路由身份，显示邮编只是信件上的快照。已解析地址不会按显示码重新寻址；复制出相同 UUID 的方块实体时，后出现的副本取得新 UUID，原端点的位置、绑定和投递码保持不变。
 - 潜行右键打开入网界面，提交建立/加入/退出请求。
 - 仅 `ACTIVE` 邮区接收新邮件；标题显示当前 `domainCode` 与邮区号。

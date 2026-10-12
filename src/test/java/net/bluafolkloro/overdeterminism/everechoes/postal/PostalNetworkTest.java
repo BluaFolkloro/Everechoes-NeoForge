@@ -969,27 +969,6 @@ class PostalNetworkTest {
     }
 
     /**
-     * 版本 5 可迁移到版本 6，并保留开发版曾写入的信箱列表。
-     */
-    @Test
-    void schemaFiveMigratesToSixAndPreservesMailboxes() {
-        PostalNetwork original = new PostalNetwork();
-        UUID hub = register(original, 0, 0);
-        PostalDistrict district = original.createDistrict(hub, PostalActionContext.empty()).orElseThrow();
-        original.establishAndJoin(district.districtId(), "ev", PostalActionContext.empty(), 0L).orElseThrow();
-        UUID mailboxId = registerMailbox(original, 0, 0);
-        original.bindEndpoint(mailboxId, district.districtId(), PostalActionContext.empty()).orElseThrow();
-        CompoundTag versionFive = original.save(new CompoundTag(), null);
-        versionFive.putInt("schemaVersion", 5);
-
-        PostalNetwork migrated = PostalNetwork.load(versionFive, null);
-        assertTrue(migrated.isDirty());
-        assertEquals("0AA", migrated.mailbox(mailboxId).orElseThrow().deliveryCode());
-        CompoundTag upgraded = migrated.save(new CompoundTag(), null);
-        assertEquals(6, upgraded.getInt("schemaVersion"));
-    }
-
-    /**
      * 损坏存档中的悬空邮区引用和重复投递码不会形成歧义路由。
      */
     @Test

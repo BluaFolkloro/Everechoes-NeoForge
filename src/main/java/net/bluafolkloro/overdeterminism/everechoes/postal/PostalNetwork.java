@@ -32,10 +32,6 @@ public class PostalNetwork extends SavedData {
      */
     public static final int SCHEMA_VERSION = 6;
     /**
-     * 首个可迁移的旧存档版本；版本 5 没有稳定的信箱表约束。
-     */
-    private static final int MIGRATABLE_SCHEMA_VERSION = 5;
-    /**
      * 定义 {@code DATA_NAME} 常量。
      */
     private static final String DATA_NAME = "everechoes_postal_network";
@@ -1175,8 +1171,7 @@ public class PostalNetwork extends SavedData {
      */
     public static PostalNetwork load(CompoundTag tag, HolderLookup.Provider registries) {
         PostalNetwork network = new PostalNetwork();
-        int schemaVersion = tag.getInt("schemaVersion");
-        if (schemaVersion != SCHEMA_VERSION && schemaVersion != MIGRATABLE_SCHEMA_VERSION) {
+        if (tag.getInt("schemaVersion") != SCHEMA_VERSION) {
             network.preservedUnsupportedData = tag.copy();
             return network;
         }
@@ -1186,9 +1181,6 @@ public class PostalNetwork extends SavedData {
         readNodes(network, tag);
         readCoverages(network, tag);
         readMailboxes(network, tag);
-        if (schemaVersion == MIGRATABLE_SCHEMA_VERSION) {
-            network.setDirty();
-        }
         return network;
     }
 
